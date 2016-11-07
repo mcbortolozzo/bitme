@@ -50,6 +50,12 @@ public class PeerHandler implements Runnable{
         }
     }
 
+    public synchronized void addToBuffer(String data){
+        outputBuffer.put(data.getBytes());
+        selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+        selectionKey.selector().wakeup();
+    }
+
     @Override
     public void run() {
         //do stuff
