@@ -4,6 +4,7 @@ import main.Client;
 import main.peer.Peer;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import org.junit.After;
 import org.junit.Before;
@@ -40,8 +41,6 @@ public class PeerTest {
         TorrentManager.getInstance().addTorrent(TORRENT_ID);
     }
 
-
-
     @Test
     public void peerCreationByHandshakeTest() throws IOException {
         //send dummy handshake to bittorrent client
@@ -77,18 +76,49 @@ public class PeerTest {
 
     @Test
     public void peerSendHandshake(){
-        Selector s = this.client.getSelector();
-        TorrentFile t = TorrentManager.getInstance().retrieveTorrent(TORRENT_ID);
-        SocketAddress addr = new InetSocketAddress("localhost", 9999);
+        Peer p = null;
         try {
-            Peer p = new Peer(s, t, addr);
+            p = generatePeer();
             p.sendHandshake();
-            while(p.getOtherPeerId() == null){
+            int timeout = 0;
+            while(p.getOtherPeerId() == null && timeout < 10){
+                timeout++;
                 Thread.sleep(500);
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
+        assertNotEquals(null, p);
+        assertNotEquals(null, p.getOtherPeerId());
+    }
+
+    @Test
+    public void multipleConnectionsOneTorrentTest(){
+        Peer p1 = null, p2 = null;
+        try {
+            p1 = generatePeer();
+            p2 = generatePeer();
+            p1.sendHandshake();
+            p2.sendHandshake();
+            int timeout = 0;
+            while((p1.getOtherPeerId() == null || p2.getOtherPeerId() == null) && timeout < 10){
+                timeout++;
+                Thread.sleep(500);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertNotNull(p1);
+        assertNotNull(p2);
+        assertNotNull(p1.getOtherPeerId());
+        assertNotNull(p2.getOtherPeerId());
+    }
+
+    private Peer generatePeer() throws IOException {
+        Selector s = this.client.getSelector();
+        TorrentFile t = TorrentManager.getInstance().retrieveTorrent(TORRENT_ID);
+        SocketAddress addr = new InetSocketAddress("localhost", 9999);
+        return new Peer(s, t, addr);
     }
 
     @After

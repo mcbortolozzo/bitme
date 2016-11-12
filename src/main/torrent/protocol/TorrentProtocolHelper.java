@@ -16,6 +16,8 @@ public class TorrentProtocolHelper {
     static final char PSTRLEN = (char) PROTOCOL_VERSION.length();
     private static final int ID_LEN = 20;
     static final int HANDSHAKE_SIZE = 1+19+8+ID_LEN*2; // pstrlen + protocol + reserved + torrent info hash + peer id
+    static final int STATE_CHANGE_LENGTH = 1; // just the id
+    static final int MESSAGE_LENGTH_FIELD_SIZE = 4; //length field on messages (except handshake)
 
     public static List<TorrentRequest> decodeStream(ByteBuffer messageBuffer) throws UnsupportedEncodingException {
         List<TorrentRequest> requests = new LinkedList<>();
@@ -55,5 +57,18 @@ public class TorrentProtocolHelper {
         handshake.put(torrentId.getBytes());
         handshake.put(peerId.getBytes());
         return handshake;
+    }
+
+    public static ByteBuffer createStateChangeMessage(RequestTypes stateRequest){
+        if(!RequestTypes.isStateChange(stateRequest))
+            throw new InvalidParameterException("invalid type of request");
+        return generateRequestBuffer(STATE_CHANGE_LENGTH, stateRequest.getId());
+    }
+
+    private static ByteBuffer generateRequestBuffer(int messageLength, int messageId){
+        ByteBuffer request = ByteBuffer.allocate(messageLength + MESSAGE_LENGTH_FIELD_SIZE);
+        request.putInt(messageLength);
+        request.put((byte) messageId);
+        return request;
     }
 }

@@ -3,6 +3,7 @@ package main.peer;
 import main.Client;
 import main.reactor.PeerHandler;
 import main.torrent.TorrentFile;
+import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 
@@ -65,6 +66,10 @@ public class Peer{
     public void sendHandshake(){
         ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentFile.getTorrentId(), this.getLocalPeerId());
         this.sendMessage(message);
+    }
+
+    public void sendStateChange(RequestTypes stateRequest){
+        this.sendMessage(TorrentProtocolHelper.createStateChangeMessage(stateRequest));
     }
 
     public String getLocalPeerId() {
