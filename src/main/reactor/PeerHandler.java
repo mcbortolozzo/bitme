@@ -9,7 +9,7 @@ import java.nio.channels.SocketChannel;
 /**
  * Created by marcelo on 18/10/16.
  */
-public class PeerHandler implements Runnable{
+public class PeerHandler{
     private final SelectionKey selectionKey;
     private final Selector selector;
     private final SocketChannel socket;
@@ -26,47 +26,5 @@ public class PeerHandler implements Runnable{
         selector.wakeup();
     }
 
-    private void read(){
-        System.out.println("read");
-        try {
-            socket.read(inputBuffer);
-            String data = new String(inputBuffer.array(), "ASCII");
-            //TODO handle data
-            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
 
-    private void write(){
-        try {
-            System.out.println("write");
-            socket.write(outputBuffer);
-            outputBuffer.clear();
-            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            selectionKey.selector().wakeup();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public synchronized void addToBuffer(String data){
-        outputBuffer.put(data.getBytes());
-        selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        selectionKey.selector().wakeup();
-    }
-
-    @Override
-    public void run() {
-        //do stuff
-        if (selectionKey.isReadable()) {
-            read();
-        } else if (selectionKey.isWritable()) {
-            if(outputBuffer.position() != 0) {
-                write();
-            } else {
-                selectionKey.interestOps(SelectionKey.OP_READ);
-            }
-        }
-    }
 }
