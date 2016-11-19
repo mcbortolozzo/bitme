@@ -23,6 +23,8 @@ public class PeerConnection implements Runnable {
     public static final int PEER_BUFFER_SIZE = 5000;
     Logger logger = Logger.getLogger(PeerConnection.class.getName());
 
+    private final Object readLock = new Object(), writeLock = new Object();
+
     private Peer peer;
     private SocketChannel socket;
     private SelectionKey selectionKey;
@@ -51,41 +53,46 @@ public class PeerConnection implements Runnable {
         selector.wakeup();
     }
 
-    //TODO fix this synchronized stuff
     private void read(){
-        try {
-            socket.read(inputBuffer);
-            inputBuffer.flip();
-            List<TorrentRequest> requests = TorrentProtocolHelper.decodeStream(inputBuffer);
-            inputBuffer.flip();
-            peer.process(requests);
-            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        } catch (IOException e) {
-            e.printStackTrace();
+        synchronized (readLock) {
+            try {
+                socket.read(inputBuffer);
+                inputBuffer.flip();
+                List<TorrentRequest> requests = TorrentProtocolHelper.decodeStream(inputBuffer);
+                inputBuffer.flip();
+                peer.process(requests);
+                selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private synchronized void write(){
-        try {
-            logger.log(Level.FINE, Messages.WRITE_CONNECTION + " - " + new String(outputBuffer.array(), "UTF-8"));
-            if(outputBufferWrite){
-                outputBuffer.flip();
-                outputBufferWrite = false;
+    private void write(){
+        synchronized (writeLock) {
+            try {
+                logger.log(Level.FINE, Messages.WRITE_CONNECTION + " - " + new String(outputBuffer.array(), "UTF-8"));
+                if (outputBufferWrite) {
+                    outputBuffer.flip();
+                    outputBufferWrite = false;
+                }
+                socket.write(outputBuffer);
+                outputBuffer.clear();
+                selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                selectionKey.selector().wakeup();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            socket.write(outputBuffer);
-            outputBuffer.clear();
-            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-            selectionKey.selector().wakeup();
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     public synchronized void addToBuffer(ByteBuffer data){
-        outputBufferWrite = true;
-        outputBuffer.put(data.array());
-        selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        selectionKey.selector().wakeup();
+        synchronized (writeLock) {
+            outputBufferWrite = true;
+            outputBuffer.put(data.array());
+            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            selectionKey.selector().wakeup();
+        }
     }
 
     @Override

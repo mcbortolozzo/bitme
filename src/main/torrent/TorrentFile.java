@@ -1,10 +1,13 @@
 package main.torrent;
 
+import main.peer.Peer;
+
 /**
  * Created by marcelo on 07/11/16.
  */
 public class TorrentFile {
 
+    private final String peerId;
     private String torrentId;
 
     private int pieceSize;
@@ -14,6 +17,7 @@ public class TorrentFile {
         this.torrentId = torrentId;
         this.pieceSize = pieceSize;
         this.pieceCount = pieceCount;
+        this.peerId = Peer.generatePeerId();
     }
 
     public String getTorrentId() {
@@ -21,5 +25,9 @@ public class TorrentFile {
     }
 
     public int getPieceCount() { return this.pieceCount;
+    }
+
+    public String getPeerId() {
+        return peerId;
     }
 }
