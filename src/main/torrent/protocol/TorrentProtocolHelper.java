@@ -1,5 +1,7 @@
 package main.torrent.protocol;
 
+import main.torrent.HashId;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
@@ -52,7 +54,7 @@ public class TorrentProtocolHelper {
      * @param peerId 20 byte peer Id
      * @return the buffer containing the message to be sent
      */
-    public static ByteBuffer createHandshake(String torrentId, String peerId) {
+    public static ByteBuffer createHandshake(HashId torrentId, HashId peerId) {
         if(torrentId.length() != ID_LEN)
             throw new InvalidParameterException("Invalid torrent Id");
         if(peerId.length() != ID_LEN)

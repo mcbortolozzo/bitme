@@ -2,6 +2,7 @@ package test.torrent.protocol;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
+import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,17 +35,17 @@ public class HandshakeRequestTest {
 
     @Test(expected = InvalidParameterException.class)
     public void invalidTorrentIdHandshakeTest() {
-        TorrentProtocolHelper.createHandshake(INVALID_TORRENT_ID, VALID_PEER_ID);
+        TorrentProtocolHelper.createHandshake(new HashId(INVALID_TORRENT_ID.getBytes()), new HashId(VALID_PEER_ID.getBytes()));
     }
 
     @Test(expected = InvalidParameterException.class)
     public void invalidPeerIdHandshakeTest() {
-        TorrentProtocolHelper.createHandshake(VALID_TORRENT_ID, INVALID_PEER_ID);
+        TorrentProtocolHelper.createHandshake(new HashId(VALID_TORRENT_ID.getBytes()), new HashId(INVALID_PEER_ID.getBytes()));
     }
 
     @Test
     public void handshakeCreationTest(){
-        ByteBuffer handshake = TorrentProtocolHelper.createHandshake(VALID_TORRENT_ID, VALID_PEER_ID);
+        ByteBuffer handshake = TorrentProtocolHelper.createHandshake(new HashId(VALID_TORRENT_ID.getBytes()), new HashId(VALID_PEER_ID.getBytes()));
         assertNotEquals(null, handshake);
         try {
             assertEquals(validHandshake, new String(handshake.array(), "UTF-8"));

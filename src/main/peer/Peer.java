@@ -1,11 +1,13 @@
 package main.peer;
 
 import main.Client;
+import main.torrent.HashId;
 import main.torrent.TorrentFile;
-import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
+import org.mockito.internal.util.collections.ArrayUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -25,8 +27,8 @@ public class Peer{
     private PeerConnection peerConnection;
 
     private TorrentFile torrentFile;
-    private String otherPeerId;
-    private String localPeerId;
+    private HashId otherPeerId;
+    private HashId localPeerId;
 
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
@@ -59,14 +61,15 @@ public class Peer{
      * static method generating a random peer Id
      * @return a random peer id according to structure used in the bittorrent protocol
      */
-    public static String generatePeerId(){
+    public static HashId generatePeerId() throws IOException {
         String peerId;
         peerId = "-" + Client.CLIENT_ID + Client.CLIENT_VERSION + "-";
-        for(int i = 0; i < 12; i++){
-            peerId += new SecureRandom().nextInt(10);
-        }
-        byte[] bytes = peerId.getBytes();
-        return peerId;
+        byte[] randomBytes = new byte[12];
+        new SecureRandom().nextBytes(randomBytes);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        outputStream.write(peerId.getBytes());
+        outputStream.write(randomBytes);
+        return new HashId(outputStream.toByteArray());
     }
 
     /**
@@ -96,29 +99,33 @@ public class Peer{
         this.sendMessage(message);
     }
 
-    /**
-     * @return the peer id associated with the local client, file and connection
-     */
-    public String getLocalPeerId() {
-        return localPeerId;
-    }
-
     public void setTorrentFile(TorrentFile torrentFile) {
         this.bitfield = new Bitfield(torrentFile);
         this.torrentFile = torrentFile;
     }
 
     /**
+     * @return the peer id associated with the local client, file and connection
+     */
+    public HashId getLocalPeerId() {
+        return localPeerId;
+    }
+
+    public void setLocalPeerId(HashId localPeerId) {
+        this.localPeerId = localPeerId;
+    }
+
+    public HashId getOtherPeerId() {
+        return this.otherPeerId;
+    }
+
+    /**
      * adds the information about the remote peer id and sets the handshake as complete
      * @param peerId the remote peer id
      */
-    public void setOtherPeerId(String peerId) {
+    public void setOtherPeerId(HashId peerId) {
         this.stateManager.setHandshakeDone(true);   //setting the other peer id can only be done through the handshake in this implementation
         this.otherPeerId = peerId;
-    }
-
-    public String getOtherPeerId() {
-        return this.otherPeerId;
     }
 
     public void setHavePiece(int pieceIndex) {
@@ -127,9 +134,5 @@ public class Peer{
 
     public boolean hasPiece(int pieceIndex) {
         return this.bitfield.checkHavePiece(pieceIndex);
-    }
-
-    public void setLocalPeerId(String localPeerId) {
-        this.localPeerId = localPeerId;
     }
 }

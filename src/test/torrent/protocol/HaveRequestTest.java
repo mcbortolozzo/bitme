@@ -3,6 +3,7 @@ package test.torrent.protocol;
 import main.Client;
 import main.peer.Peer;
 import main.peer.PeerConnection;
+import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 import main.torrent.protocol.TorrentProtocolHelper;
@@ -32,8 +33,8 @@ public class HaveRequestTest {
     @Before
     public void setUp() throws IOException {
         this.client = new Client(9999);
-        TorrentManager.getInstance().addTorrent(TestUtil.TORRENT_ID, TestUtil.PIECE_SIZE, TestUtil.PIECE_COUNT);
-        this.torrentFile = TorrentManager.getInstance().retrieveTorrent(TestUtil.TORRENT_ID);
+        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_SIZE, TestUtil.PIECE_COUNT);
+        this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
     }
 
     @Test
