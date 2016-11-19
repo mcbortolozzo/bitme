@@ -3,9 +3,9 @@ package main.peer;
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
+import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
-import org.mockito.internal.util.collections.ArrayUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -126,6 +126,18 @@ public class Peer{
     public void setOtherPeerId(HashId peerId) {
         this.stateManager.setHandshakeDone(true);   //setting the other peer id can only be done through the handshake in this implementation
         this.otherPeerId = peerId;
+    }
+
+    public void setState(RequestTypes type) {
+        this.stateManager.setState(type);
+    }
+
+    public boolean isPeerChoking() {
+        return this.stateManager.isPeerChoking();
+    }
+
+    public boolean isPeerInterested() {
+        return this.stateManager.isPeerInterested();
     }
 
     public void setHavePiece(int pieceIndex) {
