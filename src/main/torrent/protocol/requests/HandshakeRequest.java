@@ -1,8 +1,10 @@
-package main.torrent.protocol;
+package main.torrent.protocol.requests;
 
 import main.peer.Peer;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.torrent.protocol.TorrentProtocolHelper;
+import main.torrent.protocol.TorrentRequest;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;

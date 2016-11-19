@@ -99,4 +99,8 @@ public class PeerConnection implements Runnable {
             }
         }
     }
+
+    public Peer getPeer() {
+        return peer;
+    }
 }

@@ -1,5 +1,7 @@
 package main.torrent.protocol;
 
+import main.torrent.protocol.requests.HandshakeRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;

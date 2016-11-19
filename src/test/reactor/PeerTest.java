@@ -4,16 +4,15 @@ import main.Client;
 import main.peer.Peer;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
-import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import test.util.TestUtil;
 
 import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -27,8 +26,7 @@ public class PeerTest {
 
     private Client client;
     private ByteBuffer validHandshake = ByteBuffer.allocate(68);
-    private static final String TORRENT_ID = "torrentID01234567890";
-    private static final String PEER_ID = "peerID01234567890123";
+    private TorrentFile torrentFile;
 
     @Before
     public void setUp() throws IOException {
@@ -37,8 +35,9 @@ public class PeerTest {
         char pstrlen = 19;
         validHandshake.put((byte) pstrlen);
         validHandshake.put(TorrentProtocolHelper.PROTOCOL_VERSION.getBytes());
-        validHandshake.put(("00000000" + TORRENT_ID + "peerID01234567890123").getBytes());
-        TorrentManager.getInstance().addTorrent(TORRENT_ID);
+        validHandshake.put(("00000000" + TestUtil.TORRENT_ID + TestUtil.PEER_ID).getBytes());
+        TorrentManager.getInstance().addTorrent(TestUtil.TORRENT_ID, TestUtil.PIECE_SIZE, TestUtil.PIECE_COUNT);
+        this.torrentFile = TorrentManager.getInstance().retrieveTorrent(TestUtil.TORRENT_ID);
     }
 
     @Test
@@ -60,7 +59,7 @@ public class PeerTest {
         }
         //validate torrent id received
         String reply = sb.toString();
-        assertEquals(TORRENT_ID, reply.substring(28, 48));
+        assertEquals(TestUtil.TORRENT_ID, reply.substring(28, 48));
     }
 
     @Test
@@ -78,7 +77,7 @@ public class PeerTest {
     public void peerSendHandshake(){
         Peer p = null;
         try {
-            p = generatePeer();
+            p = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
             p.sendHandshake();
             int timeout = 0;
             while(p.getOtherPeerId() == null && timeout < 10){
@@ -96,8 +95,8 @@ public class PeerTest {
     public void multipleConnectionsOneTorrentTest(){
         Peer p1 = null, p2 = null;
         try {
-            p1 = generatePeer();
-            p2 = generatePeer();
+            p1 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
+            p2 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
             p1.sendHandshake();
             p2.sendHandshake();
             int timeout = 0;
@@ -112,13 +111,6 @@ public class PeerTest {
         assertNotNull(p2);
         assertNotNull(p1.getOtherPeerId());
         assertNotNull(p2.getOtherPeerId());
-    }
-
-    private Peer generatePeer() throws IOException {
-        Selector s = this.client.getSelector();
-        TorrentFile t = TorrentManager.getInstance().retrieveTorrent(TORRENT_ID);
-        SocketAddress addr = new InetSocketAddress("localhost", 9999);
-        return new Peer(s, t, addr);
     }
 
     @After

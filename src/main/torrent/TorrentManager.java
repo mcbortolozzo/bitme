@@ -26,8 +26,8 @@ public class TorrentManager {
     }
 
     //TODO upgrade method to retrieve data from file
-    public synchronized void addTorrent(String torrentId){
-        TorrentFile torrentFile = new TorrentFile(torrentId);
+    public synchronized void addTorrent(String torrentId, int pieceSize, int pieceCount){
+        TorrentFile torrentFile = new TorrentFile(torrentId, pieceSize, pieceCount);
         torrentList.put(torrentId, torrentFile);
         //TODO take action if file already in map?
     }

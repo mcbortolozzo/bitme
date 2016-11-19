@@ -6,12 +6,20 @@ package main.torrent;
 public class TorrentFile {
 
     private String torrentId;
+
+    private int pieceSize;
+    private int pieceCount;
     //TODO complete constructor and class methods
-    public TorrentFile(String torrentId){
+    public TorrentFile(String torrentId, int pieceSize, int pieceCount){
         this.torrentId = torrentId;
+        this.pieceSize = pieceSize;
+        this.pieceCount = pieceCount;
     }
 
     public String getTorrentId() {
         return torrentId;
+    }
+
+    public int getPieceCount() { return this.pieceCount;
     }
 }
