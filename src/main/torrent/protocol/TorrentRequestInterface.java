@@ -7,5 +7,5 @@ import main.peer.Peer;
  */
 public interface TorrentRequestInterface {
 
-    public void processRequest(Peer peer);
+    public void processRequest();
 }

@@ -4,21 +4,45 @@ import main.reactor.Dispatcher;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Created by marcelo on 24/10/16.
  */
-public class Client {
+public class Client implements Runnable {
+
+    Logger logger = Logger.getLogger(Client.class.getName());
 
     private static final int PORT = 9999;
+    public static final String CLIENT_ID = "AB";
+    public static final String CLIENT_VERSION = "0000";
+    private Dispatcher dispatcher;
+    private ServerSocketChannel server;
+
+    public Client(int port) throws IOException{
+        logger.log(Level.CONFIG, "client_id: " + CLIENT_ID + " client version: " + CLIENT_VERSION + " port: " + port);
+        this.server = ServerSocketChannel.open();
+        this.server.socket().bind(new InetSocketAddress(port));
+        this.server.configureBlocking(false);
+        this.dispatcher = new Dispatcher(server);
+    }
+
+    public Selector getSelector(){ return this.dispatcher.getSelector(); }
+
+    @Override
+    public void run() { //not sure if this is what we should do
+        new Thread(dispatcher).start();
+    }
+
+    public void shutdown() throws IOException {
+        this.server.close();
+    }
 
     public static void main(String args[]) throws IOException {
-        ServerSocketChannel server = ServerSocketChannel.open();
-        server.socket().bind(new InetSocketAddress(PORT));
-        server.configureBlocking(false);
-
-        Dispatcher dispatcher = new Dispatcher(server);
-        dispatcher.run();
+        Client client = new Client(PORT);
+        client.run();
     }
 }

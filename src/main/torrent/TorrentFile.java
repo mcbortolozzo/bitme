@@ -14,6 +14,7 @@ import java.util.Map;
  */
 public class TorrentFile {
 
+
     private Map<String,Object> dict;
     private Map<String,Object> info;
     private List<Map<String,Object>> files;
@@ -101,4 +102,15 @@ public class TorrentFile {
     }
 
 
+/**
+    private String torrentId;
+    //TODO complete constructor and class methods
+    public TorrentFile(String torrentId){
+        this.torrentId = torrentId;
+    }
+
+    public String getTorrentId() {
+        return torrentId;
+    }
+**/
 }
