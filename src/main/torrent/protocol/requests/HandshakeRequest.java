@@ -39,8 +39,8 @@ public class HandshakeRequest extends TorrentRequest {
             if (torrentFile != null) {
                 peer.setTorrentFile(torrentFile);
                 peer.setOtherPeerId(this.otherPeerId);
-                ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentId, peer.getLocalPeerId());
-                peer.sendMessage(message);
+                peer.setLocalPeerId(torrentFile.getPeerId());
+                peer.sendHandshake();
             } else {
                 //TODO handle torrent not found or just ignore?
             }

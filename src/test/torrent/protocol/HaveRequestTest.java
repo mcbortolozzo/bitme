@@ -38,10 +38,10 @@ public class HaveRequestTest {
 
     @Test
     public void haveCreationTest(){
-        ByteBuffer haveBuffer1 =TorrentProtocolHelper.createHave(0);
+        ByteBuffer haveBuffer1 = TorrentProtocolHelper.createHave(0); // piece index
         haveBuffer1.flip();
         HaveRequest have1 = new HaveRequest(haveBuffer1);
-        ByteBuffer haveBuffer2 =TorrentProtocolHelper.createHave(1);
+        ByteBuffer haveBuffer2 = TorrentProtocolHelper.createHave(1);
         haveBuffer2.flip();
         HaveRequest have2 = new HaveRequest(haveBuffer2);
         assertEquals(4, have1.getMessageType());

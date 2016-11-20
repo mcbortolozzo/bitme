@@ -2,6 +2,7 @@ package main.torrent.protocol;
 
 import main.torrent.protocol.requests.HandshakeRequest;
 import main.torrent.protocol.requests.StateChangeRequest;
+import main.torrent.protocol.requests.HaveRequest;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -67,6 +68,7 @@ public enum RequestTypes {
             case NOT_INTERESTED:
                 return new StateChangeRequest(messageBuffer, this);
             case HAVE:
+                new HaveRequest(messageBuffer);
                 break;
             case BITFIELD:
                 break;

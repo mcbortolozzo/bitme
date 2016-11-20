@@ -26,7 +26,7 @@ public class Peer{
 
     private TorrentFile torrentFile;
     private String otherPeerId;
-    private final String localPeerId = generatePeerId();
+    private String localPeerId;
 
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
@@ -42,7 +42,7 @@ public class Peer{
     }
 
     /**
-     * Constructor used when this client creates de connection, so it already knows which file it's using
+     * Constructor used when this client creates the connection, so it already knows which file it's using
      * @param selector selector used to register the connection for read and write
      * @param torrentFile the file to which this peer will be associated
      * @param destAddr the address of the remote peer used for connection
@@ -50,6 +50,7 @@ public class Peer{
      */
     public Peer(Selector selector, TorrentFile torrentFile, SocketAddress destAddr) throws IOException {
         this.torrentFile = torrentFile;
+        this.localPeerId = torrentFile.getPeerId();
         this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
     }
@@ -58,7 +59,7 @@ public class Peer{
      * static method generating a random peer Id
      * @return a random peer id according to structure used in the bittorrent protocol
      */
-    private static String generatePeerId(){
+    public static String generatePeerId(){
         String peerId;
         peerId = "-" + Client.CLIENT_ID + Client.CLIENT_VERSION + "-";
         for(int i = 0; i < 12; i++){
@@ -138,5 +139,9 @@ public class Peer{
 
     public boolean hasPiece(int pieceIndex) {
         return this.bitfield.checkHavePiece(pieceIndex);
+    }
+
+    public void setLocalPeerId(String localPeerId) {
+        this.localPeerId = localPeerId;
     }
 }

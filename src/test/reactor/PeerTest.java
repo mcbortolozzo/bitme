@@ -64,13 +64,16 @@ public class PeerTest {
 
     @Test
     public void peerIdGenerationTest() throws IOException {
-        SocketChannel dummySocket = SocketChannel.open();
-        Selector dummySelector = Selector.open();
-        Peer peer1 = new Peer(dummySocket, dummySelector);
-        Peer peer2 = new Peer(dummySocket, dummySelector);
+        Peer peer1 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
+        Peer peer2 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
         assertEquals(20, peer1.getLocalPeerId().length());
         assertEquals(20, peer2.getLocalPeerId().length());
-        assertNotEquals(peer1.getLocalPeerId(), peer2.getLocalPeerId());
+        assertEquals(peer1.getLocalPeerId(), peer2.getLocalPeerId());
+
+        TorrentManager.getInstance().addTorrent("ABC123ABC--ABC123ABC", 1000, 2000);
+        TorrentFile otherTorrent = TorrentManager.getInstance().retrieveTorrent("ABC123ABC--ABC123ABC");
+        Peer peer3 = TestUtil.generatePeer(this.client, otherTorrent, new InetSocketAddress("localhost", 9999));
+        assertNotEquals(peer1.getLocalPeerId(), peer3.getLocalPeerId());
     }
 
     @Test
