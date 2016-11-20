@@ -23,7 +23,7 @@ public class TrackerHelperTest {
 
     @Before
     public void setUp() throws IOException {
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), 1000, 10000);
+        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), 10000);
         tf = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
     }
 

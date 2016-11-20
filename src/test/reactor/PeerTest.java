@@ -15,8 +15,6 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
 
 import static org.junit.Assert.*;
 
@@ -37,7 +35,7 @@ public class PeerTest {
         validHandshake.put((byte) pstrlen);
         validHandshake.put(TorrentProtocolHelper.PROTOCOL_VERSION.getBytes());
         validHandshake.put(("00000000" + TestUtil.TORRENT_ID + TestUtil.PEER_ID).getBytes());
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_SIZE, TestUtil.PIECE_COUNT);
+        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_COUNT);
         this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
     }
 
@@ -71,7 +69,7 @@ public class PeerTest {
         assertEquals(20, peer2.getLocalPeerId().length());
         assertEquals(peer1.getLocalPeerId(), peer2.getLocalPeerId());
 
-        TorrentManager.getInstance().addTorrent(new HashId("ABC123ABC--ABC123ABC".getBytes()), 1000, 2000);
+        TorrentManager.getInstance().addTorrent(new HashId("ABC123ABC--ABC123ABC".getBytes()), 2000);
         TorrentFile otherTorrent = TorrentManager.getInstance().retrieveTorrent(new HashId("ABC123ABC--ABC123ABC".getBytes()));
         Peer peer3 = TestUtil.generatePeer(this.client, otherTorrent, new InetSocketAddress("localhost", 9999));
         assertNotEquals(peer1.getLocalPeerId(), peer3.getLocalPeerId());

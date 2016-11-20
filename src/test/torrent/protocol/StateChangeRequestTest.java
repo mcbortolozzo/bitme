@@ -5,8 +5,6 @@ import main.peer.Peer;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
-import main.torrent.protocol.RequestTypes;
-import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 import main.torrent.protocol.requests.StateChangeRequest;
 import org.junit.After;
@@ -19,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
-import static main.torrent.TorrentManager.getInstance;
 import static main.torrent.protocol.RequestTypes.*;
 import static main.torrent.protocol.TorrentProtocolHelper.createStateChangeMessage;
 import static org.junit.Assert.*;
@@ -40,7 +37,7 @@ public class StateChangeRequestTest {
     @Before
     public void setUp() throws IOException {
         this.client = new Client(9999);
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_SIZE, TestUtil.PIECE_COUNT);
+        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_COUNT);
         this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
     }
 
