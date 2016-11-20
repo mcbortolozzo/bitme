@@ -10,14 +10,18 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by marcelo on 24/10/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aadhi
+ * Thibault Tourailles
  */
 public class Client implements Runnable {
 
     Logger logger = Logger.getLogger(Client.class.getName());
 
     private static final int PORT = 9999;
-    public static final String CLIENT_ID = "AB";
+    public static final String CLIENT_ID = "ET";
     public static final String CLIENT_VERSION = "0000";
     private Dispatcher dispatcher;
     private ServerSocketChannel server;

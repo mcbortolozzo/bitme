@@ -120,6 +120,18 @@ public class Peer{
         return this.otherPeerId;
     }
 
+    public void setState(RequestTypes type) {
+        this.stateManager.setState(type);
+    }
+
+    public boolean isPeerChoking() {
+        return this.stateManager.isPeerChoking();
+    }
+
+    public boolean isPeerInterested() {
+        return this.stateManager.isPeerInterested();
+    }
+
     public void setHavePiece(int pieceIndex) {
         this.bitfield.setHavePiece(pieceIndex);
     }

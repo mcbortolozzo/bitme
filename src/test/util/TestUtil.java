@@ -4,6 +4,7 @@ import main.Client;
 import main.peer.Peer;
 import main.peer.PeerConnection;
 import main.torrent.TorrentFile;
+import main.torrent.protocol.TorrentRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -40,5 +41,25 @@ public class TestUtil {
             }
         }
         return peers;
+    }
+
+    public static Peer processRequests(List<TorrentRequest> requests, Client client, TorrentFile torrentFile) {
+
+        Peer p1 = null;
+
+        try {
+            p1 = TestUtil.generatePeer(client, torrentFile, new InetSocketAddress("localhost", 9999));
+            p1.sendHandshake();
+            p1.process(requests);
+            int timeout = 0;
+            while(p1.getOtherPeerId() == null && timeout < 10){
+                timeout++;
+                Thread.sleep(500);
+            }
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        return p1;
     }
 }
