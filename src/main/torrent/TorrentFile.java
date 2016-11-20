@@ -20,13 +20,13 @@ public class TorrentFile {
     private List<Map<String,Object>> files;
     private String announce;
     private List<String> l_announce ;
-    private Date date;
+    private Long date;
     private String comment;
     private String created_by;
-    private int len_piece;
+    private Long len_piece;
     private String pieces;
     private String name;
-    private List<Integer> len_file;
+    private List<Long> len_file;
     private List<String> md5sum;
     private List<String> path;
 
@@ -57,16 +57,16 @@ public class TorrentFile {
         }
         this.info = (Map<String,Object>) this.dict.get("info");
         this.name =(String) this.info.get("name");
-        this.len_piece = (int) this.info.get("piece length");
+        this.len_piece = (Long) this.info.get("piece length");
         this.pieces = (String) this.info.get("pieces");
-        this.len_file = new ArrayList<Integer>();
+        this.len_file = new ArrayList<Long>();
         this.path = new ArrayList<String>();
         this.md5sum = new ArrayList<String>();
         if (this.info.containsKey("files")){
             this.files = (List<Map<String,Object>>) this.info.get("files");
 
             for (Map<String,Object> f : this.files){
-                this.len_file.add((Integer) f.get("length"));
+                this.len_file.add((Long) f.get("length"));
                 this.path.add((String) f.get("path"));
                 if (f.containsKey("md5sum")){
                     this.md5sum.add((String) f.get("md5sum"));
@@ -74,7 +74,7 @@ public class TorrentFile {
             }
         }
         else{
-            this.len_file.add((Integer) this.info.get("length"));
+            this.len_file.add((Long) this.info.get("length"));
             if (this.info.containsKey("md5sum")){
                 this.md5sum.add((String) this.info.get("md5sum"));
             }
@@ -82,7 +82,7 @@ public class TorrentFile {
         }
         this.announce = (String) this.dict.get("announce");
         if ( this.dict.containsKey("creation date")) {
-            this.date = (Date) this.dict.get("creation date");
+            this.date = (Long) this.dict.get("creation date");
         }
         if (this.dict.containsKey("comment")) {
             this.comment = (String) this.dict.get("comment");
