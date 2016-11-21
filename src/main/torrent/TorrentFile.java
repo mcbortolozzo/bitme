@@ -27,6 +27,7 @@ public class TorrentFile {
     public TorrentFile(HashId torrentId) throws IOException {
         this.torrentId = torrentId;
         this.peerId = Peer.generatePeerId();
+        this.pieceCount = 2000; //TODO remove this
 
     }
 
@@ -35,6 +36,7 @@ public class TorrentFile {
         this.fileInfo = fileInfo;
         this.torrentId = new HashId(fileInfo.getInfoHash());
         this.peerId = Peer.generatePeerId();
+        this.pieceCount = this.fileInfo.getPieceCount();
     }
 
     public HashId getTorrentId() {

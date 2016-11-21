@@ -85,4 +85,8 @@ public class TorrentFileInfo {
     public byte[] getInfoHash() {
         return this.infoHash;
     }
+
+    public int getPieceCount(){
+        return this.pieces.length() / 20;
+    }
 }
