@@ -5,7 +5,7 @@ import main.peer.Peer;
 /**
  * Created by marcelo on 07/11/16.
  */
-public abstract class TorrentRequest implements TorrentRequestInterface, Runnable {
+public abstract class TorrentRequest implements ExecutableTask, Runnable {
 
     protected Peer peer;
 
