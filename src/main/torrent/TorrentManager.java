@@ -7,7 +7,6 @@ import main.torrent.file.SingleFileInfo;
 import main.torrent.file.TorrentFileInfo;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
@@ -43,15 +42,16 @@ public class TorrentManager {
         //TODO take action if file already in map?
     }
 
-    public void addTorrent(String filePath) throws IOException, BencodeReadException, NoSuchAlgorithmException {
-        TorrentFileInfo fileInfo = readFileInfo(filePath);
+    public TorrentFile addTorrent(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+        TorrentFileInfo fileInfo = readFileInfo(filePath, saveFileFolder);
         TorrentFile torrentFile = new TorrentFile(filePath, fileInfo);
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }
+        return torrentFile;
     }
 
-    private TorrentFileInfo readFileInfo(String filePath) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+    private TorrentFileInfo readFileInfo(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         Map<String,Object> dict = null;
         Map<String,Object> info;
         InputStream in = new FileInputStream(filePath);
@@ -61,9 +61,9 @@ public class TorrentManager {
 
         info = (Map<String, Object>) dict.get("info");
         if(dict.containsKey("files")){
-            return new MultipleFileInfo(dict);
+            return new MultipleFileInfo(dict, saveFileFolder);
         } else {
-            return new SingleFileInfo(dict);
+            return new SingleFileInfo(dict, saveFileFolder);
         }
     }
 

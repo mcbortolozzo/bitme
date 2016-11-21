@@ -1,14 +1,9 @@
 package main.torrent.file;
 
 import com.hypirion.bencode.BencodeWriter;
-import main.torrent.HashId;
-import main.torrent.TorrentFile;
-import sun.security.provider.SHA;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -22,10 +17,11 @@ import java.util.Map;
  * Hajar Aahdi
  * Thibault Tourailles
  */
-public class TorrentFileInfo {
+public abstract class TorrentFileInfo {
 
-    private Long pieceSize;
+    protected Long pieceSize;
     private byte[] infoHash;
+    protected String filesSaveFolder;
 
     private Map<String,Object> dict;
     protected Map<String,Object> info;
@@ -37,11 +33,12 @@ public class TorrentFileInfo {
     private String created_by;
     private Long len_piece;
     private String pieces;
-    private String name;
+    protected String name;
     protected List<Long> len_file;
 
-    public TorrentFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
+    public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
+        this.filesSaveFolder = saveFolder;
 
         this.info = (Map<String,Object>) this.dict.get("info");
         this.name =(String) this.info.get("name");
@@ -89,4 +86,9 @@ public class TorrentFileInfo {
     public int getPieceCount(){
         return this.pieces.length() / 20;
     }
+
+    public abstract TorrentBlock getFileBlock(int index, int begin, int length);
+
+    public abstract Long getLength();
+
 }
