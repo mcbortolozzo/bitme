@@ -94,11 +94,110 @@ public class TorrentFile {
         if (this.dict.containsKey(("announce-list"))){
             this.l_announce = (List<String>) this.dict.get("announce-list");
         }
+    }
 
+    public Map<String, Object> getDict() {
+        return dict;
+    }
 
+    public void setDict(Map<String, Object> dict) {
+        this.dict = dict;
+    }
 
+    public List<Map<String, Object>> getFiles() {
+        return files;
+    }
 
+    public void setFiles(List<Map<String, Object>> files) {
+        this.files = files;
+    }
 
+    public String getAnnounce() {
+        return announce;
+    }
+
+    public void setAnnounce(String announce) {
+        this.announce = announce;
+    }
+
+    public List<String> getL_announce() {
+        return l_announce;
+    }
+
+    public void setL_announce(List<String> l_announce) {
+        this.l_announce = l_announce;
+    }
+
+    public Long getDate() {
+        return date;
+    }
+
+    public void setDate(Long date) {
+        this.date = date;
+    }
+
+    public String getComment() {
+        return comment;
+    }
+
+    public void setComment(String comment) {
+        this.comment = comment;
+    }
+
+    public String getCreated_by() {
+        return created_by;
+    }
+
+    public void setCreated_by(String created_by) {
+        this.created_by = created_by;
+    }
+
+    public Long getLen_piece() {
+        return len_piece;
+    }
+
+    public void setLen_piece(Long len_piece) {
+        this.len_piece = len_piece;
+    }
+
+    public String getPieces() {
+        return pieces;
+    }
+
+    public void setPieces(String pieces) {
+        this.pieces = pieces;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public List<Long> getLen_file() {
+        return len_file;
+    }
+
+    public void setLen_file(List<Long> len_file) {
+        this.len_file = len_file;
+    }
+
+    public List<String> getMd5sum() {
+        return md5sum;
+    }
+
+    public void setMd5sum(List<String> md5sum) {
+        this.md5sum = md5sum;
+    }
+
+    public List<String> getPath() {
+        return path;
+    }
+
+    public void setPath(List<String> path) {
+        this.path = path;
     }
 
 
