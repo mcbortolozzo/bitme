@@ -3,6 +3,7 @@ package main.peer;
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
+import main.torrent.TorrentManager;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
@@ -23,7 +24,6 @@ import java.util.concurrent.Executors;
  */
 public class Peer{
 
-    private static ExecutorService executorService = Executors.newFixedThreadPool(10);
     private PeerConnection peerConnection;
 
     private TorrentFile torrentFile;
@@ -79,7 +79,7 @@ public class Peer{
     public void process(List<TorrentRequest> requests){
         for(TorrentRequest req : requests){
             req.setPeer(this);
-            executorService.execute(req);
+            TorrentManager.executorService.execute(req);
         }
     }
 

@@ -16,7 +16,7 @@ public class TorrentProtocolHelper {
 
     public static final String PROTOCOL_VERSION = "BitTorrent protocol";
     static final char PSTRLEN = (char) PROTOCOL_VERSION.length();
-    private static final int ID_LEN = 20;
+    public static final int ID_LEN = 20;
     public static final int HANDSHAKE_SIZE = 1+19+8+ID_LEN*2; // pstrlen + protocol + reserved + torrent info hash + peer id
     public static final int STATE_CHANGE_LENGTH = 1; // just the id
     public static final int HAVE_LENGTH = 5; // id + piece index

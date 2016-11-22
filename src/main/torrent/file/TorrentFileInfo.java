@@ -9,11 +9,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * Written by
@@ -28,7 +30,7 @@ public class TorrentFileInfo {
     private byte[] infoHash;
 
     private Map<String,Object> dict;
-    protected Map<String,Object> info;
+    protected TreeMap<String,Object> info;
     protected List<Map<String,Object>> files;
     private String announce;
     private List<String> l_announce ;
@@ -43,7 +45,7 @@ public class TorrentFileInfo {
     public TorrentFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
 
-        this.info = (Map<String,Object>) this.dict.get("info");
+        this.info = new TreeMap<String, Object>((Map<String, Object>) this.dict.get("info"));
         this.name =(String) this.info.get("name");
         this.pieceSize = (Long) this.info.get("piece length");
         this.pieces = (String) this.info.get("pieces");
@@ -69,16 +71,16 @@ public class TorrentFileInfo {
 
     private void generateInfoHash() throws IOException, NoSuchAlgorithmException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        BencodeWriter benWriter = new BencodeWriter(out);
+        BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.info);
-        String infoString = new String(out.toByteArray());
+        byte[] infoString = out.toByteArray();
         this.infoHash = calculateHash(infoString);
     }
 
-    protected byte[] calculateHash(String infoString) throws NoSuchAlgorithmException {
-        MessageDigest crypt = MessageDigest.getInstance("SHA1");
+    public static byte[] calculateHash(byte[] infoString) throws NoSuchAlgorithmException {
+        MessageDigest crypt = MessageDigest.getInstance("SHA-1");
         crypt.reset();
-        crypt.update(infoString.getBytes());
+        crypt.update(infoString);
         return crypt.digest();
     }
 
@@ -89,4 +91,9 @@ public class TorrentFileInfo {
     public int getPieceCount(){
         return this.pieces.length() / 20;
     }
+
+    public String getTrackerAnnounce() {
+        return this.announce;
+    }
+
 }
