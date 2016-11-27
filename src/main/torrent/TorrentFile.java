@@ -1,9 +1,11 @@
 package main.torrent;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.peer.Peer;
 import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
-
+import main.tracker.TrackerHelper;
+import main.tracker.TrackerQueryResult;
 import java.io.IOException;
 
 /**
@@ -23,6 +25,7 @@ public class TorrentFile {
 
     private Long pieceSize;
     private int pieceCount;
+
 
     //TODO complete constructor and class methods
     public TorrentFile(HashId torrentId) throws IOException {
@@ -53,6 +56,7 @@ public class TorrentFile {
 
     public HashId getPeerId() {
         return peerId;
+
     }
 
     //TODO get uploaded, downloaded and left according to peers
@@ -66,5 +70,11 @@ public class TorrentFile {
 
     public int getLeft(){
         return 0;
+    }
+
+    public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
+        String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
+        String result = TrackerHelper.sendTrackerRequest(trackerRequest);
+        TrackerQueryResult trackerResult = new TrackerQueryResult(result);
     }
 }

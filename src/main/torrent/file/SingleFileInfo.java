@@ -25,6 +25,13 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     @Override
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+        Map<String, Object> torrent = super.generateTorrent();
+        torrent.put("length", this.len_file);
+        torrent.put("md5sum", this.md5sum);
+        return torrent;
+    }
+
     public TorrentBlock getFileBlock(int index, int begin, int length) {
         TorrentBlock block = new TorrentBlock(index, begin, length);
         Long blockBegin = index * this.pieceSize + begin;
@@ -35,5 +42,6 @@ public class SingleFileInfo extends TorrentFileInfo {
     @Override
     public Long getLength() {
         return this.len_file;
+
     }
 }

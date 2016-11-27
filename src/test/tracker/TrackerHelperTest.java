@@ -1,5 +1,6 @@
 package test.tracker;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
@@ -9,7 +10,9 @@ import org.junit.Test;
 import test.util.TestUtil;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
+import java.security.NoSuchAlgorithmException;
 
 import static org.junit.Assert.*;
 
@@ -19,23 +22,16 @@ import static org.junit.Assert.*;
 public class TrackerHelperTest {
 
     private final String trackerURL = "http://127.0.0.1";
-    private TorrentFile tf;
-
-    @Before
-    public void setUp() throws IOException {
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), 10000);
-        tf = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
-    }
-
 
     @Test
-    public void trackerRequestGenerationTest() throws MalformedURLException {
-        String expectedRequest = "http://127.0.0.1/announce?port=9999&info_hash=" + new HashId(TestUtil.TORRENT_ID.getBytes()).asURLEncodedString()
+    public void trackerRequestGenerationTest() throws IOException, BencodeReadException, NoSuchAlgorithmException {
+        TorrentFile tf = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        String expectedRequest = "http://127.0.0.1/announce?port=9999&info_hash=g%ffqp%26%f2e%0c%09%b5B%a2%2b2%91%20%84%c9%ad%8f"
                 + "&peer_id=" + tf.getPeerId().asURLEncodedString()
                 + "&uploaded=" + tf.getUploaded() + "&downloaded=" + tf.getDownloaded() + "&left=" + tf.getLeft()
                 + "&event=" + TrackerHelper.Event.STARTED.toString().toLowerCase();
 
-        String receivedRequest = TrackerHelper.generateTrackerRequest(TestUtil.TORRENT_ID.getBytes(), TrackerHelper.Event.STARTED, trackerURL);
+        String receivedRequest = TrackerHelper.generateTrackerRequest(tf.getTorrentId(), TrackerHelper.Event.STARTED, trackerURL);
         assertEquals(expectedRequest, receivedRequest);
     }
 

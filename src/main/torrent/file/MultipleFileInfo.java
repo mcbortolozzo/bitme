@@ -47,6 +47,25 @@ public class MultipleFileInfo extends TorrentFileInfo {
     }
 
     @Override
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+        Map<String, Object> torrent = super.generateTorrent();
+        List<Map<String, Object>> filesTorrent = new LinkedList<>();
+        for (SubFileStructure f : this.files) {
+            Map<String, Object> file = new HashMap<String, Object>();
+            file.put("length", f.length);
+            file.put("path", f.path);
+            if(f.md5sum != null){
+                file.put("md5sum", f.md5sum);
+            }
+            filesTorrent.add(file);
+
+        }
+        torrent.put("files", filesTorrent);
+        return torrent;
+
+    }
+
+    @Override
     public TorrentBlock getFileBlock(int index, int begin, int length) {
         TorrentBlock torrentBlock = new TorrentBlock(index, begin, length);
         int startingPosition = (int) (index * this.pieceSize + begin);
@@ -94,5 +113,6 @@ public class MultipleFileInfo extends TorrentFileInfo {
             totalLength += l;
         }
         return totalLength;
+
     }
 }
