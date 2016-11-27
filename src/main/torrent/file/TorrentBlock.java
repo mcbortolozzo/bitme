@@ -45,6 +45,7 @@ public class TorrentBlock {
         for(FileBlockInfo blockInfo : this.blockList){
             blockBuffer.put(blockInfo.readFileData());
         }
+        blockBuffer.flip();
         return blockBuffer;
     }
 

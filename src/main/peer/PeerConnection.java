@@ -1,5 +1,8 @@
 package main.peer;
 
+import main.reactor.DecodeProtocolTask;
+import main.reactor.Dispatcher;
+import main.torrent.TorrentManager;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 import main.util.Messages;
@@ -46,23 +49,29 @@ public class PeerConnection implements Runnable {
 
     private void configureSocket(SocketChannel socket, Selector selector) throws IOException {
         this.socket.configureBlocking(false);
-        this.selectionKey = socket.register(selector, 0);
-        this.selectionKey.attach(this);
-        this.selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        selector.wakeup();
+        synchronized (Dispatcher.SELECTOR_LOCK2) {
+            selector.wakeup();
+            synchronized (Dispatcher.SELECTOR_LOCK) {
+                this.selectionKey = socket.register(selector, 0);
+                this.selectionKey.attach(this);
+                this.selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            }
+        }
     }
 
     private void read(){
         synchronized (readLock) {
             try {
                 socket.read(inputBuffer);
-                inputBuffer.flip();
-                List<TorrentRequest> requests = TorrentProtocolHelper.decodeStream(inputBuffer);
-                inputBuffer.flip();
-                peer.process(requests);
+                if(inputBuffer.position() > 0) {
+                    inputBuffer.flip();
+                    TorrentManager.executorService.execute(new DecodeProtocolTask(this.peer, inputBuffer));
+                    inputBuffer.clear();
+                }
                 selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
             } catch (IOException e) {
                 e.printStackTrace();
+                //TODO close peer
             }
         }
     }

@@ -7,6 +7,10 @@ import main.torrent.file.TorrentFileInfo;
 import main.tracker.TrackerHelper;
 import main.tracker.TrackerQueryResult;
 import java.io.IOException;
+import java.util.TimerTask;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Written by
@@ -26,8 +30,9 @@ public class TorrentFile {
     private Long pieceSize;
     private int pieceCount;
 
+    private final ScheduledExecutorService trackerExecutor = Executors.newScheduledThreadPool(1);
 
-    //TODO complete constructor and class methods
+    //TODO remove this constructor, keep only the other I guess
     public TorrentFile(HashId torrentId) throws IOException {
         this.torrentId = torrentId;
         this.peerId = Peer.generatePeerId();
@@ -35,7 +40,7 @@ public class TorrentFile {
 
     }
 
-    public TorrentFile(String filePath, TorrentFileInfo fileInfo) throws IOException {
+    public TorrentFile(String filePath, TorrentFileInfo fileInfo) throws IOException, BencodeReadException {
         this.filePath = filePath;
         this.fileInfo = fileInfo;
         this.torrentId = new HashId(fileInfo.getInfoHash());
@@ -72,9 +77,30 @@ public class TorrentFile {
         return 0;
     }
 
+    private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
+        this.trackerExecutor.schedule(new TrackerUpdater(), delay, unit);
+    }
+
     public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
         String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
         String result = TrackerHelper.sendTrackerRequest(trackerRequest);
         TrackerQueryResult trackerResult = new TrackerQueryResult(result);
+        scheduleTrackerUpdate(5l, TimeUnit.SECONDS);
     }
+
+    private class TrackerUpdater implements Runnable {
+
+        @Override
+        public void run() {
+            try {
+                retrieveTrackerData(TrackerHelper.Event.UNSPECIFIED);
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (BencodeReadException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+
 }

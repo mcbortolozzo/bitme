@@ -4,7 +4,8 @@ package main.util;
  * Created by marcelo on 12/11/16.
  */
 public enum Messages {
-    DISPATCHER_RUN("dispatcher running"), CONNECTION_ACCEPT("accepting new connection"), WRITE_CONNECTION("writing to output buffer");
+    DISPATCHER_RUN("dispatcher running"), CONNECTION_ACCEPT("accepting new connection"), WRITE_CONNECTION("writing to output buffer"),
+    REQUEST_PROCESS_FAIL("Processing of piece request failed");
 
     private final String text;
 

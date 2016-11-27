@@ -9,6 +9,7 @@ import main.torrent.file.SingleFileInfo;
 import main.torrent.file.TorrentFileInfo;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
+import main.tracker.TrackerHelper;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -61,6 +62,7 @@ public class TorrentManager {
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }
+        torrentFile.retrieveTrackerData(TrackerHelper.Event.STARTED);
         return torrentFile;
     }
 

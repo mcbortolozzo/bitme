@@ -41,7 +41,7 @@ public class HandshakeRequest extends TorrentRequest {
                 peer.setTorrentFile(torrentFile);
                 peer.setOtherPeerId(new HashId(this.otherPeerId));
                 peer.setLocalPeerId(torrentFile.getPeerId());
-                peer.sendHandshake();
+                if(!peer.isHandshakeSent()) peer.sendHandshake();
             } else {
                 //TODO handle torrent not found or just ignore?
             }

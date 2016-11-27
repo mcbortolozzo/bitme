@@ -4,6 +4,7 @@ import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.torrent.file.TorrentBlock;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
@@ -37,6 +38,8 @@ public class Peer{
     private Bitfield bitfield;
 
     private Date lastContact;
+
+    private boolean handshakeSent = false;
 
     /**
      * Constructor used when connection is first received, still not knowing to which torrent file it corresponds
@@ -102,6 +105,7 @@ public class Peer{
      * Creates and sends a handshake message based on the information this peer has
      */
     public void sendHandshake(){
+        this.handshakeSent = true;
         ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentFile.getTorrentId(), this.getLocalPeerId());
         this.sendMessage(message);
     }
@@ -161,5 +165,14 @@ public class Peer{
 
     public boolean hasPiece(int pieceIndex) {
         return this.bitfield.checkHavePiece(pieceIndex);
+    }
+
+    public ByteBuffer retrieveDataBlock(int pieceIndex, int begin, int length) throws IOException {
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, length);
+        return tb.readFileBlock();
+    }
+
+    public boolean isHandshakeSent() {
+        return handshakeSent;
     }
 }
