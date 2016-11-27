@@ -61,7 +61,7 @@ public class TorrentManager {
         dict = benReader.readDict();
 
         info = (Map<String, Object>) dict.get("info");
-        if(dict.containsKey("files")){
+        if(info.containsKey("files")){
             return new MultipleFileInfo(dict, saveFileFolder);
         } else {
             return new SingleFileInfo(dict, saveFileFolder);

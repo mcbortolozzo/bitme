@@ -26,10 +26,20 @@ public class TorrentBlock {
         this.blockLength = blockLength;
     }
 
+    /**
+     * Adds a new chunk of data to the list, containing the file in which this data
+     * is contained, the position in which to start reading and how much is read from the file
+     * @param nextBlock the object containing this information
+     */
     public void addNextBlock(FileBlockInfo nextBlock){
         this.blockList.add(nextBlock);
     }
 
+    /**
+     * reads all the data from the blocks defined in the list into a byte buffer
+     * @return the buffer containing the data from the files
+     * @throws IOException in case of failure to read the file
+     */
     public ByteBuffer readFileBlock() throws IOException {
         ByteBuffer blockBuffer = ByteBuffer.allocate(blockLength);
         for(FileBlockInfo blockInfo : this.blockList){

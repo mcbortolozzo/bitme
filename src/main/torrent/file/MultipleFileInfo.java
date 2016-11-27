@@ -16,12 +16,18 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     private class SubFileStructure {
         Long length;
-        String path;
+        List<String> path;
         String md5sum;
 
-        SubFileStructure(Long length, String path) {
+        SubFileStructure(ArrayList<String> path, Long length) {
             this.length = length;
             this.path = path;
+        }
+
+        public String getPath(){
+            String pathString = "";
+            for(String p : this.path){ pathString += p; }
+            return pathString;
         }
 
     }
@@ -32,7 +38,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
         List<Map<String, Object>> fileDataList = (List<Map<String,Object>>) this.info.get("files");
 
         for (Map<String,Object> f : fileDataList){
-            SubFileStructure subFile = new SubFileStructure((Long) f.get("length"), (String) f.get("path"));
+            SubFileStructure subFile = new SubFileStructure((ArrayList<String>) f.get("path"), (Long) f.get("length"));
             this.files.add(subFile);
             if (f.containsKey("md5sum")){
                 subFile.md5sum = (String) f.get("md5sum");
@@ -46,7 +52,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
         int startingPosition = (int) (index * this.pieceSize + begin);
         int position = startingPosition;
         while(position - startingPosition < length){ //read < length
-            int lengthLeft = position - startingPosition - length;
+            int lengthLeft =length - position - startingPosition;
             FileBlockInfo nextBlock = getNextBlock(position, lengthLeft);
             if(nextBlock != null){
                 position += nextBlock.getLength();
@@ -56,6 +62,14 @@ public class MultipleFileInfo extends TorrentFileInfo {
         return torrentBlock;
     }
 
+    /**
+     * Multiple file torrents may require reads that are split in different files, so this
+     * method generates the block of data to be read from different files, based on the global position
+     * in which it will be started and the amount left to be read.
+     * @param blockPositionBegin the global torrent position of the read in bytes
+     * @param lengthLeft the amount of bytes left to be read
+     * @return an object containing the info required to read/write to a file, which is may be one of many files included in this read/write
+     */
     private FileBlockInfo getNextBlock(int blockPositionBegin, int lengthLeft){
         int fileBegin = 0;
         int currentPosition = 0;
@@ -66,7 +80,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
                 int blockReadLength;
                 if (lengthLeft <= (f.length - positionInBlock)) blockReadLength = lengthLeft;
                 else blockReadLength = Math.toIntExact(f.length);
-                return new FileBlockInfo(this.filesSaveFolder + '/' + f.path, (long) positionInBlock, blockReadLength);
+                return new FileBlockInfo(this.filesSaveFolder + '/' + f.getPath(), (long) positionInBlock, blockReadLength);
             }
             fileBegin = currentPosition;
         }

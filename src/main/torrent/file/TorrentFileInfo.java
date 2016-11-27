@@ -90,6 +90,13 @@ public abstract class TorrentFileInfo {
         return this.pieces.length() / 20;
     }
 
+    /**
+     * Obtains the Read/Write structure helper, with one implementation for each of the torrent types
+     * @param index the first piece index
+     * @param begin the position inside the first piece
+     * @param length the length of the data to be read (may contain multiple pieces and/or files)
+     * @return the structure which contains a list of objects which point to the files to be read, one for each file and the methods needed to read it
+     */
     public abstract TorrentBlock getFileBlock(int index, int begin, int length);
 
     public abstract Long getLength();

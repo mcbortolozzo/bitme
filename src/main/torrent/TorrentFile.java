@@ -1,6 +1,7 @@
 package main.torrent;
 
 import main.peer.Peer;
+import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
 
 import java.io.IOException;
@@ -37,6 +38,10 @@ public class TorrentFile {
         this.torrentId = new HashId(fileInfo.getInfoHash());
         this.peerId = Peer.generatePeerId();
         this.pieceCount = this.fileInfo.getPieceCount();
+    }
+
+    public TorrentBlock getBlockInfo(int index, int begin, int length){
+        return this.fileInfo.getFileBlock(index, begin, length);
     }
 
     public HashId getTorrentId() {
