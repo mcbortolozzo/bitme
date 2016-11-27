@@ -16,7 +16,7 @@ import java.nio.channels.FileChannel;
 public class FileBlockInfo {
     private String filePath;
     private Long localFileBegin;
-    private int localBlockLength;
+    private int localBlockLength; //read or write length
 
     public FileBlockInfo(String filePath, Long localFileBegin, int localBlockLength) {
         this.filePath = filePath;
@@ -34,5 +34,9 @@ public class FileBlockInfo {
         fIn.close();
         localBuffer.flip();
         return localBuffer;
+    }
+
+    public int getLength() {
+        return localBlockLength;
     }
 }

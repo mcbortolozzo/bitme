@@ -4,6 +4,9 @@ import com.hypirion.bencode.BencodeWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -66,7 +69,7 @@ public abstract class TorrentFileInfo {
 
     private void generateInfoHash() throws IOException, NoSuchAlgorithmException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
-        BencodeWriter benWriter = new BencodeWriter(out);
+        BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.info);
         String infoString = new String(out.toByteArray());
         this.infoHash = calculateHash(infoString);

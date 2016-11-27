@@ -9,6 +9,7 @@ import main.torrent.file.TorrentFileInfo;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
@@ -56,7 +57,7 @@ public class TorrentManager {
         Map<String,Object> info;
         InputStream in = new FileInputStream(filePath);
 
-        BencodeReader benReader = new BencodeReader(in);
+        BencodeReader benReader = new BencodeReader(in, StandardCharsets.ISO_8859_1);
         dict = benReader.readDict();
 
         info = (Map<String, Object>) dict.get("info");
