@@ -1,4 +1,4 @@
-package reactor;
+package test.reactor;
 
 import main.Client;
 import main.peer.Peer;
@@ -10,7 +10,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import util.TestUtil;
+import test.util.TestUtil;
 
 import java.io.*;
 import java.net.InetSocketAddress;
@@ -19,7 +19,11 @@ import java.nio.ByteBuffer;
 
 
 /**
- * Created by marcelo on 10/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class PeerTest {
 

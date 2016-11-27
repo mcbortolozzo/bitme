@@ -5,7 +5,6 @@ import main.torrent.protocol.TorrentRequest;
 import main.util.Messages;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;

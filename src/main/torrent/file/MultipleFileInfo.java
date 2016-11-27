@@ -2,9 +2,7 @@ package main.torrent.file;
 
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Written by
@@ -14,23 +12,107 @@ import java.util.Map;
  * Thibault Tourailles
  */
 public class MultipleFileInfo extends TorrentFileInfo {
-    private List<Long> len_file;
-    private List<String> path;
-    private List<String> md5sum;
+    private List<SubFileStructure> files;
 
+    private class SubFileStructure {
+        Long length;
+        List<String> path;
+        String md5sum;
 
-    public MultipleFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
-        super(dict);
-        this.files = (List<Map<String,Object>>) this.info.get("files");
-        this.path = new ArrayList<String>();
-        this.md5sum = new ArrayList<String>();
+        SubFileStructure(ArrayList<String> path, Long length) {
+            this.length = length;
+            this.path = path;
+        }
 
-        for (Map<String,Object> f : this.files){
-            this.len_file.add((Long) f.get("length"));
-            this.path.add((String) f.get("path"));
+        public String getPath(){
+            String pathString = "";
+            for(String p : this.path){ pathString += p; }
+            return pathString;
+        }
+
+    }
+
+    public MultipleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
+        super(dict, saveFolder);
+        this.files = new LinkedList<>();
+        List<Map<String, Object>> fileDataList = (List<Map<String,Object>>) this.info.get("files");
+
+        for (Map<String,Object> f : fileDataList){
+            SubFileStructure subFile = new SubFileStructure((ArrayList<String>) f.get("path"), (Long) f.get("length"));
+            this.files.add(subFile);
             if (f.containsKey("md5sum")){
-                this.md5sum.add((String) f.get("md5sum"));
+                subFile.md5sum = (String) f.get("md5sum");
             }
         }
+    }
+
+    @Override
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+        Map<String, Object> torrent = super.generateTorrent();
+        List<Map<String, Object>> filesTorrent = new LinkedList<>();
+        for (SubFileStructure f : this.files) {
+            Map<String, Object> file = new HashMap<String, Object>();
+            file.put("length", f.length);
+            file.put("path", f.path);
+            if(f.md5sum != null){
+                file.put("md5sum", f.md5sum);
+            }
+            filesTorrent.add(file);
+
+        }
+        torrent.put("files", filesTorrent);
+        return torrent;
+
+    }
+
+    @Override
+    public TorrentBlock getFileBlock(int index, int begin, int length) {
+        TorrentBlock torrentBlock = new TorrentBlock(index, begin, length);
+        int startingPosition = (int) (index * this.pieceSize + begin);
+        int position = startingPosition;
+        while(position - startingPosition < length){ //read < length
+            int lengthLeft =length - position - startingPosition;
+            FileBlockInfo nextBlock = getNextBlock(position, lengthLeft);
+            if(nextBlock != null){
+                position += nextBlock.getLength();
+                torrentBlock.addNextBlock(nextBlock);
+            }
+        }
+        return torrentBlock;
+    }
+
+    /**
+     * Multiple file torrents may require reads that are split in different files, so this
+     * method generates the block of data to be read from different files, based on the global position
+     * in which it will be started and the amount left to be read.
+     * @param blockPositionBegin the global torrent position of the read in bytes
+     * @param lengthLeft the amount of bytes left to be read
+     * @return an object containing the info required to read/write to a file, which is may be one of many files included in this read/write
+     */
+    private FileBlockInfo getNextBlock(int blockPositionBegin, int lengthLeft){
+        int fileBegin = 0;
+        int currentPosition = 0;
+        for(SubFileStructure f : this.files){
+            currentPosition += f.length;
+            if(blockPositionBegin < currentPosition){
+                int positionInBlock = blockPositionBegin - fileBegin;
+                int blockReadLength;
+                if (lengthLeft <= (f.length - positionInBlock)) blockReadLength = lengthLeft;
+                else blockReadLength = Math.toIntExact(f.length);
+                return new FileBlockInfo(this.filesSaveFolder + '/' + f.getPath(), (long) positionInBlock, blockReadLength);
+            }
+            fileBegin = currentPosition;
+        }
+        return null;
+    }
+
+    @Override
+    public Long getLength() {
+        Long totalLength = 0L;
+        for(Long l : len_file){
+            totalLength += l;
+        }
+        return totalLength;
+
     }
 }

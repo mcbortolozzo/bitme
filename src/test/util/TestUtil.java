@@ -1,4 +1,4 @@
-package util;
+package test.util;
 
 import main.Client;
 import main.peer.Peer;
@@ -8,7 +8,6 @@ import main.torrent.protocol.TorrentRequest;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
@@ -16,7 +15,11 @@ import java.util.LinkedList;
 import java.util.List;
 
 /**
- * Created by marcelo on 19/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class TestUtil {
 

@@ -1,4 +1,4 @@
-package torrent.protocol;
+package test.torrent.protocol;
 
 import main.Client;
 import main.peer.Peer;
@@ -12,7 +12,7 @@ import main.torrent.protocol.requests.HaveRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import util.TestUtil;
+import test.util.TestUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -23,7 +23,11 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 /**
- * Created by marcelo on 19/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class HaveRequestTest {
 

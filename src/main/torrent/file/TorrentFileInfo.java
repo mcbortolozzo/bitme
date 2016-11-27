@@ -1,21 +1,22 @@
 package main.torrent.file;
 
 import com.hypirion.bencode.BencodeWriter;
-import main.torrent.HashId;
-import main.torrent.TorrentFile;
-import sun.security.provider.SHA;
+
+
+import java.io.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+
 
 /**
  * Written by
@@ -24,10 +25,14 @@ import java.util.TreeMap;
  * Hajar Aahdi
  * Thibault Tourailles
  */
-public class TorrentFileInfo {
+public abstract class TorrentFileInfo {
 
-    private Long pieceSize;
+    protected Long pieceSize;
     private byte[] infoHash;
+    protected String filesSaveFolder;
+
+    //The .torrent to create
+    private Map<String,Object> torrent;
 
     private Map<String,Object> dict;
     protected TreeMap<String,Object> info;
@@ -38,17 +43,19 @@ public class TorrentFileInfo {
     private String comment;
     private String created_by;
     private Long len_piece;
+    private String hash_pieces;
     private String pieces;
-    private String name;
+    protected String name;
     protected List<Long> len_file;
 
-    public TorrentFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
+    public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
+        this.filesSaveFolder = saveFolder;
 
         this.info = new TreeMap<String, Object>((Map<String, Object>) this.dict.get("info"));
         this.name =(String) this.info.get("name");
         this.pieceSize = (Long) this.info.get("piece length");
-        this.pieces = (String) this.info.get("pieces");
+        this.hash_pieces = (String) this.info.get("pieces");
         this.len_file = new ArrayList<Long>();
 
         this.announce = (String) this.dict.get("announce");
@@ -84,16 +91,56 @@ public class TorrentFileInfo {
         return crypt.digest();
     }
 
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+
+
+        this.torrent = new HashMap<String,Object>();
+        this.torrent.put ("name",this.name);
+        this.torrent.put("piece length",this.len_piece);
+        this.hash_pieces = (calculateHash((this.pieces).getBytes())).toString();
+        this.torrent.put("pieces",this.hash_pieces);
+        this.torrent.put("announce",this.announce);
+        this.torrent.put("announce-list",this.l_announce);
+        this.torrent.put("comment",this.comment);
+        this.torrent.put("created by",this.created_by);
+        this.date = new Date().getTime();
+        this.torrent.put("creation date",this.date);
+        return this.torrent;
+
+
+    }
+
+    public FileOutputStream bencodedFile(String nameFile) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
+        benWriter.writeDict(this.torrent);
+        FileOutputStream file = new FileOutputStream(new File(nameFile));
+        out.writeTo(file);
+        return file;
+    }
+
     public byte[] getInfoHash() {
         return this.infoHash;
     }
 
     public int getPieceCount(){
-        return this.pieces.length() / 20;
+        return this.hash_pieces.length() / 20;
     }
 
     public String getTrackerAnnounce() {
         return this.announce;
     }
+
+    /**
+     * Obtains the Read/Write structure helper, with one implementation for each of the torrent types
+     * @param index the first piece index
+     * @param begin the position inside the first piece
+     * @param length the length of the data to be read (may contain multiple pieces and/or files)
+     * @return the structure which contains a list of objects which point to the files to be read, one for each file and the methods needed to read it
+     */
+    public abstract TorrentBlock getFileBlock(int index, int begin, int length);
+
+    public abstract Long getLength();
+
 
 }

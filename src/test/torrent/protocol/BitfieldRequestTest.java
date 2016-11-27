@@ -22,8 +22,7 @@ import java.util.List;
 import java.util.Random;
 
 import static main.torrent.protocol.TorrentProtocolHelper.createBitfield;
-import static org.junit.Assert.*;
-import static test.util.TestUtil.processRequests;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Written by
@@ -71,7 +70,7 @@ public class BitfieldRequestTest {
 
         List<TorrentRequest> requests = new LinkedList<>();
         requests.add(bitfieldRequest);
-        Peer p1 = processRequests(requests, client, torrentFile);
+        Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
 
         assertEquals(TestUtil.PIECE_COUNT,
                 p1.getBitfield().getBitfieldLength());
