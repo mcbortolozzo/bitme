@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -130,6 +131,14 @@ public class Peer{
 
     public void setState(RequestTypes type) {
         this.stateManager.setState(type);
+    }
+
+    public Bitfield getBitfield() {
+        return this.bitfield;
+    }
+
+    public void updateBitfield(BitSet bitfield) {
+        this.bitfield.updateBitfield(bitfield);
     }
 
     public boolean isPeerChoking() {

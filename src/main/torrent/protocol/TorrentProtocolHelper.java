@@ -1,5 +1,6 @@
 package main.torrent.protocol;
 
+import main.peer.Bitfield;
 import main.torrent.HashId;
 
 import java.io.UnsupportedEncodingException;
@@ -19,6 +20,7 @@ public class TorrentProtocolHelper {
     private static final int ID_LEN = 20;
     public static final int HANDSHAKE_SIZE = 1+19+8+ID_LEN*2; // pstrlen + protocol + reserved + torrent info hash + peer id
     public static final int STATE_CHANGE_LENGTH = 1; // just the id
+    public static final int BITFIELD_INITIAL_LENGHT = 1; // the lenght of a bitfield is variable
     public static final int HAVE_LENGTH = 5; // id + piece index
     public static final int MESSAGE_LENGTH_FIELD_SIZE = 4; //length field on messages (except handshake)
 
@@ -66,6 +68,13 @@ public class TorrentProtocolHelper {
         handshake.put(torrentId.getBytes());
         handshake.put(peerId.getBytes());
         return handshake;
+    }
+
+    public static ByteBuffer createBitfield(Bitfield bitfield) {
+        int length = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
+        ByteBuffer bitfieldBuffer = generateRequestBuffer(length, RequestTypes.BITFIELD.getId());
+        bitfieldBuffer.put(bitfield.getBitfield().toByteArray());
+        return bitfieldBuffer;
     }
 
     public static ByteBuffer createStateChangeMessage(RequestTypes stateRequest){

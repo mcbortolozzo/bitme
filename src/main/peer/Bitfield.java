@@ -3,23 +3,24 @@ package main.peer;
 import main.torrent.TorrentFile;
 
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 
 /**
  * Created by marcelo on 19/11/16.
  */
 public class Bitfield {
 
-    private boolean[] bitfield;
+    private BitSet bitfield;
     private int bitfieldLength;
 
     public Bitfield(TorrentFile torrentFile) {
         this.bitfieldLength = torrentFile.getPieceCount();
-        bitfield = new boolean[bitfieldLength]; //defaults to false, so ok
+        bitfield = new BitSet(bitfieldLength); //defaults to false, so ok
     }
 
     public synchronized boolean checkHavePiece(int index){
         if(index < bitfieldLength) {
-            return this.bitfield[index];
+            return this.bitfield.get(index);
         } else {
             throw new IndexOutOfBoundsException();
         }
@@ -27,15 +28,25 @@ public class Bitfield {
 
     public synchronized void setHavePiece(int index){
         if(index < bitfieldLength){
-            this.bitfield[index] = true;
+            this.bitfield.set(index);
         } else {
             throw new IndexOutOfBoundsException();
         }
     }
 
-    public synchronized  void updateBitfield(ByteBuffer bitfieldBuffer){
-        //TODO
-        throw new UnsupportedOperationException();
+    public synchronized void updateBitfield(BitSet bitfield){
+        if(bitfield.length() <= bitfieldLength) {
+            this.bitfield = bitfield;
+        } else {
+            throw new IndexOutOfBoundsException();
+        }
     }
 
+    public BitSet getBitfield() {
+        return bitfield;
+    }
+
+    public int getBitfieldLength() {
+        return bitfieldLength;
+    }
 }
