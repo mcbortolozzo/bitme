@@ -23,4 +23,12 @@ public class SingleFileInfo extends TorrentFileInfo {
             this.md5sum = (String) this.info.get("md5sum");
         }
     }
+
+    @Override
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+        Map<String,Object> torrent =  super.generateTorrent();
+        torrent.put("length",this.len_file);
+        torrent.put("md5sum",this.md5sum);
+        return torrent ;
+    }
 }

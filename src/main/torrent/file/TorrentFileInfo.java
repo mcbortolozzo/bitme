@@ -40,6 +40,7 @@ public class TorrentFileInfo {
     private String comment;
     private String created_by;
     private Long len_piece;
+    private String hash_pieces;
     private String pieces;
     private String name;
     protected List<Long> len_file;
@@ -50,7 +51,7 @@ public class TorrentFileInfo {
         this.info = new TreeMap<String, Object>((Map<String, Object>) this.dict.get("info"));
         this.name =(String) this.info.get("name");
         this.pieceSize = (Long) this.info.get("piece length");
-        this.pieces = (String) this.info.get("pieces");
+        this.hash_pieces = (String) this.info.get("pieces");
         this.len_file = new ArrayList<Long>();
 
         this.announce = (String) this.dict.get("announce");
@@ -86,19 +87,21 @@ public class TorrentFileInfo {
         return crypt.digest();
     }
 
-    public void generateTorrent() {
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+
 
         this.torrent = new HashMap<String,Object>();
-
         this.torrent.put ("name",this.name);
         this.torrent.put("piece length",this.len_piece);
-        this.torrent.put("pieces",this.pieces);
+        this.hash_pieces = (calculateHash((this.pieces).getBytes())).toString();
+        this.torrent.put("pieces",this.hash_pieces);
         this.torrent.put("announce",this.announce);
         this.torrent.put("announce-list",this.l_announce);
         this.torrent.put("comment",this.comment);
         this.torrent.put("created by",this.created_by);
-        this.date = new Date().getTime() ;
+        this.date = new Date().getTime();
         this.torrent.put("creation date",this.date);
+        return this.torrent;
 
 
     }
@@ -117,7 +120,7 @@ public class TorrentFileInfo {
     }
 
     public int getPieceCount(){
-        return this.pieces.length() / 20;
+        return this.hash_pieces.length() / 20;
     }
 
     public String getTrackerAnnounce() {

@@ -3,6 +3,7 @@ package main.torrent.file;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -17,6 +18,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
     private List<Long> len_file;
     private List<String> path;
     private List<String> md5sum;
+    private int nb_files;
 
 
     public MultipleFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
@@ -32,5 +34,20 @@ public class MultipleFileInfo extends TorrentFileInfo {
                 this.md5sum.add((String) f.get("md5sum"));
             }
         }
+    }
+    @Override
+    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+        Map<String,Object> torrent =  super.generateTorrent();
+        for (int i = 0 ; i<nb_files ; i++) {
+            Map<String,Object> file = new HashMap<String,Object>();
+            file.put("length",this.len_file.get(i));
+            file.put("path",this.path.get(i));
+            file.put("md5sum",this.md5sum.get(i));
+            this.files.set(i,file);
+
+        }
+        torrent.put("files",this.files);
+        return torrent ;
+
     }
 }
