@@ -21,8 +21,8 @@ public class MultipleFileInfo extends TorrentFileInfo {
     private int nb_files;
 
 
-    public MultipleFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
-        super(dict);
+    public MultipleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
+        super(dict, saveFolder);
         this.files = (List<Map<String,Object>>) this.info.get("files");
         this.path = new ArrayList<String>();
         this.md5sum = new ArrayList<String>();
@@ -35,19 +35,35 @@ public class MultipleFileInfo extends TorrentFileInfo {
             }
         }
     }
+
     @Override
     public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
-        Map<String,Object> torrent =  super.generateTorrent();
-        for (int i = 0 ; i<nb_files ; i++) {
-            Map<String,Object> file = new HashMap<String,Object>();
-            file.put("length",this.len_file.get(i));
-            file.put("path",this.path.get(i));
-            file.put("md5sum",this.md5sum.get(i));
-            this.files.set(i,file);
+        Map<String, Object> torrent = super.generateTorrent();
+        for (int i = 0; i < nb_files; i++) {
+            Map<String, Object> file = new HashMap<String, Object>();
+            file.put("length", this.len_file.get(i));
+            file.put("path", this.path.get(i));
+            file.put("md5sum", this.md5sum.get(i));
+            this.files.set(i, file);
 
         }
-        torrent.put("files",this.files);
-        return torrent ;
+        torrent.put("files", this.files);
+        return torrent;
+
+    }
+
+    @Override
+    public TorrentBlock getFileBlock(int index, int begin, int length) {
+        return null;
+    }
+
+    @Override
+    public Long getLength() {
+        Long totalLength = 0L;
+        for(Long l : len_file){
+            totalLength += l;
+        }
+        return totalLength;
 
     }
 }

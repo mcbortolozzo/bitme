@@ -4,6 +4,10 @@ import com.hypirion.bencode.BencodeWriter;
 
 
 import java.io.*;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -23,10 +27,11 @@ import java.util.TreeMap;
  * Hajar Aahdi
  * Thibault Tourailles
  */
-public class TorrentFileInfo {
+public abstract class TorrentFileInfo {
 
-    private Long pieceSize;
+    protected Long pieceSize;
     private byte[] infoHash;
+    protected String filesSaveFolder;
 
     //The .torrent to create
     private Map<String,Object> torrent;
@@ -42,11 +47,12 @@ public class TorrentFileInfo {
     private Long len_piece;
     private String hash_pieces;
     private String pieces;
-    private String name;
+    protected String name;
     protected List<Long> len_file;
 
-    public TorrentFileInfo(Map<String, Object> dict) throws IOException, NoSuchAlgorithmException {
+    public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
+        this.filesSaveFolder = saveFolder;
 
         this.info = new TreeMap<String, Object>((Map<String, Object>) this.dict.get("info"));
         this.name =(String) this.info.get("name");
@@ -126,5 +132,11 @@ public class TorrentFileInfo {
     public String getTrackerAnnounce() {
         return this.announce;
     }
+
+
+    public abstract TorrentBlock getFileBlock(int index, int begin, int length);
+
+    public abstract Long getLength();
+
 
 }

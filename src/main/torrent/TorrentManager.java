@@ -56,8 +56,13 @@ public class TorrentManager {
         //TODO take action if file already in map?
     }
 
+<<<<<<< HEAD
     public TorrentFile addTorrent(String filePath) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         TorrentFileInfo fileInfo = readFileInfo(filePath);
+=======
+    public TorrentFile addTorrent(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+        TorrentFileInfo fileInfo = readFileInfo(filePath, saveFileFolder);
+>>>>>>> 0923c14cd960e443dbf15e29186c6fa1b37429c3
         TorrentFile torrentFile = new TorrentFile(filePath, fileInfo);
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
@@ -65,7 +70,7 @@ public class TorrentManager {
         return torrentFile;
     }
 
-    private TorrentFileInfo readFileInfo(String filePath) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+    private TorrentFileInfo readFileInfo(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         Map<String,Object> dict = null;
         InputStream in = new FileInputStream(filePath);
 
@@ -73,9 +78,9 @@ public class TorrentManager {
         dict = benReader.readDict();
 
         if(dict.containsKey("files")){
-            return new MultipleFileInfo(dict);
+            return new MultipleFileInfo(dict, saveFileFolder);
         } else {
-            return new SingleFileInfo(dict);
+            return new SingleFileInfo(dict, saveFileFolder);
         }
     }
 
