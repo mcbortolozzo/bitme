@@ -34,6 +34,9 @@ public class Peer{
     private HashId otherPeerId;
     private HashId localPeerId;
 
+    private int uploaded;
+    private int downloaded;
+
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
 
@@ -60,6 +63,7 @@ public class Peer{
      */
     public Peer(Selector selector, TorrentFile torrentFile, SocketAddress destAddr) throws IOException {
         this.torrentFile = torrentFile;
+        this.torrentFile.addPeer(this);
         this.localPeerId = torrentFile.getPeerId();
         this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
@@ -115,9 +119,15 @@ public class Peer{
         this.sendMessage(message);
     }
 
+    public void sendStateChange(RequestTypes state){
+        ByteBuffer message = TorrentProtocolHelper.createStateChangeMessage(state);
+        this.sendMessage(message);
+    }
+
     public void setTorrentFile(TorrentFile torrentFile) {
         this.bitfield = new Bitfield(torrentFile);
         this.torrentFile = torrentFile;
+        this.torrentFile.addPeer(this);
     }
 
     /**
@@ -180,4 +190,5 @@ public class Peer{
     public boolean isHandshakeSent() {
         return handshakeSent;
     }
+
 }

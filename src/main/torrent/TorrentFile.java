@@ -10,7 +10,8 @@ import main.tracker.TrackerQueryResult;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-import java.util.TimerTask;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -35,14 +36,16 @@ public class TorrentFile {
 
     private Bitfield bitfield;
 
-    private final ScheduledExecutorService trackerExecutor = Executors.newScheduledThreadPool(1);
+    private List<Peer> peers = new LinkedList<>();
+    private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
+
+    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
 
     //TODO remove this constructor, keep only the other I guess
     public TorrentFile(HashId torrentId) throws IOException {
         this.torrentId = torrentId;
         this.peerId = Peer.generatePeerId();
         this.pieceCount = 2000; //TODO remove this
-
     }
 
     public TorrentFile(String filePath, TorrentFileInfo fileInfo) throws IOException, BencodeReadException, NoSuchAlgorithmException {
@@ -53,6 +56,12 @@ public class TorrentFile {
         this.pieceCount = this.fileInfo.getPieceCount();
         this.pieceSize = this.fileInfo.getPieceSize();
         this.updateBitfield();
+        this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+    }
+
+    public synchronized void addPeer(Peer p) {
+        this.peers.add(p);
+        this.chokingAlgorithm.updatePeers(this.peers);
     }
 
     public TorrentBlock getBlockInfo(int index, int begin, int length){
@@ -107,7 +116,7 @@ public class TorrentFile {
     }
 
     private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
-        this.trackerExecutor.schedule(new TrackerUpdater(), delay, unit);
+        this.scheduledExecutor.schedule(new TrackerUpdater(), delay, unit);
     }
 
     public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
