@@ -3,6 +3,7 @@ package main.peer;
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
+import main.torrent.TorrentManager;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
@@ -14,6 +15,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
+import java.util.BitSet;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +25,6 @@ import java.util.concurrent.Executors;
  */
 public class Peer{
 
-    private static ExecutorService executorService = Executors.newFixedThreadPool(10);
     private PeerConnection peerConnection;
 
     private TorrentFile torrentFile;
@@ -79,7 +80,7 @@ public class Peer{
     public void process(List<TorrentRequest> requests){
         for(TorrentRequest req : requests){
             req.setPeer(this);
-            executorService.execute(req);
+            TorrentManager.executorService.execute(req);
         }
     }
 
@@ -130,6 +131,14 @@ public class Peer{
 
     public void setState(RequestTypes type) {
         this.stateManager.setState(type);
+    }
+
+    public Bitfield getBitfield() {
+        return this.bitfield;
+    }
+
+    public void updateBitfield(BitSet bitfield) {
+        this.bitfield.updateBitfield(bitfield);
     }
 
     public boolean isPeerChoking() {

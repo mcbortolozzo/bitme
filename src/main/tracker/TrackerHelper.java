@@ -8,6 +8,7 @@ import main.torrent.TorrentManager;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,7 +51,7 @@ public class TrackerHelper {
         }
     }
 
-    public static String generateTrackerRequest(byte[] torrentId, Event event, String trackerURL) throws MalformedURLException {
+    public static String generateTrackerRequest(HashId torrentId, Event event, String trackerURL) throws MalformedURLException, UnsupportedEncodingException {
         List<HttpField> parameters = getRequestParameters(torrentId, event);
         return composeTrackerRequest(parameters, trackerURL);
     }
@@ -75,7 +76,7 @@ public class TrackerHelper {
         return reply.toString();
     }
 
-    private static List<HttpField> getRequestParameters(byte[] torrentId, Event event){
+    private static List<HttpField> getRequestParameters(HashId torrentId, Event event) throws UnsupportedEncodingException {
         int port = Client.PORT;
         List<HttpField> parameters = new LinkedList<>();
         parameters.add(new HttpField(Field.PORT, port));
@@ -87,8 +88,8 @@ public class TrackerHelper {
     }
 
     //TODO escape the hash parameters
-    private static List<HttpField> getTorrentFileParameters(byte[] torrentId) {
-        TorrentFile torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(torrentId));
+    private static List<HttpField> getTorrentFileParameters(HashId torrentId) throws UnsupportedEncodingException {
+        TorrentFile torrentFile = TorrentManager.getInstance().retrieveTorrent(torrentId);
         List<HttpField> fileParameters = new LinkedList<>();
         String encodedTorrentHash = torrentFile.getTorrentId().asURLEncodedString();
         String encodedPeerHash = torrentFile.getPeerId().asURLEncodedString();
