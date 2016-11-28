@@ -96,7 +96,9 @@ public class TorrentProtocolHelper {
     private static ByteBuffer generateRequestBuffer(int messageLength, int messageId){
         ByteBuffer request = ByteBuffer.allocate(messageLength + MESSAGE_LENGTH_FIELD_SIZE);
         request.putInt(messageLength);
-        request.put((byte) messageId);
+        if(messageId != -2) {
+            request.put((byte) messageId);
+        }
         return request;
     }
 
