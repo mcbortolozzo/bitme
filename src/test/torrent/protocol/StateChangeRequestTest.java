@@ -1,4 +1,4 @@
-package test.torrent.protocol;
+package torrent.protocol;
 
 import main.Client;
 import main.peer.Peer;
@@ -10,7 +10,7 @@ import main.torrent.protocol.requests.StateChangeRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import test.util.TestUtil;
+import util.TestUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,7 +20,7 @@ import java.util.List;
 import static main.torrent.protocol.RequestTypes.*;
 import static main.torrent.protocol.TorrentProtocolHelper.createStateChangeMessage;
 import static org.junit.Assert.*;
-import static test.util.TestUtil.*;
+import static util.TestUtil.*;
 
 /**
  * Written by

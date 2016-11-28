@@ -1,4 +1,4 @@
-package test.util;
+package util;
 
 import main.Client;
 import main.peer.Peer;

@@ -1,4 +1,4 @@
-package test.tracker;
+package tracker;
 
 import com.hypirion.bencode.BencodeReadException;
 import main.torrent.HashId;
@@ -7,7 +7,7 @@ import main.torrent.TorrentManager;
 import main.tracker.TrackerHelper;
 import org.junit.Before;
 import org.junit.Test;
-import test.util.TestUtil;
+import util.TestUtil;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
