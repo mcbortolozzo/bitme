@@ -218,7 +218,8 @@ public class MainWindow {
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			System.out.println("Opening: " + file.getName());
+			System.out.println("Opening: " + file.getAbsolutePath());
+			((TorrentTableModel)torrents.getModel()).addTorrent(file.getAbsolutePath());
 		} else {
 			System.out.println("Open command cancelled by user.");
 		}

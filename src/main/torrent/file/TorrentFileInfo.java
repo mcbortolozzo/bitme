@@ -89,4 +89,6 @@ public class TorrentFileInfo {
     public int getPieceCount(){
         return this.pieces.length() / 20;
     }
+
+    public String getName() { return this.name; }
 }

@@ -1,10 +1,13 @@
 package main.gui;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 
 import javax.swing.table.AbstractTableModel;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -20,7 +23,13 @@ public class TorrentTableModel extends AbstractTableModel {
 
     public TorrentTableModel(TorrentManager manager) {
         this.tManager = manager;
-        List<TorrentFile> torrents = new ArrayList<>();
+        this.torrents = new ArrayList<>();
+        for (HashId id : this.tManager.getTorrentList().keySet())
+            torrents.add(this.tManager.getTorrentList().get(id));
+    }
+
+    private void updateList() {
+        this.torrents = new ArrayList<>();
         for (HashId id : this.tManager.getTorrentList().keySet())
             torrents.add(this.tManager.getTorrentList().get(id));
     }
@@ -47,30 +56,70 @@ public class TorrentTableModel extends AbstractTableModel {
 
     }
 
+    public void addTorrent(String path) {
+        try {
+            this.tManager.addTorrent(path);
+            updateList();
+            this.fireTableDataChanged();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (BencodeReadException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
+
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         TorrentFile current = this.torrents.get(rowIndex);
         switch (columnIndex) {
-            case 0:
-                return "Un fichier torrent " + rowIndex;
-            case 1:
-                return "Super Size " + rowIndex;
-            case 2:
-                return 50;
-            case 3:
+            case 0: // Name
+                return current.getFileInfo().getName();
+            case 1: // Taille
+                return prettySizePrint(current.getPieceSize() * current.getPieceCount());
+            case 2: // Progression
+                return prettySizePrint(current.getDownloaded());
+            case 3: // Reçu
                 return current.getDownloaded();
-            case 4:
+            case 4: // Vitesse Reception
                 return "dl speed " + rowIndex;
-            case 5:
-                return current.getUploaded();
-            case 6:
+            case 5: // Uploadé
+                return prettySizePrint(current.getUploaded());
+            case 6: // Vitesse Upload
                 return "up speed " + rowIndex;
-            case 7:
+            case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
-            case 8:
+            case 8: // Temps restant
                 return "tmps restant " + rowIndex;
             default:
                 return null;
         }
+    }
+
+    private static final long K = 1024;
+    private static final long M = K * K;
+    private static final long G = M * K;
+    private static final long T = G * K;
+
+    protected String prettySizePrint(long value) {
+        final long[] dividers = new long[] { T, G, M, K, 1 };
+        final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
+        if(value < 1)
+            throw new IllegalArgumentException("Invalid file size: " + value);
+        String result = null;
+        for(int i = 0; i < dividers.length; i++){
+            final long divider = dividers[i];
+            if(value >= divider){
+                result = format(value, divider, units[i]);
+                break;
+            }
+        }
+        return result;
+    }
+
+    protected static String format(long value, long divider, String unit){
+        final double result = divider > 1 ? (double) value / (double) divider : (double) value;
+        return String.format("%.1f %s", Double.valueOf(result), unit);
     }
 }
