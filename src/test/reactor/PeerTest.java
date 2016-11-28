@@ -1,5 +1,6 @@
 package test.reactor;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.Client;
 import main.peer.Peer;
 import main.torrent.HashId;
@@ -16,6 +17,8 @@ import java.io.*;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.NoSuchAlgorithmException;
 
 
 /**
@@ -32,25 +35,26 @@ public class PeerTest {
     private TorrentFile torrentFile;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, BencodeReadException, NoSuchAlgorithmException {
         client = new Client(9999);
         client.run();
         char pstrlen = 19;
         validHandshake.put((byte) pstrlen);
-        validHandshake.put(TorrentProtocolHelper.PROTOCOL_VERSION.getBytes());
-        validHandshake.put(("00000000" + TestUtil.TORRENT_ID + TestUtil.PEER_ID).getBytes());
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_COUNT);
-        this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
+        validHandshake.put(TorrentProtocolHelper.PROTOCOL_VERSION.getBytes(StandardCharsets.ISO_8859_1));
+        for(int i = 0; i < 8; i ++) validHandshake.put((byte) 0);
+        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        validHandshake.put(this.torrentFile.getTorrentId().getBytes());
+        validHandshake.put(TestUtil.PEER_ID.getBytes(StandardCharsets.ISO_8859_1));
     }
 
     @Test
     public void peerCreationByHandshakeTest() throws IOException {
         //send dummy handshake to bittorrent client
         Socket socket = new Socket("localhost", 9999);
-        BufferedWriter out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+        OutputStream out = socket.getOutputStream();
         BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-        out.write(new String(validHandshake.array(), "UTF-8"));
+        out.write(validHandshake.array());
         out.flush();
         //wait for reply
         StringBuilder sb = new StringBuilder();
@@ -62,7 +66,7 @@ public class PeerTest {
         }
         //validate torrent id received
         String reply = sb.toString();
-        Assert.assertEquals(TestUtil.TORRENT_ID, reply.substring(28, 48));
+        Assert.assertEquals(new String(this.torrentFile.getTorrentId().getBytes()), reply.substring(28, 47));
     }
 
     @Test

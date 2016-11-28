@@ -18,6 +18,11 @@ public class Bitfield {
         bitfield = new BitSet(bitfieldLength); //defaults to false, so ok
     }
 
+    public Bitfield(int pieceCount) {
+        this.bitfieldLength = pieceCount;
+        bitfield = new BitSet(bitfieldLength);
+    }
+
     public synchronized boolean checkHavePiece(int index){
         if(index < bitfieldLength) {
             return this.bitfield.get(index);
@@ -48,5 +53,15 @@ public class Bitfield {
 
     public int getBitfieldLength() {
         return bitfieldLength;
+    }
+
+    public byte[] getBytes(){
+        byte[] bytes = new byte[this.bitfieldLength];
+        int setBit = 0;
+        while((setBit = this.bitfield.nextSetBit(setBit)) != -1){
+            bytes[setBit] = 1;
+            setBit++;
+        }
+        return bytes;
     }
 }

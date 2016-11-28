@@ -25,7 +25,7 @@ public class Client implements Runnable {
     Logger logger = Logger.getLogger(Client.class.getName());
 
 
-    public static final int PORT = 12345;
+    public static final int PORT = 8998;
     public static final String CLIENT_ID = "ET";
     public static final String CLIENT_VERSION = "0000";
     private Dispatcher dispatcher;

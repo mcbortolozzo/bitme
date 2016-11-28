@@ -1,12 +1,14 @@
 package main.torrent.file;
 
 import com.hypirion.bencode.BencodeWriter;
+import main.util.Utils;
 
 
 import java.io.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import java.security.MessageDigest;
@@ -81,14 +83,7 @@ public abstract class TorrentFileInfo {
         BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.info);
         byte[] infoString = out.toByteArray();
-        this.infoHash = calculateHash(infoString);
-    }
-
-    public static byte[] calculateHash(byte[] infoString) throws NoSuchAlgorithmException {
-        MessageDigest crypt = MessageDigest.getInstance("SHA-1");
-        crypt.reset();
-        crypt.update(infoString);
-        return crypt.digest();
+        this.infoHash = Utils.calculateHash(infoString);
     }
 
     public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
@@ -97,7 +92,7 @@ public abstract class TorrentFileInfo {
         this.torrent = new HashMap<String,Object>();
         this.torrent.put ("name",this.name);
         this.torrent.put("piece length",this.len_piece);
-        this.hash_pieces = (calculateHash((this.pieces).getBytes())).toString();
+        this.hash_pieces = (Utils.calculateHash((this.pieces).getBytes())).toString();
         this.torrent.put("pieces",this.hash_pieces);
         this.torrent.put("announce",this.announce);
         this.torrent.put("announce-list",this.l_announce);
@@ -143,4 +138,13 @@ public abstract class TorrentFileInfo {
     public abstract Long getLength();
 
 
+    public boolean isPieceValid(byte[] piece, int pieceIndex) throws NoSuchAlgorithmException {
+        byte[] expected = this.hash_pieces.substring(pieceIndex * 20, pieceIndex * 20 + 20).getBytes(StandardCharsets.ISO_8859_1);
+        byte[] pieceHash = Utils.calculateHash(piece);
+        return Arrays.equals(expected, pieceHash);
+    }
+
+    public Long getPieceSize() {
+        return pieceSize;
+    }
 }
