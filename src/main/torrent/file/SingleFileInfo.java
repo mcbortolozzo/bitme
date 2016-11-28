@@ -25,6 +25,11 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     @Override
+    protected void prepareInfoField() {
+        // should work properly already, no need to do anything
+    }
+
+    @Override
     public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
         Map<String, Object> torrent = super.generateTorrent();
         torrent.put("length", this.len_file);

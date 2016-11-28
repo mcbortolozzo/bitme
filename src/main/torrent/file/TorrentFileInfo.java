@@ -79,12 +79,15 @@ public abstract class TorrentFileInfo {
     }
 
     private void generateInfoHash() throws IOException, NoSuchAlgorithmException {
+        this.prepareInfoField();
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.info);
         byte[] infoString = out.toByteArray();
         this.infoHash = Utils.calculateHash(infoString);
     }
+
+    protected abstract void prepareInfoField();
 
     public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
 

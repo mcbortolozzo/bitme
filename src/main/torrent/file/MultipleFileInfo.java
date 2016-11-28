@@ -1,8 +1,15 @@
 package main.torrent.file;
 
+import com.hypirion.bencode.BencodeWriter;
+import main.util.Utils;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * Written by
@@ -109,10 +116,16 @@ public class MultipleFileInfo extends TorrentFileInfo {
     @Override
     public Long getLength() {
         Long totalLength = 0L;
-        for(Long l : len_file){
-            totalLength += l;
+        for(SubFileStructure f : files){
+            totalLength += f.length;
         }
         return totalLength;
+    }
 
+    @Override
+    protected void prepareInfoField() {
+        List<Map> oldFiles = (List<Map>) this.info.get("files");
+        ArrayList<Map<String, Object>> filesList = oldFiles.stream().map((Function<Map, TreeMap<String, Object>>) TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
+        this.info.put("files", filesList);
     }
 }
