@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
  */
 public class StateChangeRequest extends NonHandshakeRequest {
 
-    RequestTypes type;
+    private RequestTypes type;
 
     public StateChangeRequest(ByteBuffer requestBuffer, RequestTypes type) {
         super(requestBuffer);

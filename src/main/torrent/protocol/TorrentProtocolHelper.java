@@ -21,6 +21,10 @@ public class TorrentProtocolHelper {
     public static final int HANDSHAKE_SIZE = 1+19+8+ID_LEN*2; // pstrlen + protocol + reserved + torrent info hash + peer id
     public static final int STATE_CHANGE_LENGTH = 1; // just the id
     public static final int BITFIELD_INITIAL_LENGHT = 1; // the lenght of a bitfield is variable
+    public static final int KEEP_ALIVE_LENGHT = 0; // keep alive requests have no message
+    public static final int PIECE_INITIAL_LENGHT = 9; // id + piece index + begin
+    public static final int REQUEST_LENGHT = 13; // id + piece index + begin + length
+    public static final int CANCEL_LENGHT = 13; // id + piece index + begin + length
     public static final int HAVE_LENGTH = 5; // id + piece index
     public static final int MESSAGE_LENGTH_FIELD_SIZE = 4; //length field on messages (except handshake)
 
@@ -71,8 +75,8 @@ public class TorrentProtocolHelper {
     }
 
     public static ByteBuffer createBitfield(Bitfield bitfield) {
-        int length = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
-        ByteBuffer bitfieldBuffer = generateRequestBuffer(length, RequestTypes.BITFIELD.getId());
+        int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
+        ByteBuffer bitfieldBuffer = generateRequestBuffer(messageLenght, RequestTypes.BITFIELD.getId());
         bitfieldBuffer.put(bitfield.getBitfield().toByteArray());
         return bitfieldBuffer;
     }
@@ -100,5 +104,34 @@ public class TorrentProtocolHelper {
         ByteBuffer haveBuffer = generateRequestBuffer(HAVE_LENGTH, RequestTypes.HAVE.getId());
         haveBuffer.putInt(pieceIndex);
         return haveBuffer;
+    }
+
+    public static ByteBuffer createRequest(int pieceIndex, int begin, int lenght) {
+        ByteBuffer requestBuffer = generateRequestBuffer(REQUEST_LENGHT, RequestTypes.REQUEST.getId());
+        requestBuffer.putInt(pieceIndex);
+        requestBuffer.putInt(begin);
+        requestBuffer.putInt(lenght);
+        return requestBuffer;
+    }
+
+    public static ByteBuffer createPiece(int pieceIndex, int begin, byte[] block) {
+        int messageLength = PIECE_INITIAL_LENGHT + block.length;
+        ByteBuffer pieceBuffer = generateRequestBuffer(messageLength, RequestTypes.PIECE.getId());
+        pieceBuffer.putInt(pieceIndex);
+        pieceBuffer.putInt(begin);
+        pieceBuffer.put(block);
+        return pieceBuffer;
+    }
+
+    public static ByteBuffer createKeepAlive() {
+        return generateRequestBuffer(KEEP_ALIVE_LENGHT, RequestTypes.KEEP_ALIVE.getId());
+    }
+
+    public static ByteBuffer createCancel(int pieceIndex, int begin, int lenght) {
+        ByteBuffer cancelBuffer = generateRequestBuffer(CANCEL_LENGHT, RequestTypes.CANCEL.getId());
+        cancelBuffer.putInt(pieceIndex);
+        cancelBuffer.putInt(begin);
+        cancelBuffer.putInt(lenght);
+        return cancelBuffer;
     }
 }

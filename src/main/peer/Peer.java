@@ -15,7 +15,9 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.BitSet;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +35,8 @@ public class Peer{
 
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
+
+    private Date lastContact;
 
     /**
      * Constructor used when connection is first received, still not knowing to which torrent file it corresponds
@@ -56,6 +60,7 @@ public class Peer{
         this.localPeerId = torrentFile.getPeerId();
         this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
+        this.lastContact = Date.from(Instant.now());
     }
 
     /**
@@ -82,6 +87,7 @@ public class Peer{
             req.setPeer(this);
             TorrentManager.executorService.execute(req);
         }
+        this.lastContact = Date.from(Instant.now());
     }
 
     /**
