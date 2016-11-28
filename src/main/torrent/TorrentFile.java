@@ -89,6 +89,10 @@ public class TorrentFile {
         }
     }
 
+    public Bitfield getBitfield() {
+        return bitfield;
+    }
+
     //TODO get uploaded, downloaded and left according to peers
     public int getUploaded() {
         return 0;

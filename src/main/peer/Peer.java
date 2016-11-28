@@ -111,7 +111,7 @@ public class Peer{
     }
 
     public void sendBitfield() {
-        ByteBuffer message = TorrentProtocolHelper.createBitfield(this.bitfield);
+        ByteBuffer message = TorrentProtocolHelper.createBitfield(this.torrentFile.getBitfield());
         this.sendMessage(message);
     }
 

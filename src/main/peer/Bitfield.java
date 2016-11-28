@@ -56,10 +56,10 @@ public class Bitfield {
     }
 
     public byte[] getBytes(){
-        byte[] bytes = new byte[this.bitfieldLength];
+        byte[] bytes = new byte[(int) Math.ceil(this.bitfieldLength/8f)];
         int setBit = 0;
         while((setBit = this.bitfield.nextSetBit(setBit)) != -1){
-            bytes[setBit] = 1;
+            bytes[(int) Math.floor(setBit/8f)] |= 1 << (7 - (setBit % 8));
             setBit++;
         }
         return bytes;
