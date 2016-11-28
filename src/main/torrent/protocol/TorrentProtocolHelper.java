@@ -77,7 +77,7 @@ public class TorrentProtocolHelper {
     }
 
     public static ByteBuffer createBitfield(Bitfield bitfield) {
-        int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
+        int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLengthInBytes();
         ByteBuffer bitfieldBuffer = generateRequestBuffer(messageLenght, RequestTypes.BITFIELD.getId());
         bitfieldBuffer.put(bitfield.getBytes());
         return bitfieldBuffer;

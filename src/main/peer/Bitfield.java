@@ -38,13 +38,10 @@ public class Bitfield {
             throw new IndexOutOfBoundsException();
         }
     }
-
+    //TODO check if exception not needed here
     public synchronized void updateBitfield(BitSet bitfield){
-        if(bitfield.length() <= bitfieldLength) {
-            this.bitfield = bitfield;
-        } else {
-            throw new IndexOutOfBoundsException();
-        }
+        this.bitfield = new BitSet(this.bitfieldLength);
+        this.bitfield.or(bitfield);
     }
 
     public BitSet getBitfield() {
@@ -63,5 +60,10 @@ public class Bitfield {
             setBit++;
         }
         return bytes;
+    }
+
+
+    public int getBitfieldLengthInBytes() {
+        return (int) Math.ceil(this.getBitfieldLength()/8.0);
     }
 }

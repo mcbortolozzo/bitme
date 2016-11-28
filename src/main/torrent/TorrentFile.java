@@ -120,10 +120,12 @@ public class TorrentFile {
     }
 
     public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
-        String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
-        String result = TrackerHelper.sendTrackerRequest(trackerRequest);
-        TrackerQueryResult trackerResult = new TrackerQueryResult(result);
-        scheduleTrackerUpdate(5l, TimeUnit.SECONDS);
+        if(this.fileInfo.getTrackerAnnounce() != null) {
+            String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
+            String result = TrackerHelper.sendTrackerRequest(trackerRequest);
+            TrackerQueryResult trackerResult = new TrackerQueryResult(result);
+            scheduleTrackerUpdate(5l, TimeUnit.SECONDS);
+        }
     }
 
     private class TrackerUpdater implements Runnable {

@@ -46,7 +46,7 @@ public class Dispatcher implements Runnable{
             try {
                 Iterator handleIterator = null;
                 synchronized (SELECTOR_LOCK) {
-                    this.selector.select(500);
+                    this.selector.select();
                 }
                 synchronized (SELECTOR_LOCK2){}
                 Set selectedKeys = this.selector.selectedKeys();
