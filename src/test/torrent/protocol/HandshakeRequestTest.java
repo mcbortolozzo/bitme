@@ -1,7 +1,5 @@
 package test.torrent.protocol;
 
-import junit.framework.TestCase;
-import junit.framework.TestResult;
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 import org.junit.Before;
@@ -13,7 +11,6 @@ import java.security.InvalidParameterException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Created by marcelo on 07/11/16.

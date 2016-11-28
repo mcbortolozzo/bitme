@@ -5,15 +5,11 @@ import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import sun.security.provider.SHA;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.time.LocalDateTime;
+import java.util.*;
 
 /**
  * Written by
@@ -26,6 +22,9 @@ public class TorrentFileInfo {
 
     private Long pieceSize;
     private byte[] infoHash;
+
+    //The .torrent to create
+    private Map<String,Object> torrent;
 
     private Map<String,Object> dict;
     protected Map<String,Object> info;
@@ -80,6 +79,32 @@ public class TorrentFileInfo {
         crypt.reset();
         crypt.update(infoString.getBytes());
         return crypt.digest();
+    }
+
+    public void generateTorrent() {
+
+        this.torrent = new HashMap<String,Object>();
+
+        this.torrent.put ("name",this.name);
+        this.torrent.put("piece length",this.len_piece);
+        this.torrent.put("pieces",this.pieces);
+        this.torrent.put("announce",this.announce);
+        this.torrent.put("announce-list",this.l_announce);
+        this.torrent.put("comment",this.comment);
+        this.torrent.put("created by",this.created_by);
+        this.date = new Date().getTime() ;
+        this.torrent.put("creation date",this.date);
+
+
+    }
+
+    public FileOutputStream bencodedFile(String nameFile) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        BencodeWriter benWriter = new BencodeWriter(out);
+        benWriter.writeDict(this.torrent);
+        FileOutputStream file = new FileOutputStream(new File(nameFile));
+        out.writeTo(file);
+        return file;
     }
 
     public byte[] getInfoHash() {
