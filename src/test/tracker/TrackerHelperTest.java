@@ -1,4 +1,4 @@
-package test.tracker;
+package tracker;
 
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
@@ -6,7 +6,7 @@ import main.torrent.TorrentManager;
 import main.tracker.TrackerHelper;
 import org.junit.Before;
 import org.junit.Test;
-import test.util.TestUtil;
+import util.TestUtil;
 
 import java.io.IOException;
 import java.net.MalformedURLException;

@@ -1,9 +1,8 @@
-package test.torrent.protocol;
+package torrent.protocol;
 
-import junit.framework.TestCase;
-import junit.framework.TestResult;
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -11,9 +10,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertTrue;
+
 
 /**
  * Created by marcelo on 07/11/16.
@@ -46,9 +43,9 @@ public class HandshakeRequestTest {
     @Test
     public void handshakeCreationTest(){
         ByteBuffer handshake = TorrentProtocolHelper.createHandshake(new HashId(VALID_TORRENT_ID.getBytes()), new HashId(VALID_PEER_ID.getBytes()));
-        assertNotEquals(null, handshake);
+        Assert.assertNotNull(handshake);
         try {
-            assertEquals(validHandshake, new String(handshake.array(), "UTF-8"));
+            Assert.assertEquals(validHandshake, new String(handshake.array(), "UTF-8"));
         } catch (UnsupportedEncodingException e) {
             System.out.println("conversion from buffer to string failed");
             System.exit(-1);

@@ -1,4 +1,4 @@
-package test.torrent.protocol;
+package torrent.protocol;
 
 import main.Client;
 import main.peer.Peer;
@@ -12,7 +12,7 @@ import main.torrent.protocol.requests.HaveRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import test.util.TestUtil;
+import util.TestUtil;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;

@@ -1,0 +1,264 @@
+package main.gui;
+
+import main.torrent.TorrentManager;
+
+import javax.swing.*;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.io.File;
+
+public class MainWindow {
+
+	private JFrame frmBitme;
+	private JTextField nbActiveTransfers;
+	private JTable torrents;
+	private final JFileChooser fc = new JFileChooser();
+
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args) {
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					MainWindow window = new MainWindow();
+					window.frmBitme.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
+	/**
+	 * Create the application.
+	 */
+	public MainWindow() {
+		initialize();
+	}
+
+	/**
+	 * Initialize the contents of the frame.
+	 */
+	private void initialize() {
+		frmBitme = new JFrame();
+		frmBitme.setTitle("BitMe");
+		frmBitme.setBounds(100, 100, 450, 300);
+		frmBitme.setMinimumSize(new Dimension(450, 300));
+		frmBitme.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+
+		JMenuBar menuBar = new JMenuBar();
+		frmBitme.setJMenuBar(menuBar);
+
+		JMenu mnFichier = new JMenu("Fichier");
+		menuBar.add(mnFichier);
+
+		JMenuItem mntmCrerUnFichier = new JMenuItem("Créer un fichier torrent");
+		mnFichier.add(mntmCrerUnFichier);
+		mnFichier.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainWindow.this.createTorrentFile();
+			}
+		});
+
+		JMenuItem mntmOuvrirUnFichier = new JMenuItem("Ouvrir un fichier torrent");
+		mntmOuvrirUnFichier.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainWindow.this.openTorrentFile();
+			}
+		});
+		mnFichier.add(mntmOuvrirUnFichier);
+
+		JMenuItem mntmOuvrirUnLien = new JMenuItem("Ouvrir un lien magnet");
+		mntmOuvrirUnLien.setEnabled(false);
+		mnFichier.add(mntmOuvrirUnLien);
+
+		JSeparator separator = new JSeparator();
+		mnFichier.add(separator);
+
+		JMenuItem mntmFermerLaFentre = new JMenuItem("Fermer la fenêtre");
+		mnFichier.add(mntmFermerLaFentre);
+
+		JMenu mndition = new JMenu("Édition");
+		menuBar.add(mndition);
+
+		JMenuItem mntmEffacer = new JMenuItem("Effacer");
+		mndition.add(mntmEffacer);
+
+		JMenuItem mntmToutSlectionner = new JMenuItem("Tout sélectionner");
+		mndition.add(mntmToutSlectionner);
+
+		JMenuItem mntmToutDslectionner = new JMenuItem("Tout désélectionner");
+		mndition.add(mntmToutDslectionner);
+
+		JMenu mnTransferts = new JMenu("Transferts");
+		menuBar.add(mnTransferts);
+
+		JMenu mnFentre = new JMenu("Fenêtre");
+		menuBar.add(mnFentre);
+		SpringLayout springLayout = new SpringLayout();
+		frmBitme.getContentPane().setLayout(springLayout);
+
+		JPanel bottomPanel = new JPanel();
+		springLayout.putConstraint(SpringLayout.WEST, bottomPanel, 0, SpringLayout.WEST, frmBitme.getContentPane());
+		springLayout.putConstraint(SpringLayout.SOUTH, bottomPanel, 0, SpringLayout.SOUTH, frmBitme.getContentPane());
+		springLayout.putConstraint(SpringLayout.EAST, bottomPanel, 0, SpringLayout.EAST, frmBitme.getContentPane());
+		bottomPanel.setBackground(SystemColor.window);
+		springLayout.putConstraint(SpringLayout.NORTH, bottomPanel, -40, SpringLayout.SOUTH, frmBitme.getContentPane());
+		frmBitme.getContentPane().add(bottomPanel);
+
+		JPanel mainPanel = new JPanel();
+		mainPanel.setBackground(SystemColor.text);
+		springLayout.putConstraint(SpringLayout.WEST, mainPanel, 0, SpringLayout.WEST, bottomPanel);
+		springLayout.putConstraint(SpringLayout.SOUTH, mainPanel, 0, SpringLayout.NORTH, bottomPanel);
+		springLayout.putConstraint(SpringLayout.EAST, mainPanel, 0, SpringLayout.EAST, bottomPanel);
+		frmBitme.getContentPane().add(mainPanel);
+
+		JPanel buttonPanel = new JPanel();
+		springLayout.putConstraint(SpringLayout.NORTH, mainPanel, 45, SpringLayout.NORTH, buttonPanel);
+		SpringLayout sl_mainPanel = new SpringLayout();
+		mainPanel.setLayout(sl_mainPanel);
+
+		JScrollPane scrollPane = new JScrollPane();
+		sl_mainPanel.putConstraint(SpringLayout.NORTH, scrollPane, 0, SpringLayout.NORTH, mainPanel);
+		sl_mainPanel.putConstraint(SpringLayout.WEST, scrollPane, 0, SpringLayout.WEST, mainPanel);
+		sl_mainPanel.putConstraint(SpringLayout.SOUTH, scrollPane, 0, SpringLayout.SOUTH, mainPanel);
+		sl_mainPanel.putConstraint(SpringLayout.EAST, scrollPane, 0, SpringLayout.EAST, mainPanel);
+		mainPanel.add(scrollPane);
+
+		torrents = new JTable(new TorrentTableModel(TorrentManager.getInstance()));
+		torrents.getColumnModel().getColumn(2).setCellRenderer(new ProgressCellRenderer());
+		scrollPane.setViewportView(torrents);
+		springLayout.putConstraint(SpringLayout.SOUTH, buttonPanel, 45, SpringLayout.NORTH, frmBitme.getContentPane());
+		buttonPanel.setBackground(SystemColor.window);
+		springLayout.putConstraint(SpringLayout.NORTH, buttonPanel, 0, SpringLayout.NORTH, frmBitme.getContentPane());
+		springLayout.putConstraint(SpringLayout.WEST, buttonPanel, 0, SpringLayout.WEST, bottomPanel);
+		springLayout.putConstraint(SpringLayout.EAST, buttonPanel, 0, SpringLayout.EAST, bottomPanel);
+		torrents.addKeyListener(new MyKeyListener());
+		torrents.setFillsViewportHeight(true);
+
+
+		nbActiveTransfers = new JTextField();
+		nbActiveTransfers.setHorizontalAlignment(SwingConstants.CENTER);
+		nbActiveTransfers.setText("0 transfert");
+		nbActiveTransfers.setBackground(SystemColor.window);
+		bottomPanel.add(nbActiveTransfers);
+		nbActiveTransfers.setColumns(10);
+		frmBitme.getContentPane().add(buttonPanel);
+		SpringLayout sl_buttonPanel = new SpringLayout();
+		buttonPanel.setLayout(sl_buttonPanel);
+
+		JButton btnCreatetorrent = new JButton("");
+		btnCreatetorrent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainWindow.this.createTorrentFile();
+			}
+		});
+		btnCreatetorrent.setToolTipText("Créer un fichier Torrent");
+		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnCreatetorrent, 5, SpringLayout.NORTH, buttonPanel);
+		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnCreatetorrent, 5, SpringLayout.WEST, buttonPanel);
+		btnCreatetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/createFilemin.png")));
+		buttonPanel.add(btnCreatetorrent);
+
+		JButton btnAddtorrent = new JButton("");
+		btnAddtorrent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				MainWindow.this.openTorrentFile();
+			}
+		});
+		btnAddtorrent.setToolTipText("Ajouter un fichier Torrent");
+		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnAddtorrent, 5, SpringLayout.NORTH, buttonPanel);
+		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnAddtorrent, 5, SpringLayout.EAST, btnCreatetorrent);
+		btnAddtorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/openFilemin.png")));
+		buttonPanel.add(btnAddtorrent);
+
+		JButton btnRemovetorrent = new JButton("");
+		btnRemovetorrent.setEnabled(false);
+		btnRemovetorrent.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+			}
+		});
+
+		torrents.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+
+			@Override
+			public void valueChanged(ListSelectionEvent e) {
+				if (torrents.getSelectedRow() == -1)
+					btnRemovetorrent.setEnabled(false);
+				else
+					btnRemovetorrent.setEnabled(true);
+			}
+		});
+
+		mntmToutSlectionner.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount() - 1);
+			}
+		});
+
+		sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
+		btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/removeFile.png")));
+		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnRemovetorrent, 5, SpringLayout.NORTH, buttonPanel);
+		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnRemovetorrent, 45, SpringLayout.EAST, btnAddtorrent);
+		buttonPanel.add(btnRemovetorrent);
+	}
+
+	private void openTorrentFile() {
+		fc.setDialogTitle("Ouvrir un fichier Torrent");
+		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fc.setFileFilter(new FileNameExtensionFilter("Fichier Torrent", "torrent"));
+		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = fc.getSelectedFile();
+			System.out.println("Opening: " + file.getName());
+		} else {
+			System.out.println("Open command cancelled by user.");
+		}
+	}
+
+	private void createTorrentFile() {
+		fc.setDialogTitle("Créer un fichier Torrent");
+		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
+		if (returnVal == JFileChooser.APPROVE_OPTION) {
+			File file = fc.getSelectedFile();
+			System.out.println("Opening: " + file.getName());
+		} else {
+			System.out.println("Open command cancelled by user.");
+		}
+	}
+
+	static class MyKeyListener extends KeyAdapter {
+		@Override
+		public void keyTyped(KeyEvent e) {
+			if (e.getKeyChar() == KeyEvent.VK_CAPS_LOCK ) {
+				// delete row method (when "delete" is typed)
+				System.out.println("Key \"Delete\" Typed");
+			}
+		}
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK ) {
+				// delete row method (when "delete" is pressed)
+				System.out.println("Key \"Delete\" Pressed");
+			}
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK ) {
+				// delete row method (when "delete" is released)
+				System.out.println("Key \"Delete\" Released");
+			}
+		}
+	}
+}

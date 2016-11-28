@@ -32,6 +32,8 @@ public class TorrentManager {
         return instance;
     }
 
+    public synchronized  HashMap<HashId, TorrentFile> getTorrentList() { return this.torrentList; }
+
     public synchronized TorrentFile retrieveTorrent(HashId torrentId) {
         return this.torrentList.get(torrentId);
     }
