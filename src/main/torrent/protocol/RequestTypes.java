@@ -32,7 +32,10 @@ public enum RequestTypes {
     public static RequestTypes getMessageType(ByteBuffer messageBuffer) {
         if(isHandshake(messageBuffer))
             return HANDSHAKE;
-        return getOtherRequestType(messageBuffer);
+        else if(messageBuffer.remaining() > 4)
+            return getOtherRequestType(messageBuffer);
+        else
+            return RequestTypes.NONE;
     }
 
     static boolean isHandshake(ByteBuffer messageBuffer){
