@@ -72,8 +72,9 @@ public class TorrentFile {
         return torrentId;
     }
 
-    public int getPieceCount() { return this.pieceCount;
-    }
+    public int getPieceCount() { return this.pieceCount; }
+
+    public long getPieceSize() { return this.pieceSize; }
 
     public HashId getPeerId() {
         return peerId;
@@ -114,6 +115,9 @@ public class TorrentFile {
     public int getLeft(){
         return 0;
     }
+
+
+    public TorrentFileInfo getFileInfo() { return fileInfo; }
 
     private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
         this.scheduledExecutor.schedule(new TrackerUpdater(), delay, unit);
