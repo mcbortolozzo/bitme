@@ -74,6 +74,11 @@ public class TorrentProtocolHelper {
         return handshake;
     }
 
+    /**
+     * Creates the bitfield message according to the given bitfield
+     * @param bitfield of the torrent
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createBitfield(Bitfield bitfield) {
         int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
         ByteBuffer bitfieldBuffer = generateRequestBuffer(messageLenght, RequestTypes.BITFIELD.getId());
@@ -81,6 +86,11 @@ public class TorrentProtocolHelper {
         return bitfieldBuffer;
     }
 
+    /**
+     * Creates the state change message according to the type of the request
+     * @param stateRequest type of request that is being made
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createStateChangeMessage(RequestTypes stateRequest){
         if(!RequestTypes.isStateChange(stateRequest))
             throw new InvalidParameterException("invalid type of request");
@@ -102,12 +112,25 @@ public class TorrentProtocolHelper {
         return request;
     }
 
+    /**
+     * Create the have message according to the index of the piece
+     * @param pieceIndex index of the piece inside the torrent
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createHave(int pieceIndex) {
         ByteBuffer haveBuffer = generateRequestBuffer(HAVE_LENGTH, RequestTypes.HAVE.getId());
         haveBuffer.putInt(pieceIndex);
         return haveBuffer;
     }
 
+    /**
+     * Creates the request message according to the index of the wanted piece, the offset of the block within the piece
+     * and the lenght of the block
+     * @param pieceIndex index of the desired piece
+     * @param begin offset within the piece
+     * @param lenght length of the desired block
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createRequest(int pieceIndex, int begin, int lenght) {
         ByteBuffer requestBuffer = generateRequestBuffer(REQUEST_LENGHT, RequestTypes.REQUEST.getId());
         requestBuffer.putInt(pieceIndex);
@@ -116,6 +139,14 @@ public class TorrentProtocolHelper {
         return requestBuffer;
     }
 
+    /**
+     * Creates the piece message according to the index of the piece to be sent, the offset of the block withing the
+     * piece and the sent block
+     * @param pieceIndex index of the piece being sent
+     * @param begin offset within the piece
+     * @param block data block being sent
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createPiece(int pieceIndex, int begin, byte[] block) {
         int messageLength = PIECE_INITIAL_LENGHT + block.length;
         ByteBuffer pieceBuffer = generateRequestBuffer(messageLength, RequestTypes.PIECE.getId());
@@ -125,10 +156,22 @@ public class TorrentProtocolHelper {
         return pieceBuffer;
     }
 
+    /**
+     * Creates the keep alive message.
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createKeepAlive() {
         return generateRequestBuffer(KEEP_ALIVE_LENGHT, RequestTypes.KEEP_ALIVE.getId());
     }
 
+    /**
+     * Creates the cancel message according to the index of the piece that was previously requested, the offset within
+     * the piece and the lenght of the block
+     * @param pieceIndex index of the piece that was requested
+     * @param begin offset withing the piece
+     * @param lenght lenght of the block
+     * @return the buffer containing the message to be sent
+     */
     public static ByteBuffer createCancel(int pieceIndex, int begin, int lenght) {
         ByteBuffer cancelBuffer = generateRequestBuffer(CANCEL_LENGHT, RequestTypes.CANCEL.getId());
         cancelBuffer.putInt(pieceIndex);
