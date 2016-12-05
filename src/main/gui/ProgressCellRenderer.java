@@ -14,6 +14,7 @@ public class ProgressCellRenderer extends JProgressBar implements TableCellRende
         this.setValue(0);
         this.setString("0%");
         this.setStringPainted(true);
+        this.setBackground(Color.RED);
     }
 
     @Override

@@ -62,12 +62,10 @@ public class MainWindow {
 		menuBar.add(mnFichier);
 
 		JMenuItem mntmCrerUnFichier = new JMenuItem("Créer un fichier torrent");
+        mnFichier.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) { MainWindow.this.createTorrentFile(); }
+        });
 		mnFichier.add(mntmCrerUnFichier);
-		mnFichier.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				MainWindow.this.createTorrentFile();
-			}
-		});
 
 		JMenuItem mntmOuvrirUnFichier = new JMenuItem("Ouvrir un fichier torrent");
 		mntmOuvrirUnFichier.addActionListener(new ActionListener() {
@@ -85,18 +83,41 @@ public class MainWindow {
 		mnFichier.add(separator);
 
 		JMenuItem mntmFermerLaFentre = new JMenuItem("Fermer la fenêtre");
+		mntmFermerLaFentre.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) { System.exit(0); }
+        });
 		mnFichier.add(mntmFermerLaFentre);
 
 		JMenu mndition = new JMenu("Édition");
 		menuBar.add(mndition);
 
 		JMenuItem mntmEffacer = new JMenuItem("Effacer");
+		mntmEffacer.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+            }
+        });
 		mndition.add(mntmEffacer);
 
 		JMenuItem mntmToutSlectionner = new JMenuItem("Tout sélectionner");
+		mntmToutSlectionner.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount());
+            }
+        });
 		mndition.add(mntmToutSlectionner);
 
 		JMenuItem mntmToutDslectionner = new JMenuItem("Tout désélectionner");
+		mntmToutDslectionner.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                torrents.setRowSelectionInterval(0, 0);
+                torrents.getSelectionModel().removeIndexInterval(0, torrents.getModel().getRowCount());
+            }
+        });
 		mndition.add(mntmToutDslectionner);
 
 		JMenu mnTransferts = new JMenu("Transferts");
@@ -192,10 +213,14 @@ public class MainWindow {
 
 			@Override
 			public void valueChanged(ListSelectionEvent e) {
-				if (torrents.getSelectedRow() == -1)
-					btnRemovetorrent.setEnabled(false);
-				else
-					btnRemovetorrent.setEnabled(true);
+				if (torrents.getSelectedRow() == -1) {
+                    btnRemovetorrent.setEnabled(false);
+                    mntmEffacer.setEnabled(false);
+                }
+				else {
+                    btnRemovetorrent.setEnabled(true);
+                    mntmEffacer.setEnabled(true);
+                }
 			}
 		});
 
@@ -231,8 +256,22 @@ public class MainWindow {
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
-			File file = fc.getSelectedFile();
-			System.out.println("Opening: " + file.getName());
+            File file = fc.getSelectedFile();
+            System.out.println("Opening: " + file.getAbsolutePath());
+            String originName = file.getName();
+            if (file.isFile())
+                originName = originName.substring(0, originName.lastIndexOf('.'));
+            String outName = originName + ".torrent";
+            fc.setDialogTitle("Enregistrer le fichier torrent");
+            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fc.setFileFilter(new FileNameExtensionFilter("Fichier Torrent", "torrent"));
+            fc.setCurrentDirectory(new File(file.getParentFile().getPath() + "/" + outName));
+            System.out.println(file.getParentFile().getPath() + "/" + outName);
+            returnVal = fc.showSaveDialog(MainWindow.this.frmBitme);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                System.out.println("Save file to " + fc.getSelectedFile().getAbsolutePath() + ".torrent");
+                // TODO Do the actual saving
+            }
 		} else {
 			System.out.println("Open command cancelled by user.");
 		}
