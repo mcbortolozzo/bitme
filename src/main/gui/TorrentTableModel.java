@@ -1,13 +1,10 @@
 package main.gui;
 
-import com.hypirion.bencode.BencodeReadException;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 
 import javax.swing.table.AbstractTableModel;
-import java.io.IOException;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -57,17 +54,8 @@ public class TorrentTableModel extends AbstractTableModel {
     }
 
     public void addTorrent(String path) {
-        try {
-            this.tManager.addTorrent(path);
-            updateList();
-            this.fireTableDataChanged();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (BencodeReadException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+        // TODO Implement torrent add
+        this.fireTableDataChanged();
     }
 
     @Override

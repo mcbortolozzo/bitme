@@ -3,21 +3,13 @@ package main.torrent.file;
 import com.hypirion.bencode.BencodeWriter;
 import main.util.Utils;
 
-
-import java.io.*;
-
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 
 /**
