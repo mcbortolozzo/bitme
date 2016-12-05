@@ -1,8 +1,6 @@
 package main.torrent.protocol;
 
-import main.torrent.protocol.requests.HandshakeRequest;
-import main.torrent.protocol.requests.StateChangeRequest;
-import main.torrent.protocol.requests.HaveRequest;
+import main.torrent.protocol.requests.*;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
@@ -12,7 +10,7 @@ import java.util.Arrays;
  * Created by marcelo on 07/11/16.
  */
 public enum RequestTypes {
-    NONE(-2), HANDSHAKE(-1), CHOKE(0), UNCHOKE(1), INTERESTED(2), NOT_INTERESTED(3), HAVE(4), BITFIELD(5), REQUEST(6), PIECE(7), CANCEL(8);
+    NONE(-3),KEEP_ALIVE(-2), HANDSHAKE(-1), CHOKE(0), UNCHOKE(1), INTERESTED(2), NOT_INTERESTED(3), HAVE(4), BITFIELD(5), REQUEST(6), PIECE(7), CANCEL(8);
 
     private final int id;
 
@@ -60,6 +58,8 @@ public enum RequestTypes {
 
     public TorrentRequest generateRequest(ByteBuffer messageBuffer) throws UnsupportedEncodingException {
         switch (this){
+            case KEEP_ALIVE:
+                return new KeepAliveRequest(messageBuffer);
             case HANDSHAKE:
                 return new HandshakeRequest(messageBuffer);
             case CHOKE:
@@ -68,20 +68,18 @@ public enum RequestTypes {
             case NOT_INTERESTED:
                 return new StateChangeRequest(messageBuffer, this);
             case HAVE:
-                new HaveRequest(messageBuffer);
-                break;
+                return new HaveRequest(messageBuffer);
             case BITFIELD:
-                break;
+                return new BitfieldRequest(messageBuffer);
             case REQUEST:
-                break;
+                return new RequestRequest(messageBuffer);
             case PIECE:
-                break;
+                return new PieceRequest(messageBuffer);
             case CANCEL:
-                break;
+                return new CancelRequest(messageBuffer);
             default:
                 return null;
         }
-        return null;
     }
 
     public static boolean isStateChange(RequestTypes stateRequest) {

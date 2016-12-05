@@ -23,7 +23,7 @@ public class TestUtil {
     public static final String TORRENT_ID = "torrentID01234567890";
     public static final String PEER_ID = "peerID01234567890123";
     public static final int PIECE_SIZE = 32000;
-    public static final int PIECE_COUNT = 5000;
+    public static final int PIECE_COUNT = 2000;
 
     public static Peer generatePeer(Client client, TorrentFile t, InetSocketAddress addr) throws IOException {
         Selector s = client.getSelector();

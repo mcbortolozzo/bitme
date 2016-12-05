@@ -14,7 +14,9 @@ public abstract class NonHandshakeRequest extends TorrentRequest {
 
     protected NonHandshakeRequest(ByteBuffer requestBuffer){
         this.messageLength = requestBuffer.getInt();
-        this.messageType = requestBuffer.get();
+        if(this.messageLength != 0) {
+            this.messageType = requestBuffer.get();
+        }
     }
 
     public int getMessageLength() {

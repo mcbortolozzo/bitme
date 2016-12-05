@@ -1,8 +1,13 @@
 package main.torrent;
 
+import main.util.Utils;
+
 import java.io.UnsupportedEncodingException;
+import java.math.BigInteger;
 import java.net.URLEncoder;
 import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * Created by marcelo on 19/11/16.
@@ -13,6 +18,10 @@ public class HashId {
 
     public HashId(byte[] hashIdBytes){
         this.hashIdBytes = hashIdBytes;
+    }
+
+    public HashId(String encodedString){
+        this.hashIdBytes = Utils.decodeURLString(encodedString);
     }
 
     public byte[] getBytes(){
@@ -36,20 +45,15 @@ public class HashId {
     }
 
     public String toString(){
-        try {
-            return new String(this.hashIdBytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
+        StringBuilder builder = new StringBuilder();
+        for(byte b: this.hashIdBytes){
+            builder.append(String.format("%02x", b));
         }
-        return "";
+        return builder.toString();
     }
 
-    public String asURLEncodedString() {
-        StringBuilder urlEncoded = new StringBuilder();
-        for(byte b : this.hashIdBytes){
-            urlEncoded.append("%").append(String.format("%02X", b));
-        }
-        return urlEncoded.toString();
+    public String asURLEncodedString() throws UnsupportedEncodingException {
+        return Utils.encodeToURLString(this.hashIdBytes);
     }
 
     public int length() {

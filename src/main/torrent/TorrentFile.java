@@ -1,7 +1,10 @@
 package main.torrent;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.peer.Peer;
 import main.torrent.file.TorrentFileInfo;
+import main.tracker.TrackerHelper;
+import main.tracker.TrackerQueryResult;
 
 import java.io.IOException;
 
@@ -65,4 +68,10 @@ public class TorrentFile {
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
+
+    public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
+        String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
+        String result = TrackerHelper.sendTrackerRequest(trackerRequest);
+        TrackerQueryResult trackerResult = new TrackerQueryResult(result);
+    }
 }
