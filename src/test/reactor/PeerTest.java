@@ -76,10 +76,6 @@ public class PeerTest {
         Assert.assertEquals(20, peer1.getLocalPeerId().length());
         Assert.assertEquals(20, peer2.getLocalPeerId().length());
         Assert.assertEquals(peer1.getLocalPeerId(), peer2.getLocalPeerId());
-
-        TorrentManager.getInstance().addTorrent(new HashId("ABC123ABC--ABC123ABC".getBytes()), 2000);
-        TorrentFile otherTorrent = TorrentManager.getInstance().retrieveTorrent(new HashId("ABC123ABC--ABC123ABC".getBytes()));
-        Peer peer3 = TestUtil.generatePeer(this.client, otherTorrent, new InetSocketAddress("localhost", 9999));
         //Assert.assertNotEquals(peer1.getLocalPeerId(), peer3.getLocalPeerId());
     }
 

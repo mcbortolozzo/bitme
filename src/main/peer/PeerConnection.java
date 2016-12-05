@@ -19,7 +19,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by marcelo on 10/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class PeerConnection implements Runnable {
 
@@ -32,8 +36,7 @@ public class PeerConnection implements Runnable {
     private SocketChannel socket;
     private SelectionKey selectionKey;
     private ByteBuffer inputBuffer = ByteBuffer.allocate(PEER_BUFFER_SIZE);
-    LinkedList<ByteBuffer> outputBuffer = new LinkedList<>();
-    private boolean outputBufferWrite = true;
+    private LinkedList<ByteBuffer> outputBuffer = new LinkedList<>();
 
     public PeerConnection(SocketChannel socket, Selector selector, Peer peer) throws IOException {
         this.socket = socket;
@@ -74,8 +77,9 @@ public class PeerConnection implements Runnable {
                         this.selectionKey.interestOps(0);
                 }
             } catch (IOException e) {
-                e.printStackTrace();
-                //TODO close peer
+                logger.log(Level.INFO, e.getMessage());
+                logger.log(Level.INFO, Messages.SOCKET_READ_FAIL.getText());
+                this.peer.shutdown();
             }
         }
     }
@@ -83,15 +87,12 @@ public class PeerConnection implements Runnable {
     private void write(){
         synchronized (writeLock) {
             try {
-                logger.log(Level.FINE, Messages.WRITE_CONNECTION + " - " + new String(outputBuffer.peek().array(), "UTF-8"));
-               /* if (outputBufferWrite) {
-                    outputBuffer.flip();
-                    outputBufferWrite = false;
-                }*/
                if(outputBuffer.size() > 0)
                     socket.write(outputBuffer.pop());
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.log(Level.INFO, e.getMessage());
+                logger.log(Level.INFO, Messages.SOCKET_WRITE_FAIL.getText());
+                this.peer.shutdown();
             }
 
             if(outputBuffer.size() > 0) {
@@ -105,7 +106,6 @@ public class PeerConnection implements Runnable {
 
     public synchronized void addToBuffer(ByteBuffer data){
         synchronized (writeLock) {
-            outputBufferWrite = true;
             data.flip();
             outputBuffer.add(data);
             selectionKey.interestOps(SelectionKey.OP_WRITE);
@@ -127,5 +127,14 @@ public class PeerConnection implements Runnable {
 
     public Peer getPeer() {
         return peer;
+    }
+
+    public void shutdown(){
+        try {
+            this.socket.close();
+        } catch (IOException e) {
+            logger.log(Level.INFO, Messages.SOCKET_CLOSE_FAIL.getText());
+        }
+        this.selectionKey.cancel();
     }
 }

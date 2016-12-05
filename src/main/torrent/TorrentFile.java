@@ -7,6 +7,8 @@ import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
 import main.tracker.TrackerHelper;
 import main.tracker.TrackerQueryResult;
+import org.omg.SendingContext.RunTime;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
@@ -39,14 +41,7 @@ public class TorrentFile {
     private List<Peer> peers = new LinkedList<>();
     private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
 
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
-
-    //TODO remove this constructor, keep only the other I guess
-    public TorrentFile(HashId torrentId) throws IOException {
-        this.torrentId = torrentId;
-        this.peerId = Peer.generatePeerId();
-        this.pieceCount = 2000; //TODO remove this
-    }
+    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
 
     public TorrentFile(String filePath, TorrentFileInfo fileInfo) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.filePath = filePath;
@@ -61,6 +56,11 @@ public class TorrentFile {
 
     public synchronized void addPeer(Peer p) {
         this.peers.add(p);
+        this.chokingAlgorithm.updatePeers(this.peers);
+    }
+
+    public void removePeer(Peer p) {
+        this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
     }
 
@@ -126,6 +126,10 @@ public class TorrentFile {
             TrackerQueryResult trackerResult = new TrackerQueryResult(result);
             scheduleTrackerUpdate(5l, TimeUnit.SECONDS);
         }
+    }
+
+    public ScheduledExecutorService getExecutor() {
+        return this.scheduledExecutor;
     }
 
     private class TrackerUpdater implements Runnable {

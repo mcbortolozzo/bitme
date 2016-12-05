@@ -49,13 +49,6 @@ public class TorrentManager {
         return this.torrentList.get(torrentId);
     }
 
-    //TODO upgrade method to retrieve data from file
-    public synchronized void addTorrent(HashId torrentId, int pieceCount) throws IOException {
-        TorrentFile torrentFile = new TorrentFile(torrentId);
-        torrentList.put(torrentId, torrentFile);
-        //TODO take action if file already in map?
-    }
-
     public TorrentFile addTorrent(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         TorrentFileInfo fileInfo = readFileInfo(filePath, saveFileFolder);
         TorrentFile torrentFile = new TorrentFile(filePath, fileInfo);
