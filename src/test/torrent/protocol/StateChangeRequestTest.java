@@ -1,4 +1,4 @@
-package torrent.protocol;
+package test.torrent.protocol;
 
 import main.Client;
 import main.peer.Peer;
@@ -10,7 +10,7 @@ import main.torrent.protocol.requests.StateChangeRequest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import util.TestUtil;
+import test.util.TestUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -20,7 +20,6 @@ import java.util.List;
 import static main.torrent.protocol.RequestTypes.*;
 import static main.torrent.protocol.TorrentProtocolHelper.createStateChangeMessage;
 import static org.junit.Assert.*;
-import static util.TestUtil.*;
 
 /**
  * Written by
@@ -51,7 +50,7 @@ public class StateChangeRequestTest {
 
         List<TorrentRequest> requests = new LinkedList<>();
         requests.add(chokeRequest);
-        Peer p1 = processRequests(requests, client, torrentFile);
+        Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
         assertEquals(true, p1.isPeerChoking());
     }
 
@@ -65,7 +64,7 @@ public class StateChangeRequestTest {
 
         List<TorrentRequest> requests = new LinkedList<>();
         requests.add(unchokeRequest);
-        Peer p1 = processRequests(requests, client, torrentFile);
+        Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
         assertEquals(false, p1.isPeerChoking());
     }
 
@@ -79,7 +78,7 @@ public class StateChangeRequestTest {
 
         List<TorrentRequest> requests = new LinkedList<>();
         requests.add(interestedRequest);
-        Peer p1 = processRequests(requests, client, torrentFile);
+        Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
         assertEquals(true, p1.isPeerInterested());
     }
 
@@ -93,7 +92,7 @@ public class StateChangeRequestTest {
 
         List<TorrentRequest> requests = new LinkedList<>();
         requests.add(notInterestedRequest);
-        Peer p1 = processRequests(requests, client, torrentFile);
+        Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
         assertEquals(false, p1.isPeerInterested());
     }
 

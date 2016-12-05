@@ -18,6 +18,11 @@ public class Bitfield {
         bitfield = new BitSet(bitfieldLength); //defaults to false, so ok
     }
 
+    public Bitfield(int pieceCount) {
+        this.bitfieldLength = pieceCount;
+        bitfield = new BitSet(bitfieldLength);
+    }
+
     public synchronized boolean checkHavePiece(int index){
         if(index < bitfieldLength) {
             return this.bitfield.get(index);
@@ -33,13 +38,10 @@ public class Bitfield {
             throw new IndexOutOfBoundsException();
         }
     }
-
+    //TODO check if exception not needed here
     public synchronized void updateBitfield(BitSet bitfield){
-        if(bitfield.length() <= bitfieldLength) {
-            this.bitfield = bitfield;
-        } else {
-            throw new IndexOutOfBoundsException();
-        }
+        this.bitfield = new BitSet(this.bitfieldLength);
+        this.bitfield.or(bitfield);
     }
 
     public BitSet getBitfield() {
@@ -48,5 +50,20 @@ public class Bitfield {
 
     public int getBitfieldLength() {
         return bitfieldLength;
+    }
+
+    public byte[] getBytes(){
+        byte[] bytes = new byte[(int) Math.ceil(this.bitfieldLength/8f)];
+        int setBit = 0;
+        while((setBit = this.bitfield.nextSetBit(setBit)) != -1){
+            bytes[(int) Math.floor(setBit/8f)] |= 1 << (7 - (setBit % 8));
+            setBit++;
+        }
+        return bytes;
+    }
+
+
+    public int getBitfieldLengthInBytes() {
+        return (int) Math.ceil(this.getBitfieldLength()/8.0);
     }
 }

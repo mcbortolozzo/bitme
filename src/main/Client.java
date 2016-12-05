@@ -1,11 +1,15 @@
 package main;
 
+
+import com.hypirion.bencode.BencodeReadException;
 import main.reactor.Dispatcher;
+import main.torrent.TorrentManager;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,8 +24,7 @@ public class Client implements Runnable {
 
     Logger logger = Logger.getLogger(Client.class.getName());
 
-
-    public static final int PORT = 9999;
+    public static final int PORT = 6882;
     public static final String CLIENT_ID = "ET";
     public static final String CLIENT_VERSION = "0000";
     private Dispatcher dispatcher;
@@ -46,8 +49,9 @@ public class Client implements Runnable {
         this.server.close();
     }
 
-    public static void main(String args[]) throws IOException {
+    public static void main(String args[]) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         Client client = new Client(PORT);
         client.run();
+        TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files");
     }
 }

@@ -1,4 +1,4 @@
-package torrent.protocol;
+package test.torrent.protocol;
 
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
@@ -10,10 +10,14 @@ import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.security.InvalidParameterException;
 
-
+import static com.sun.xml.internal.ws.dump.LoggingDumpTube.Position.Before;
 
 /**
- * Created by marcelo on 07/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class HandshakeRequestTest {
 

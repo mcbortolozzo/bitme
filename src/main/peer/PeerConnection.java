@@ -1,16 +1,19 @@
 package main.peer;
 
+import main.reactor.DecodeProtocolTask;
+import main.reactor.Dispatcher;
+import main.torrent.TorrentManager;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 import main.util.Messages;
 
 import java.io.IOException;
-import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -20,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class PeerConnection implements Runnable {
 
-    public static final int PEER_BUFFER_SIZE = 5000;
+    public static final int PEER_BUFFER_SIZE = 65532;
     Logger logger = Logger.getLogger(PeerConnection.class.getName());
 
     private final Object readLock = new Object(), writeLock = new Object();
@@ -29,7 +32,7 @@ public class PeerConnection implements Runnable {
     private SocketChannel socket;
     private SelectionKey selectionKey;
     private ByteBuffer inputBuffer = ByteBuffer.allocate(PEER_BUFFER_SIZE);
-    private ByteBuffer outputBuffer = ByteBuffer.allocate(PEER_BUFFER_SIZE);
+    LinkedList<ByteBuffer> outputBuffer = new LinkedList<>();
     private boolean outputBufferWrite = true;
 
     public PeerConnection(SocketChannel socket, Selector selector, Peer peer) throws IOException {
@@ -47,23 +50,32 @@ public class PeerConnection implements Runnable {
 
     private void configureSocket(SocketChannel socket, Selector selector) throws IOException {
         this.socket.configureBlocking(false);
-        this.selectionKey = socket.register(selector, 0);
-        this.selectionKey.attach(this);
-        this.selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-        selector.wakeup();
+        synchronized (Dispatcher.SELECTOR_LOCK2) {
+            selector.wakeup();
+            synchronized (Dispatcher.SELECTOR_LOCK) {
+                this.selectionKey = socket.register(selector, SelectionKey.OP_READ);
+                this.selectionKey.attach(this);
+            }
+        }
     }
 
     private void read(){
         synchronized (readLock) {
             try {
                 socket.read(inputBuffer);
-                inputBuffer.flip();
-                List<TorrentRequest> requests = TorrentProtocolHelper.decodeStream(inputBuffer);
-                inputBuffer.flip();
-                peer.process(requests);
-                selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+                if(inputBuffer.position() > 0) {
+                    inputBuffer.flip();
+                    TorrentManager.executorService.execute(new DecodeProtocolTask(this.peer, inputBuffer));
+                    inputBuffer.clear();
+                } else {
+                    if(this.outputBuffer.size() > 0)
+                        this.selectionKey.interestOps(SelectionKey.OP_WRITE);
+                    else
+                        this.selectionKey.interestOps(0);
+                }
             } catch (IOException e) {
                 e.printStackTrace();
+                //TODO close peer
             }
         }
     }
@@ -71,17 +83,22 @@ public class PeerConnection implements Runnable {
     private void write(){
         synchronized (writeLock) {
             try {
-                logger.log(Level.FINE, Messages.WRITE_CONNECTION + " - " + new String(outputBuffer.array(), "UTF-8"));
-                if (outputBufferWrite) {
+                logger.log(Level.FINE, Messages.WRITE_CONNECTION + " - " + new String(outputBuffer.peek().array(), "UTF-8"));
+               /* if (outputBufferWrite) {
                     outputBuffer.flip();
                     outputBufferWrite = false;
-                }
-                socket.write(outputBuffer);
-                outputBuffer.clear();
-                selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
-                selectionKey.selector().wakeup();
+                }*/
+               if(outputBuffer.size() > 0)
+                    socket.write(outputBuffer.pop());
             } catch (IOException e) {
                 e.printStackTrace();
+            }
+
+            if(outputBuffer.size() > 0) {
+                selectionKey.interestOps(SelectionKey.OP_WRITE);
+                selectionKey.selector().wakeup();
+            } else {
+                selectionKey.interestOps(SelectionKey.OP_READ);
             }
         }
     }
@@ -89,8 +106,9 @@ public class PeerConnection implements Runnable {
     public synchronized void addToBuffer(ByteBuffer data){
         synchronized (writeLock) {
             outputBufferWrite = true;
-            outputBuffer.put(data.array());
-            selectionKey.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
+            data.flip();
+            outputBuffer.add(data);
+            selectionKey.interestOps(SelectionKey.OP_WRITE);
             selectionKey.selector().wakeup();
         }
     }
@@ -98,11 +116,11 @@ public class PeerConnection implements Runnable {
     @Override
     public void run() {
         //do stuff
-        if (selectionKey.isWritable()) {
-            if(outputBuffer.position() != 0) {
+        if(selectionKey.isReadable()){
+            read();
+       } else if (selectionKey.isWritable()) {
+            if(outputBuffer.size() > 0) {
                 write();
-            } else if(selectionKey.isReadable()){
-                read();
             }
         }
     }

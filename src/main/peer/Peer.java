@@ -4,6 +4,7 @@ import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.torrent.file.TorrentBlock;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
@@ -33,10 +34,15 @@ public class Peer{
     private HashId otherPeerId;
     private HashId localPeerId;
 
+    private int uploaded;
+    private int downloaded;
+
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
 
     private Date lastContact;
+
+    private boolean handshakeSent = false;
 
     /**
      * Constructor used when connection is first received, still not knowing to which torrent file it corresponds
@@ -57,6 +63,7 @@ public class Peer{
      */
     public Peer(Selector selector, TorrentFile torrentFile, SocketAddress destAddr) throws IOException {
         this.torrentFile = torrentFile;
+        this.torrentFile.addPeer(this);
         this.localPeerId = torrentFile.getPeerId();
         this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
@@ -102,13 +109,25 @@ public class Peer{
      * Creates and sends a handshake message based on the information this peer has
      */
     public void sendHandshake(){
+        this.handshakeSent = true;
         ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentFile.getTorrentId(), this.getLocalPeerId());
+        this.sendMessage(message);
+    }
+
+    public void sendBitfield() {
+        ByteBuffer message = TorrentProtocolHelper.createBitfield(this.torrentFile.getBitfield());
+        this.sendMessage(message);
+    }
+
+    public void sendStateChange(RequestTypes state){
+        ByteBuffer message = TorrentProtocolHelper.createStateChangeMessage(state);
         this.sendMessage(message);
     }
 
     public void setTorrentFile(TorrentFile torrentFile) {
         this.bitfield = new Bitfield(torrentFile);
         this.torrentFile = torrentFile;
+        this.torrentFile.addPeer(this);
     }
 
     /**
@@ -162,4 +181,14 @@ public class Peer{
     public boolean hasPiece(int pieceIndex) {
         return this.bitfield.checkHavePiece(pieceIndex);
     }
+
+    public ByteBuffer retrieveDataBlock(int pieceIndex, int begin, int length) throws IOException {
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, length);
+        return tb.readFileBlock();
+    }
+
+    public boolean isHandshakeSent() {
+        return handshakeSent;
+    }
+
 }

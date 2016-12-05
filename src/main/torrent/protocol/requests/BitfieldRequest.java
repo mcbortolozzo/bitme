@@ -16,7 +16,9 @@ public class BitfieldRequest extends NonHandshakeRequest {
 
     public BitfieldRequest(ByteBuffer requestBuffer) {
         super(requestBuffer);
-        this.bitfield = BitSet.valueOf(requestBuffer);
+        byte[] bitfieldBytes = new byte[this.getMessageLength() - 1]; // length minus id = received bitfield length
+        requestBuffer.get(bitfieldBytes);
+        this.bitfield = BitSet.valueOf(bitfieldBytes);
     }
 
     @Override

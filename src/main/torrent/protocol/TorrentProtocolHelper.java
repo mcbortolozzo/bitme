@@ -42,8 +42,10 @@ public class TorrentProtocolHelper {
             messageBuffer.flip();
             if(nextReq != null) {
                 requests.add(nextReq);
-            } else {
-                return requests;
+            } else if(messageBuffer.hasRemaining()){
+                messageBuffer.get();
+                messageBuffer.compact();
+                messageBuffer.flip();
             }
         }
         return requests;
@@ -68,7 +70,7 @@ public class TorrentProtocolHelper {
         ByteBuffer handshake = ByteBuffer.allocate(HANDSHAKE_SIZE);
         handshake.put((byte) PSTRLEN);
         handshake.put(PROTOCOL_VERSION.getBytes());
-        handshake.put("00000000".getBytes());   //reserved byte
+        for(int i = 0; i < 8; i ++) handshake.put((byte) 0);   //reserved byte
         handshake.put(torrentId.getBytes());
         handshake.put(peerId.getBytes());
         return handshake;
@@ -80,9 +82,9 @@ public class TorrentProtocolHelper {
      * @return the buffer containing the message to be sent
      */
     public static ByteBuffer createBitfield(Bitfield bitfield) {
-        int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLength();
+        int messageLenght = BITFIELD_INITIAL_LENGHT + bitfield.getBitfieldLengthInBytes();
         ByteBuffer bitfieldBuffer = generateRequestBuffer(messageLenght, RequestTypes.BITFIELD.getId());
-        bitfieldBuffer.put(bitfield.getBitfield().toByteArray());
+        bitfieldBuffer.put(bitfield.getBytes());
         return bitfieldBuffer;
     }
 
@@ -147,8 +149,8 @@ public class TorrentProtocolHelper {
      * @param block data block being sent
      * @return the buffer containing the message to be sent
      */
-    public static ByteBuffer createPiece(int pieceIndex, int begin, byte[] block) {
-        int messageLength = PIECE_INITIAL_LENGHT + block.length;
+    public static ByteBuffer createPiece(int pieceIndex, int begin, ByteBuffer block) {
+        int messageLength = PIECE_INITIAL_LENGHT + block.capacity();
         ByteBuffer pieceBuffer = generateRequestBuffer(messageLength, RequestTypes.PIECE.getId());
         pieceBuffer.putInt(pieceIndex);
         pieceBuffer.putInt(begin);

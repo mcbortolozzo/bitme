@@ -19,6 +19,8 @@ public class Dispatcher implements Runnable{
 
     protected Selector selector;
     Logger logger = Logger.getLogger(Dispatcher.class.getName());
+    public static final Object SELECTOR_LOCK = new Object();
+    public static final Object SELECTOR_LOCK2 = new Object();
 
     public Dispatcher(ServerSocketChannel server) throws IOException {
         this.selector = Selector.open();
@@ -42,9 +44,13 @@ public class Dispatcher implements Runnable{
         logger.log(Level.INFO, Messages.DISPATCHER_RUN.getText());
         while(true) {
             try {
-                this.selector.select();
+                Iterator handleIterator = null;
+                synchronized (SELECTOR_LOCK) {
+                    this.selector.select();
+                }
+                synchronized (SELECTOR_LOCK2){}
                 Set selectedKeys = this.selector.selectedKeys();
-                Iterator handleIterator = selectedKeys.iterator();
+                handleIterator = selectedKeys.iterator();
                 while (handleIterator.hasNext()) {
                     this.dispatch((SelectionKey) handleIterator.next());
                     handleIterator.remove();

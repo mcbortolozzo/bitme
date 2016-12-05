@@ -4,6 +4,8 @@ import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -54,5 +56,13 @@ public class Utils {
             validList.add(b);
         }
         return validList;
+    }
+
+
+    public static byte[] calculateHash(byte[] toHash) throws NoSuchAlgorithmException {
+        MessageDigest crypt = MessageDigest.getInstance("SHA-1");
+        crypt.reset();
+        crypt.update(toHash);
+        return crypt.digest();
     }
 }
