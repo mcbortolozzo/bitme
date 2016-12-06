@@ -82,20 +82,17 @@ public class TorrentFile {
 
     private void updateBitfield() throws IOException, NoSuchAlgorithmException {
         this.bitfield = new Bitfield(this.getPieceCount());
-        TorrentBlock tb = this.fileInfo.getFileBlock(0, 0, Math.toIntExact(this.fileInfo.getLength()));
-        ByteBuffer pieceBuffer = tb.readFileBlock();
-        byte[] piece = new byte[Math.toIntExact(this.pieceSize)];
-        for(int i = 0; i < this.getPieceCount() - 1; i ++){ //read all pieces except for last one
-            pieceBuffer.get(piece);
-            if(this.fileInfo.isPieceValid(piece, i)){
-                this.bitfield.setHavePiece(i);
-            }
+        List<TorrentBlock> pieces = new LinkedList<>();
+        for(int i = 0; i < this.getPieceCount(); i++){
+            pieces.add(this.fileInfo.getFileBlock(i, 0, Math.toIntExact(this.fileInfo.getPieceSize())));
         }
-        //and for the last piece
-        piece = new byte[pieceBuffer.remaining()];
-        pieceBuffer.get(piece);
-        if(this.fileInfo.isPieceValid(piece, this.getPieceCount() - 1)){
-            this.bitfield.setHavePiece(this.getPieceCount() - 1);
+        int pieceIndex = 0;
+        for(TorrentBlock tb : pieces){ //read all pieces except for last one
+            ByteBuffer pieceBuffer = tb.readFileBlock();
+            if(this.fileInfo.isPieceValid(pieceBuffer.array(), pieceIndex)){
+                this.bitfield.setHavePiece(pieceIndex);
+            }
+            pieceIndex++;
         }
     }
 

@@ -74,11 +74,12 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     @Override
     public TorrentBlock getFileBlock(int index, int begin, int length) {
-        TorrentBlock torrentBlock = new TorrentBlock(index, begin, length);
+        int blockSize = this.getValidReadLength(index, begin, length);
+        TorrentBlock torrentBlock = new TorrentBlock(index, begin, blockSize);
         int startingPosition = (int) (index * this.pieceSize + begin);
         int position = startingPosition;
-        while(position - startingPosition < length){ //read < length
-            int lengthLeft =length - position - startingPosition;
+        while(position - startingPosition < blockSize){ //read < length
+            int lengthLeft = blockSize - position - startingPosition;
             FileBlockInfo nextBlock = getNextBlock(position, lengthLeft);
             if(nextBlock != null){
                 position += nextBlock.getLength();

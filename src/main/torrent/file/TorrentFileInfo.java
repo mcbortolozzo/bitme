@@ -145,4 +145,17 @@ public abstract class TorrentFileInfo {
     public Long getPieceSize() {
         return pieceSize;
     }
+
+    protected int calculateStartingPosition(int index, int begin){
+        return (int) (index * this.pieceSize + begin);
+    }
+
+    public int getValidReadLength(int index, int begin, int length) {
+        int expectedReadEnd = this.calculateStartingPosition(index, begin) + length;
+        if(expectedReadEnd > this.getLength()){
+            return (int) (this.getLength() - this.calculateStartingPosition(index, begin)); //limit the read to length of file
+        } else {
+            return length;
+        }
+    }
 }
