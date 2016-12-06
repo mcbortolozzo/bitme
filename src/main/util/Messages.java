@@ -9,7 +9,8 @@ public enum Messages {
     PEER_CONNECTION_AUTO_CREATE("Trying to connect to other peer"), SEND_HANDSHAKE("Sending Handshake"), SEND_BITFIELD("Sending Bitfield"),
     SEND_STATE_CHANGE("Sending State Change Message"),
     PEER_SHUTDOWN("Closing peer connection"), SOCKET_CLOSE_FAIL("Failed to close socket, ignoring..."),
-    SOCKET_READ_FAIL("Failed to read from peer socket, closing connection"), SOCKET_WRITE_FAIL("Failed to write from peer socket, closing connection");
+    SOCKET_READ_FAIL("Failed to read from peer socket, closing connection"), SOCKET_WRITE_FAIL("Failed to write from peer socket, closing connection"),
+    FAILED_CONNECT_PEER("Failed to connect to Peer");
 
     private final String text;
 

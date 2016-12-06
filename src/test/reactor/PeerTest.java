@@ -42,7 +42,7 @@ public class PeerTest {
         validHandshake.put((byte) pstrlen);
         validHandshake.put(TorrentProtocolHelper.PROTOCOL_VERSION.getBytes(StandardCharsets.ISO_8859_1));
         for(int i = 0; i < 8; i ++) validHandshake.put((byte) 0);
-        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", client.getSelector());
         validHandshake.put(this.torrentFile.getTorrentId().getBytes());
         validHandshake.put(TestUtil.PEER_ID.getBytes(StandardCharsets.ISO_8859_1));
     }

@@ -38,7 +38,7 @@ public class StateChangeRequestTest {
     @Before
     public void setUp() throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.client = new Client(9999);
-        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", client.getSelector());
 
     }
 

@@ -42,7 +42,7 @@ public class BitfieldRequestTest {
     @Before
     public void setUp() throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.client = new Client(9999);
-        TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", client.getSelector());
         this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
         this.bitfield = new Bitfield(this.torrentFile);
     }

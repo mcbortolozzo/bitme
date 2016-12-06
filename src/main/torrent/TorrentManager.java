@@ -14,6 +14,7 @@ import main.tracker.TrackerHelper;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
@@ -49,9 +50,9 @@ public class TorrentManager {
         return this.torrentList.get(torrentId);
     }
 
-    public TorrentFile addTorrent(String filePath, String saveFileFolder) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+    public TorrentFile addTorrent(String filePath, String saveFileFolder, Selector selector) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         TorrentFileInfo fileInfo = readFileInfo(filePath, saveFileFolder);
-        TorrentFile torrentFile = new TorrentFile(filePath, fileInfo);
+        TorrentFile torrentFile = new TorrentFile(filePath, fileInfo, selector);
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }

@@ -31,7 +31,7 @@ public class TorrentBlockTest {
         expectedBuffer.put(Files.readAllBytes(Paths.get("resource/files/testFile1")));
         expectedBuffer.put(Files.readAllBytes(Paths.get("resource/files/testFile2")));
 
-        TorrentFile tf = TorrentManager.getInstance().addTorrent("resource/torrent/mtest.torrent", "resource/files/");
+        TorrentFile tf = TorrentManager.getInstance().addTorrent("resource/torrent/mtest.torrent", "resource/files/", null);
         TorrentBlock tb = tf.getBlockInfo(0, 0, 257 + 257);
         ByteBuffer bb = tb.readFileBlock();
 

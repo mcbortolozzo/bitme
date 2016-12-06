@@ -13,6 +13,7 @@ import main.util.Messages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
@@ -41,6 +42,8 @@ public class Peer{
     Logger logger = Logger.getLogger(Peer.class.getName());
 
     private PeerConnection peerConnection;
+    private String peerIp;
+    private int peerPort;
 
     private TorrentFile torrentFile;
     private HashId otherPeerId;
@@ -78,8 +81,10 @@ public class Peer{
      * @param destAddr the address of the remote peer used for connection
      * @throws IOException thrown from peerConnection
      */
-    public Peer(Selector selector, TorrentFile torrentFile, SocketAddress destAddr) throws IOException {
+    public Peer(Selector selector, TorrentFile torrentFile, InetSocketAddress destAddr) throws IOException {
         logger.log(Level.FINE, Messages.PEER_CONNECTION_AUTO_CREATE.getText());
+        this.peerIp = destAddr.getHostName();
+        this.peerPort = destAddr.getPort();
         this.torrentFile = torrentFile;
         this.torrentFile.addPeer(this);
         this.localPeerId = torrentFile.getPeerId();
@@ -87,6 +92,7 @@ public class Peer{
         this.peerConnection = new PeerConnection(selector, destAddr, this);
         this.lastContact = Date.from(Instant.now());
         this.launchSpeedMeasurement();
+        this.sendHandshake();
     }
 
     private void launchSpeedMeasurement() {
@@ -246,11 +252,12 @@ public class Peer{
      * Closes this connection and updates the torrent file by removing the peer from it
      */
     public void shutdown() {
-        logger.log(Level.FINE, Messages.PEER_SHUTDOWN.getText() + " - " + this.getOtherPeerId());
+        logger.log(Level.INFO, Messages.PEER_SHUTDOWN.getText() + " - other peer: " + this.getOtherPeerId());
         if(rateCalculationFuture != null)
             rateCalculationFuture.cancel(true);
         this.peerConnection.shutdown();
-        this.torrentFile.removePeer(this);
+        if(this.torrentFile != null)
+            this.torrentFile.removePeer(this);
     }
 
     public void addUploaded(int amount) {
@@ -261,6 +268,13 @@ public class Peer{
         this.downloaded += amount;
     }
 
+    public String getPeerIp() {
+        return peerIp;
+    }
+
+    public int getPeerPort() {
+        return peerPort;
+    }
 
     private class SpeedRateCalculations implements Runnable {
         private int lastUpload = 0;
