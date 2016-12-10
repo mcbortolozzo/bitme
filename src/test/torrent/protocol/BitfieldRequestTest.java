@@ -1,5 +1,6 @@
 package test.torrent.protocol;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.Client;
 import main.peer.Bitfield;
 import main.peer.Peer;
@@ -16,6 +17,7 @@ import test.util.TestUtil;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.util.BitSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -38,9 +40,9 @@ public class BitfieldRequestTest {
     private Bitfield bitfield;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.client = new Client(9999);
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_COUNT);
+        TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", client.getSelector());
         this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
         this.bitfield = new Bitfield(this.torrentFile);
     }
@@ -51,14 +53,14 @@ public class BitfieldRequestTest {
         bitfieldBuffer.flip();
         BitfieldRequest bitfieldRequest = new BitfieldRequest(bitfieldBuffer);
         assertEquals(5, bitfieldRequest.getMessageType());
-        assertEquals(TorrentProtocolHelper.BITFIELD_INITIAL_LENGHT + TestUtil.PIECE_COUNT,
+        assertEquals(TorrentProtocolHelper.BITFIELD_INITIAL_LENGHT + 1,
                 bitfieldRequest.getMessageLength());
     }
 
     @Test
     public void bitfieldProcessingTest() {
         Random rnd = new Random();
-        byte[] randomBytes = new byte[TestUtil.PIECE_COUNT/8];
+        byte[] randomBytes = new byte[1];
         rnd.nextBytes(randomBytes);
         BitSet bitset = BitSet.valueOf(randomBytes);
 
@@ -72,7 +74,7 @@ public class BitfieldRequestTest {
         requests.add(bitfieldRequest);
         Peer p1 = TestUtil.processRequests(requests, client, torrentFile);
 
-        assertEquals(TestUtil.PIECE_COUNT,
+        assertEquals(1,
                 p1.getBitfield().getBitfieldLength());
         assertEquals(bitset, p1.getBitfield().getBitfield());
     }

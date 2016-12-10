@@ -1,5 +1,6 @@
 package test.torrent.protocol;
 
+import com.hypirion.bencode.BencodeReadException;
 import main.Client;
 import main.peer.Peer;
 import main.peer.PeerConnection;
@@ -17,6 +18,7 @@ import test.util.TestUtil;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,10 +37,9 @@ public class HaveRequestTest {
     private TorrentFile torrentFile;
 
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.client = new Client(9999);
-        TorrentManager.getInstance().addTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()), TestUtil.PIECE_COUNT);
-        this.torrentFile = TorrentManager.getInstance().retrieveTorrent(new HashId(TestUtil.TORRENT_ID.getBytes()));
+        this.torrentFile = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", client.getSelector());
     }
 
     @Test

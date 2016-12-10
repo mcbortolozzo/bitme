@@ -34,6 +34,7 @@ public class RequestRequest extends NonHandshakeRequest {
     public void processRequest() {
         try {
             ByteBuffer pieceBuffer = this.peer.retrieveDataBlock(pieceIndex, begin, length);
+            this.peer.addUploaded(this.length);
             peer.sendMessage(TorrentProtocolHelper.createPiece(this.pieceIndex, this.begin, pieceBuffer));
         } catch (IOException e) {
             logger.log(Level.INFO, Messages.REQUEST_PROCESS_FAIL.getText());
