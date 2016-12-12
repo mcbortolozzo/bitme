@@ -30,8 +30,7 @@ public class PieceRequest extends NonHandshakeRequest {
     @Override
     public void processRequest() {
         try { //TODO update using new pieceManager
-            this.peer.writeDataBlock(pieceIndex, begin, block);
-            boolean pieceDone = this.peer.verifyPieceHash(pieceIndex);
+            boolean pieceDone = this.peer.receivePieceBlock(this.pieceIndex, this.begin, this.block);
             if(pieceDone){
                 this.peer.setHavePiece(pieceIndex);
                 this.peer.sendHave(pieceIndex);

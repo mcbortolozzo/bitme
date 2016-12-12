@@ -241,6 +241,10 @@ public class TorrentFile {
         return this.scheduledExecutor;
     }
 
+    public boolean receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
+        return this.blockPieceManager.receiveBlock(pieceIndex, begin, block);
+    }
+
     private class TrackerUpdater implements Runnable {
 
         @Override
