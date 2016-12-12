@@ -5,14 +5,14 @@ import main.Client;
 import main.torrent.TorrentManager;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainWindow {
 
@@ -27,14 +27,12 @@ public class MainWindow {
 	public static void main(String[] args) {
         try {
             final Client c = new Client(Client.PORT);
-            EventQueue.invokeLater(new Runnable() {
-                public void run() {
-                    try {
-                        MainWindow window = new MainWindow(c);
-                        window.frmBitme.setVisible(true);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+            EventQueue.invokeLater(() -> {
+                try {
+                    MainWindow window = new MainWindow(c);
+                    window.frmBitme.setVisible(true);
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
             });
         } catch (IOException e) {
@@ -57,7 +55,7 @@ public class MainWindow {
 		frmBitme.setTitle("BitMe");
 		frmBitme.setBounds(100, 100, 450, 300);
 		frmBitme.setMinimumSize(new Dimension(650, 500));
-		frmBitme.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frmBitme.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 
 		JMenuBar menuBar = new JMenuBar();
@@ -67,17 +65,11 @@ public class MainWindow {
 		menuBar.add(mnFichier);
 
 		JMenuItem mntmCrerUnFichier = new JMenuItem("Créer un fichier torrent");
-        mnFichier.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) { MainWindow.this.createTorrentFile(); }
-        });
+        mnFichier.addActionListener(e -> MainWindow.this.createTorrentFile());
 		mnFichier.add(mntmCrerUnFichier);
 
 		JMenuItem mntmOuvrirUnFichier = new JMenuItem("Ouvrir un fichier torrent");
-		mntmOuvrirUnFichier.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				MainWindow.this.openTorrentFile();
-			}
-		});
+		mntmOuvrirUnFichier.addActionListener(e -> MainWindow.this.openTorrentFile());
 		mnFichier.add(mntmOuvrirUnFichier);
 
 		JMenuItem mntmOuvrirUnLien = new JMenuItem("Ouvrir un lien magnet");
@@ -88,41 +80,27 @@ public class MainWindow {
 		mnFichier.add(separator);
 
 		JMenuItem mntmFermerLaFentre = new JMenuItem("Fermer la fenêtre");
-		mntmFermerLaFentre.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) { System.exit(0); }
-        });
+		mntmFermerLaFentre.addActionListener(e -> System.exit(0));
 		mnFichier.add(mntmFermerLaFentre);
 
 		JMenu mndition = new JMenu("Édition");
 		menuBar.add(mndition);
 
 		JMenuItem mntmEffacer = new JMenuItem("Effacer");
-		mntmEffacer.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
-                updateActiveTorrents();
-            }
+		mntmEffacer.addActionListener(e -> {
+            ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+            updateActiveTorrents();
         });
 		mndition.add(mntmEffacer);
 
 		JMenuItem mntmToutSlectionner = new JMenuItem("Tout sélectionner");
-		mntmToutSlectionner.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount());
-            }
-        });
+		mntmToutSlectionner.addActionListener(e -> torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount()));
 		mndition.add(mntmToutSlectionner);
 
 		JMenuItem mntmToutDslectionner = new JMenuItem("Tout désélectionner");
-		mntmToutDslectionner.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                torrents.setRowSelectionInterval(0, 0);
-                torrents.getSelectionModel().removeIndexInterval(0, torrents.getModel().getRowCount());
-            }
+		mntmToutDslectionner.addActionListener(e -> {
+            torrents.setRowSelectionInterval(0, 0);
+            torrents.getSelectionModel().removeIndexInterval(0, torrents.getModel().getRowCount());
         });
 		mndition.add(mntmToutDslectionner);
 
@@ -169,7 +147,7 @@ public class MainWindow {
 		springLayout.putConstraint(SpringLayout.NORTH, buttonPanel, 0, SpringLayout.NORTH, frmBitme.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, buttonPanel, 0, SpringLayout.WEST, bottomPanel);
 		springLayout.putConstraint(SpringLayout.EAST, buttonPanel, 0, SpringLayout.EAST, bottomPanel);
-		//torrents.addKeyListener(new MyKeyListener());
+		torrents.addKeyListener(new MyKeyListener());
 		torrents.setFillsViewportHeight(true);
 
 
@@ -184,11 +162,7 @@ public class MainWindow {
 		buttonPanel.setLayout(sl_buttonPanel);
 
 		JButton btnCreatetorrent = new JButton("");
-		btnCreatetorrent.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				MainWindow.this.createTorrentFile();
-			}
-		});
+		btnCreatetorrent.addActionListener(e -> MainWindow.this.createTorrentFile());
 		btnCreatetorrent.setToolTipText("Créer un fichier Torrent");
 		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnCreatetorrent, 5, SpringLayout.NORTH, buttonPanel);
 		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnCreatetorrent, 5, SpringLayout.WEST, buttonPanel);
@@ -196,11 +170,7 @@ public class MainWindow {
 		buttonPanel.add(btnCreatetorrent);
 
 		JButton btnAddtorrent = new JButton("");
-		btnAddtorrent.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				MainWindow.this.openTorrentFile();
-			}
-		});
+		btnAddtorrent.addActionListener(e -> MainWindow.this.openTorrentFile());
 		btnAddtorrent.setToolTipText("Ajouter un fichier Torrent");
 		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnAddtorrent, 5, SpringLayout.NORTH, buttonPanel);
 		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnAddtorrent, 5, SpringLayout.EAST, btnCreatetorrent);
@@ -209,40 +179,43 @@ public class MainWindow {
 
 		JButton btnRemovetorrent = new JButton("");
 		btnRemovetorrent.setEnabled(false);
-		btnRemovetorrent.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
-                updateActiveTorrents();
-			}
-		});
+		btnRemovetorrent.addActionListener(e -> {
+            ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+            updateActiveTorrents();
+        });
 
-		torrents.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
+		torrents.getSelectionModel().addListSelectionListener(e -> {
+            if (torrents.getSelectedRow() == -1) {
+                btnRemovetorrent.setEnabled(false);
+                mntmEffacer.setEnabled(false);
+            } else {
+                btnRemovetorrent.setEnabled(true);
+                mntmEffacer.setEnabled(true);
+            }
+        });
 
-			@Override
-			public void valueChanged(ListSelectionEvent e) {
-				if (torrents.getSelectedRow() == -1) {
-                    btnRemovetorrent.setEnabled(false);
-                    mntmEffacer.setEnabled(false);
-                }
-				else {
-                    btnRemovetorrent.setEnabled(true);
-                    mntmEffacer.setEnabled(true);
-                }
-			}
-		});
-
-		mntmToutSlectionner.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount() - 1);
-			}
-		});
+		mntmToutSlectionner.addActionListener(e -> torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount() - 1));
 
 		sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
 		btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/removeFile.png")));
 		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnRemovetorrent, 5, SpringLayout.NORTH, buttonPanel);
 		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnRemovetorrent, 45, SpringLayout.EAST, btnAddtorrent);
 		buttonPanel.add(btnRemovetorrent);
+
+        applyKeyListner(this.frmBitme);
 	}
+
+	private List<Component> applyKeyListner(final Container c) {
+        Component[] comps = c.getComponents();
+        List<Component> compList = new ArrayList<>();
+        for (Component comp : comps) {
+            compList.add(comp);
+            comp.addKeyListener(new MyKeyListener());
+            if (comp instanceof Container)
+                compList.addAll(applyKeyListner((Container) comp));
+        }
+        return compList;
+    }
 
 	private void openTorrentFile() {
 		fc.setDialogTitle("Ouvrir un fichier Torrent");
@@ -295,29 +268,45 @@ public class MainWindow {
         nbActiveTransfers.setText(torrents.getModel().getRowCount() + " transfers");
     }
 
-	/* static class MyKeyListener extends KeyAdapter {
-		@Override
-		public void keyTyped(KeyEvent e) {
-			if (e.getKeyChar() == KeyEvent.VK_CAPS_LOCK ) {
-				// delete row method (when "delete" is typed)
-				System.out.println("Key \"Delete\" Typed");
-			}
-		}
+    enum ACTION { OPEN, CREATE, NONE}
+
+	class MyKeyListener extends KeyAdapter {
+
+	    private List<Integer> events = new ArrayList<>();
 
 		@Override
 		public void keyPressed(KeyEvent e) {
-			if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK ) {
-				// delete row method (when "delete" is pressed)
-				System.out.println("Key \"Delete\" Pressed");
-			}
+			this.events.add(e.getKeyCode());
+			boolean cmdPressed = false;
+            MainWindow.ACTION action = ACTION.NONE;
+			for (Integer event : events) {
+                if (event == KeyEvent.VK_META || KeyEvent.CTRL_MASK != 0)
+                    cmdPressed = true;
+                if (event == KeyEvent.VK_O)
+                    action = ACTION.OPEN;
+                if (event == KeyEvent.VK_C)
+                    action = ACTION.CREATE;
+            }
+            if (!cmdPressed)
+                return;
+			switch (action) {
+                case OPEN:
+                    MainWindow.this.openTorrentFile();
+                    this.events.clear();
+                    break;
+                case CREATE:
+                    MainWindow.this.createTorrentFile();
+                    this.events.clear();
+                    break;
+                case NONE:
+                    break;
+            }
+
 		}
 
 		@Override
 		public void keyReleased(KeyEvent e) {
-			if (e.getKeyCode() == KeyEvent.VK_CAPS_LOCK ) {
-				// delete row method (when "delete" is released)
-				System.out.println("Key \"Delete\" Released");
-			}
+            this.events.remove(this.events.indexOf(e.getKeyCode()));
 		}
-	}*/
+	}
 }
