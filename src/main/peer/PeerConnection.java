@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  */
 public class PeerConnection implements Runnable {
 
-    public static final int PEER_BUFFER_SIZE = 65532;
+    public static final int PEER_BUFFER_SIZE = 4 * 65532;
     Logger logger = Logger.getLogger(PeerConnection.class.getName());
 
     private final Object readLock = new Object(), writeLock = new Object();

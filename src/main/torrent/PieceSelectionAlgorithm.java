@@ -9,6 +9,8 @@ import main.torrent.protocol.requests.PieceRequest;
 
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Written by
@@ -19,7 +21,9 @@ import java.util.*;
  */
 public class PieceSelectionAlgorithm implements Runnable {
 
-    public static final int RUN_PERIOD = 1000; // in miliseconds;
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
+    public static final int RUN_PERIOD = 100; // in miliseconds;
     private static final int MAX_REQUESTS = 10;
 
     private List<Peer> peers;
@@ -67,32 +71,36 @@ public class PieceSelectionAlgorithm implements Runnable {
 
     @Override
     public void run() {
-        synchronized (this) {
-            LinkedList<Peer> peersWithPiece = new LinkedList<>();
-            if(blockPieceManager.getDownloadingPieces().isEmpty()) {
-                int index = blockPieceManager.getNotStartedPieces().get(0);
-                peersWithPiece = pieceDistribution.get(index);
-                if (peersWithPiece != null) {
-                    for (Peer p : peersWithPiece) {
-                        if (!p.isPeerChoking()) {
-                            blockPieceManager.beginDownloading(index, p);
-                            break;
-                        }
-                    }
-                }
-            } else {
-                for(int i: blockPieceManager.getDownloadingPieces().keySet()) {
-                    peersWithPiece = pieceDistribution.get(i);
-                    if(peersWithPiece != null) {
+        try {
+            synchronized (this) {
+                LinkedList<Peer> peersWithPiece = new LinkedList<>();
+                if (blockPieceManager.getDownloadingPieces().size() < MAX_REQUESTS && !blockPieceManager.getNotStartedPieces().isEmpty()) {
+                    int index = blockPieceManager.getNotStartedPieces().peek();
+                    peersWithPiece = pieceDistribution.get(index);
+                    if (peersWithPiece != null) {
                         for (Peer p : peersWithPiece) {
                             if (!p.isPeerChoking()) {
-                                blockPieceManager.continueDownloading(i, p);
+                                blockPieceManager.beginDownloading(blockPieceManager.getNotStartedPieces().pop(), p);
                                 break;
+                            }
+                        }
+                    }
+                } else {
+                    for (int i : blockPieceManager.getDownloadingPieces().keySet()) {
+                        peersWithPiece = pieceDistribution.get(i);
+                        if (peersWithPiece != null) {
+                            for (Peer p : peersWithPiece) {
+                                if (!p.isPeerChoking()) {
+                                    //blockPieceManager.continueDownloading(i, p);
+                                    break;
+                                }
                             }
                         }
                     }
                 }
             }
+        } catch (Exception e){
+            e.printStackTrace();
         }
     }
 }

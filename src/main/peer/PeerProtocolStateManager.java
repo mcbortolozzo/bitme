@@ -73,7 +73,8 @@ public class PeerProtocolStateManager {
     public boolean updateInterested(){
         BitSet differentialBitSet = (BitSet) this.remoteBitfield.getBitfield().clone();
         differentialBitSet.andNot(this.localBitfield.getBitfield());
-        this.setAmInterested(differentialBitSet.nextSetBit(0) != - 1);
+        int test = differentialBitSet.nextSetBit(0);
+        this.setAmInterested(differentialBitSet.nextSetBit(0) != -1);
         return this.getAmInterested();
     }
     //TODO implement methods (possibility to do something)

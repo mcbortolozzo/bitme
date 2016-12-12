@@ -324,8 +324,13 @@ public class Peer{
         return peerPort;
     }
 
-    public boolean receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
-        return this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
+    public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
+        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
+        if(pieceDone){
+            this.torrentFile.setHavePiece(pieceIndex);
+            this.sendHave(pieceIndex);
+            this.updateInterested();
+        }
     }
 
     private class SpeedRateCalculations implements Runnable {

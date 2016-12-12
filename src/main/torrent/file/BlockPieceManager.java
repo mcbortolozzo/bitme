@@ -8,7 +8,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+
 /**
  * Written by
  * Ricardo Atanazio S Carvalho
@@ -23,7 +26,7 @@ public class BlockPieceManager {
     TorrentFileInfo fileInfo;
     private HashMap<Integer, ArrayList<byte[]>> downloadingPieces;
     private Bitfield bitfield;
-    private ArrayList<Integer> notStartedPieces = new ArrayList<>();
+    private LinkedList<Integer> notStartedPieces = new LinkedList<>();
     private int nbPieces;
     private Long lengthPiece;
     private Long lengthFile;
@@ -58,15 +61,14 @@ public class BlockPieceManager {
         }
         synchronized (this) {
             if(index == nbPieces - 1) {
-                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(nbBlocksLastPiece));
+                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocksLastPiece, null)));
                 createAndSendAllRequest(index, p);
                 //createAndSendRequest(index, 0, lengthFile.intValue(), p);
             } else {
-                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(nbBlocks));
+                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocks, null)));
                 createAndSendAllRequest(index, p);
                 //createAndSendRequest(index, 0, BLOCK_SIZE, p);
             }
-            notStartedPieces.remove(index);
         }
     }
 
@@ -117,11 +119,19 @@ public class BlockPieceManager {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
-        downloadingPieces.get(index).add((int) Math.floor(begin/ BLOCK_SIZE), block);
-        if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
+        downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
+        if(isPieceComplete(downloadingPieces.get(index))) {
             return validateAndSavePiece(index);
         }
         return false;
+    }
+
+    private boolean isPieceComplete(ArrayList pieceBlocks){
+        for(Object bytes: pieceBlocks){
+            if(bytes == null)
+                return false;
+        }
+        return true;
     }
 
     public int getNumberBlocksFromPiece(int index) {
@@ -150,6 +160,7 @@ public class BlockPieceManager {
                 TorrentBlock tb = fileInfo.getFileBlock(index, 0, getPieceSizeFromIndex(index));
                 pieceBuffer.flip();
                 tb.writeFileBlock(pieceBuffer);
+                this.downloadingPieces.remove(index);
                 return true;
             } else {
                 downloadingPieces.remove(index);
@@ -163,7 +174,7 @@ public class BlockPieceManager {
         return downloadingPieces;
     }
 
-    public ArrayList<Integer> getNotStartedPieces() {
+    public LinkedList<Integer> getNotStartedPieces() {
         return notStartedPieces;
     }
 }
