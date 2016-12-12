@@ -2,7 +2,9 @@ package main.torrent.protocol.requests;
 
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Written by
@@ -26,6 +28,14 @@ public class PieceRequest extends NonHandshakeRequest {
 
     @Override
     public void processRequest() {
-        throw new UnsupportedOperationException();
+        try {
+            this.peer.writeDataBlock(pieceIndex, begin, block);
+            boolean pieceDone = this.peer.verifyPieceHash(pieceIndex);
+            if(pieceDone) this.peer.sendHave(pieceIndex);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 }

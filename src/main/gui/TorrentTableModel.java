@@ -1,10 +1,15 @@
 package main.gui;
 
+import com.hypirion.bencode.BencodeReadException;
+import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 
 import javax.swing.table.AbstractTableModel;
+import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,12 +18,14 @@ import java.util.List;
  */
 public class TorrentTableModel extends AbstractTableModel {
 
+    private Client c;
+
     private TorrentManager tManager;
     private List<TorrentFile> torrents;
 
     private String[] title = {"Nom", "Taille", "Progression", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up", "Ratio", "Temps Restant"};
 
-    public TorrentTableModel(TorrentManager manager) {
+    public TorrentTableModel(TorrentManager manager, Client c) {
         this.tManager = manager;
         this.torrents = new ArrayList<>();
         for (HashId id : this.tManager.getTorrentList().keySet())
@@ -53,19 +60,32 @@ public class TorrentTableModel extends AbstractTableModel {
 
     }
 
-    public void addTorrent(String path) {
-        // TODO Implement torrent add
-        this.fireTableDataChanged();
+    public void addTorrent(String path, String saveFolder) {
+        try {
+            System.out.println(new File(path).getParent());
+            this.tManager.addTorrent(path, new File(path).getParent(), c.getSelector());
+            this.fireTableDataChanged();
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (BencodeReadException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
+        for (HashId id : this.tManager.getTorrentList().keySet()) {
+            System.out.println("BOUMMMMMMMM");
+            torrents.add(this.tManager.getTorrentList().get(id));
+        }
         TorrentFile current = this.torrents.get(rowIndex);
         switch (columnIndex) {
             case 0: // Name
                 return current.getFileInfo().getName();
             case 1: // Taille
-                return prettySizePrint(current.getPieceSize() * current.getPieceCount());
+                return prettySizePrint(current.getFileInfo().getLength());
             case 2: // Progression
                 return prettySizePrint(current.getDownloaded());
             case 3: // Reçu
@@ -93,7 +113,9 @@ public class TorrentTableModel extends AbstractTableModel {
     protected String prettySizePrint(long value) {
         final long[] dividers = new long[] { T, G, M, K, 1 };
         final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
-        if(value < 1)
+        if (value == 0)
+            return "0 kb";
+        if (value < 0)
             throw new IllegalArgumentException("Invalid file size: " + value);
         String result = null;
         for(int i = 0; i < dividers.length; i++){

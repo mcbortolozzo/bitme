@@ -1,6 +1,7 @@
 package main.peer;
 
 import main.torrent.TorrentFile;
+import main.util.Utils;
 
 import java.nio.ByteBuffer;
 import java.util.BitSet;
@@ -65,5 +66,17 @@ public class Bitfield {
 
     public int getBitfieldLengthInBytes() {
         return (int) Math.ceil(this.getBitfieldLength()/8.0);
+    }
+
+    public static BitSet generateBitset(byte[] bitfieldBytes, int bitsetLength) {
+        BitSet bitset = new BitSet(bitsetLength);
+        for(int byteIndex = 0; byteIndex < Math.ceil(bitsetLength/8); byteIndex++){
+            for(int i = 0; i < 8; i ++){
+                byte bit = Utils.getBit(bitfieldBytes[byteIndex], i);
+                if(bit == 1)
+                    bitset.set(byteIndex * 8 + i);
+            }
+        }
+        return bitset;
     }
 }

@@ -14,6 +14,7 @@ import main.util.Messages;
 import org.omg.SendingContext.RunTime;
 import sun.util.logging.PlatformLogger;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -127,6 +128,7 @@ public class TorrentFile {
     }
 
     private void updateBitfield() throws IOException, NoSuchAlgorithmException {
+        this.fileInfo.verifyAndAllocateFiles();
         this.bitfield = new Bitfield(this.getPieceCount());
         List<TorrentBlock> pieces = new LinkedList<>();
         for(int i = 0; i < this.getPieceCount(); i++){
@@ -140,6 +142,10 @@ public class TorrentFile {
             }
             pieceIndex++;
         }
+    }
+
+    public void setHavePiece(int pieceIndex) {
+        this.bitfield.setHavePiece(pieceIndex);
     }
 
     public Bitfield getBitfield() {
