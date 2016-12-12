@@ -37,8 +37,8 @@ public class BlockPieceManager {
         this.lengthPiece = lengthPiece;
         this.lengthFile = lengthFile;
         this.lengthLastPiece = lengthFile - (nbPieces - 1)*lengthPiece;
-        this.nbBlocks = (int) Math.ceil(lengthPiece.intValue()/ BLOCK_SIZE);
-        this.nbBlocksLastPiece = (int) Math.ceil(lengthLastPiece.intValue()/ BLOCK_SIZE);
+        this.nbBlocks = (int) Math.ceil(lengthPiece.floatValue()/ BLOCK_SIZE);
+        this.nbBlocksLastPiece = (int) Math.ceil(lengthLastPiece.floatValue()/ BLOCK_SIZE);
         this.fileInfo = fileInfo;
 
         this.bitfield = bitfield;
@@ -74,8 +74,13 @@ public class BlockPieceManager {
         for(int i = 0; i < getNumberBlocksFromPiece(index) - 1; i++) {
             createAndSendRequest(index, i * BLOCK_SIZE, BLOCK_SIZE, p);
         }
-        createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
-                , lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
+        if(index != nbPieces - 1) {
+            createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
+                    , lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
+        } else {
+            createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
+                    , lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
+        }
 
     }
 

@@ -102,6 +102,10 @@ public class TorrentFile {
         pieceSelectionAlgorithm.updateAvailablePieces(bitfield, p);
     }
 
+    public synchronized void updatePiecesFromHave(int index, Peer p) {
+        pieceSelectionAlgorithm.updatePiecesFromHave(index, p);
+    }
+
     public HashId getTorrentId() {
         return torrentId;
     }

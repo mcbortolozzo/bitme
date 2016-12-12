@@ -247,6 +247,7 @@ public class Peer{
     public void setHavePiece(int pieceIndex) {
         this.bitfield.setHavePiece(pieceIndex);
         this.updateInterested();
+        torrentFile.updatePiecesFromHave(pieceIndex, this);
     }
 
     public boolean hasPiece(int pieceIndex) {
