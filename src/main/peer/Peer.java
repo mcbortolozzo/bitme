@@ -3,6 +3,7 @@ package main.peer;
 import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import main.Client;
 import main.torrent.HashId;
+import main.torrent.PieceSelectionAlgorithm;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 import main.torrent.file.TorrentBlock;
@@ -219,6 +220,7 @@ public class Peer{
     public void updateBitfield(BitSet bitfield) {
         this.bitfield.updateBitfield(bitfield);
         this.updateInterested();
+        torrentFile.updateAvailablePieces(this.bitfield, this);
     }
 
     public boolean updateInterested() {

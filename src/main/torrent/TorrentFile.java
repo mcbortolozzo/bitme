@@ -3,6 +3,7 @@ package main.torrent;
 import com.hypirion.bencode.BencodeReadException;
 import main.peer.Bitfield;
 import main.peer.Peer;
+import main.torrent.file.BlockPieceManager;
 import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
 import main.tracker.TrackerHelper;
@@ -16,8 +17,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.security.NoSuchAlgorithmException;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -54,6 +54,8 @@ public class TorrentFile {
 
     private List<Peer> peers = new LinkedList<>();
     private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
+    private PieceSelectionAlgorithm pieceSelectionAlgorithm;
+    private BlockPieceManager blockPieceManager;
 
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
 
@@ -66,21 +68,38 @@ public class TorrentFile {
         this.pieceSize = this.fileInfo.getPieceSize();
         this.selector = selector;
         this.updateBitfield();
+        this.blockPieceManager = new BlockPieceManager(pieceCount, pieceSize, this.fileInfo.getLength(), bitfield, fileInfo);
+        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo);
         this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+        this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void addPeer(Peer p) {
         this.peers.add(p);
         this.chokingAlgorithm.updatePeers(this.peers);
+        this.pieceSelectionAlgorithm.updatePeers(this.peers);
     }
 
     public void removePeer(Peer p) {
         this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
+        /*for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
+            if(p.hasPiece(i)) {
+                pieceDistribution.get(i).remove(p);
+                pieceQuantity.set(i, pieceQuantity.get(i) - 1);
+            }
+        }
+        this.pieceSelectionAlgorithm.updatePieceDistribution(pieceDistribution);
+        this.pieceSelectionAlgorithm.updatePieceQuantity(pieceQuantity);*/
+        this.pieceSelectionAlgorithm.updatePeers(peers);
     }
 
     public TorrentBlock getBlockInfo(int index, int begin, int length){
         return this.fileInfo.getFileBlock(index, begin, length);
+    }
+
+    public void updateAvailablePieces(Bitfield bitfield, Peer p) {
+        pieceSelectionAlgorithm.updateAvailablePieces(bitfield, p);
     }
 
     public HashId getTorrentId() {

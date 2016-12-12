@@ -45,7 +45,7 @@ public class Bitfield {
         this.bitfield.or(bitfield);
     }
 
-    public BitSet getBitfield() {
+    public synchronized BitSet getBitfield() {
         return bitfield;
     }
 
