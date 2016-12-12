@@ -3,7 +3,9 @@ package main.torrent.file;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /**
  * Written by
@@ -16,6 +18,7 @@ public class SingleFileInfo extends TorrentFileInfo {
     private Long len_file;
     private String md5sum;
 
+    Logger logger = Logger.getLogger(SingleFileInfo.class.getName());
     public SingleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         super(dict, saveFolder);
 
@@ -31,11 +34,17 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent(File file, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+    public Map<String, Object> generateTorrent(List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        if (file.size() == 1 ) {
+            this.information.put("length", file.get(0).length());
 
-        this.info.put("length", file.length());
-        return super.generateTorrent(file, announce, comment, piece_Length);
+        }
+        else {
+            logger.warning("this is not a single file");
+        }
+        return super.generateTorrent(file,directoryName, announce, comment, piece_Length);
     }
+
 
     public TorrentBlock getFileBlock(int index, int begin, int length) {
         int blockSize = this.getValidReadLength(index, begin, length);

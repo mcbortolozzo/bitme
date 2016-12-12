@@ -7,6 +7,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
@@ -55,20 +56,16 @@ public class MultipleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent(File file, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        Map<String, Object> torrent = super.generateTorrent( file,  announce,  comment, piece_Length);
+    public Map<String, Object> generateTorrent(List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
         List<Map<String, Object>> filesTorrent = new LinkedList<>();
-        for (SubFileStructure f : this.files) {
-            Map<String, Object> fi = new HashMap<String, Object>();
-            fi.put("length", f.length);
-            fi.put("path", f.path);
-            if(f.md5sum != null){
-                fi.put("md5sum", f.md5sum);
+        for (File f : file) {
+            for (Map<String, Object> fi : filesTorrent) {
+                fi.put("length", f.length());
+                fi.put("path", f.getPath());
             }
-            filesTorrent.add(fi);
-
         }
-        torrent.put("files", filesTorrent);
+        this.information.put("files", filesTorrent);
+        Map<String, Object> torrent = super.generateTorrent( file, directoryName,  announce,  comment, piece_Length);
         return torrent;
 
     }

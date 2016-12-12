@@ -26,7 +26,8 @@ public abstract class TorrentFileInfo {
     protected String filesSaveFolder;
 
     //The .torrent to create
-    private Map<String,Object> torrent;
+    protected Map<String,Object> torrent;
+    protected Map<String,Object> information;
 
     private Map<String,Object> dict;
     protected TreeMap<String,Object> info;
@@ -81,16 +82,16 @@ public abstract class TorrentFileInfo {
 
     protected abstract void prepareInfoField();
 
-    public Map<String, Object> generateTorrent(File file,String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+    public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
 
         this.torrent = new HashMap<String,Object>();
-        this.info = new TreeMap<String, Object>();
+        this.information = new HashMap<String, Object>();
 
-        this.info.put ("name",file.getName());
-        this.info.put("piece length",piece_Length);
+        this.information.put ("name",DirectoryName);
+        this.information.put("piece length",piece_Length);
         this.hash_pieces(file,piece_Length);
-        this.info.put("pieces",this.hash_pieces);
+        this.information.put("pieces",this.hash_pieces);
         this.torrent.put("info",this.info);
         this.torrent.put("announce",announce);
         this.torrent.put("announce-list",this.l_announce);
@@ -103,27 +104,29 @@ public abstract class TorrentFileInfo {
     }
 
 
-    public void hash_pieces ( File file, int piece_length ) throws IOException, NoSuchAlgorithmException {
-        FileInputStream f = new FileInputStream(file);
-        ByteBuffer buffer = ByteBuffer.allocate(piece_length);
-        FileChannel channel = f.getChannel();
+    public void hash_pieces ( List<File> file, int piece_length ) throws IOException, NoSuchAlgorithmException {
         this.hash_pieces = "";
-        while ( channel.read(buffer) > 0){
-            byte [] piece= Utils.calculateHash(buffer.array());
-            this.hash_pieces += piece.toString();
-        }
-        if (buffer.position() > 0){
-            buffer.limit(buffer.position());
-            buffer.position(0);
-            byte [] piece= Utils.calculateHash(buffer.array());
-            this.hash_pieces += piece.toString();
-        }
+        for ( File f : file ) {
+            FileInputStream inputf = new FileInputStream(f);
+            ByteBuffer buffer = ByteBuffer.allocate(piece_length);
+            FileChannel channel = inputf.getChannel();
 
+            while (channel.read(buffer) > 0) {
+                byte[] piece = Utils.calculateHash(buffer.array());
+                this.hash_pieces += piece.toString();
+            }
+            if (buffer.position() > 0) {
+                buffer.limit(buffer.position());
+                buffer.position(0);
+                byte[] piece = Utils.calculateHash(buffer.array());
+                this.hash_pieces += piece.toString();
+            }
+        }
 
     }
 
-    public FileOutputStream generateFile(String torrentPath, File file,String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        this.generateTorrent(file, announce, comment, piece_Length);
+    public FileOutputStream generateFile(String torrentPath, List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        this.generateTorrent(file,directoryName, announce, comment, piece_Length);
         return this.bencodedFile(torrentPath);
     }
 
