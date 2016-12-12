@@ -59,13 +59,24 @@ public class BlockPieceManager {
         synchronized (this) {
             if(index == nbPieces - 1) {
                 downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(nbBlocksLastPiece));
-                createAndSendRequest(index, 0, lengthFile.intValue(), p);
+                createAndSendAllRequest(index, p);
+                //createAndSendRequest(index, 0, lengthFile.intValue(), p);
             } else {
                 downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(nbBlocks));
-                createAndSendRequest(index, 0, BLOCK_SIZE, p);
+                createAndSendAllRequest(index, p);
+                //createAndSendRequest(index, 0, BLOCK_SIZE, p);
             }
             notStartedPieces.remove(index);
         }
+    }
+
+    public void createAndSendAllRequest(int index, Peer p) {
+        for(int i = 0; i < getNumberBlocksFromPiece(index) - 1; i++) {
+            createAndSendRequest(index, i * BLOCK_SIZE, BLOCK_SIZE, p);
+        }
+        createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
+                , lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
+
     }
 
     public void continueDownloading(int index, Peer p) {
