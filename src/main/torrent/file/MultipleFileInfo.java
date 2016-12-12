@@ -39,6 +39,12 @@ public class MultipleFileInfo extends TorrentFileInfo {
             return pathString;
         }
 
+        public String getFullPath() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(filesSaveFolder).append('/').append(name).append('/').append(this.getPath());
+            return sb.toString();
+        }
+
     }
 
     public MultipleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
@@ -105,7 +111,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
                 int blockReadLength;
                 if (lengthLeft <= (f.length - positionInBlock)) blockReadLength = lengthLeft;
                 else blockReadLength = Math.toIntExact(f.length);
-                return new FileBlockInfo(this.filesSaveFolder + '/' + f.getPath(), (long) positionInBlock, blockReadLength);
+                return new FileBlockInfo(f.getFullPath(), (long) positionInBlock, blockReadLength);
             }
             fileBegin = currentPosition;
         }
@@ -131,7 +137,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
     @Override
     public void verifyAndAllocateFiles() {
         for(SubFileStructure file : this.files){
-            Utils.generateFile(this.filesSaveFolder + '/' + file.getPath(), file.length);
+            Utils.generateFile(file.getFullPath(), file.length);
         }
     }
 }

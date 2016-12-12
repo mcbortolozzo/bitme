@@ -103,7 +103,7 @@ public class TrackerHelper {
 
     private static String composeTrackerRequest(List<HttpField> messageArgs, String trackerURL) throws MalformedURLException {
         StringBuilder request = new StringBuilder();
-        request.append(trackerURL).append(ANNOUNCE_PREFIX).append("?");
+        request.append(trackerURL).append("?");
         for(HttpField arg : messageArgs){
             request.append(arg.toString());
             if(messageArgs.indexOf(arg) < messageArgs.size() - 1){

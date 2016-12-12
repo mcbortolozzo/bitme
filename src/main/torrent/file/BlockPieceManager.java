@@ -118,7 +118,7 @@ public class BlockPieceManager {
             return false;
         }
         downloadingPieces.get(index).add((int) Math.floor(begin/ BLOCK_SIZE), block);
-        if((int) Math.floor((begin + block.length)/ BLOCK_SIZE) == getNumberBlocksFromPiece(index)) {
+        if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
             return validateAndSavePiece(index);
         }
         return false;

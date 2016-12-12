@@ -53,7 +53,7 @@ public class Utils {
     }
 
     private static List<Byte> generateValidURLByteList() {
-        byte[] validBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ.-_~".getBytes();
+        byte[] validBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ$-_.+!*'(),".getBytes();
         List<Byte> validList = new LinkedList<>();
         for(byte b: validBytes){
             validList.add(b);

@@ -56,10 +56,14 @@ public class FileBlockInfo {
      * @throws IOException throws exception in case of failure to read the file or buffer
      */
     public void writeFileData(ByteBuffer outputBuffer) throws IOException {
+        ByteBuffer localBuffer = ByteBuffer.allocate(this.localBlockLength);
+        byte[] bufferData = new byte[this.localBlockLength];    //gj java
+        outputBuffer.get(bufferData);
+        localBuffer.put(bufferData);
+        localBuffer.flip();
         FileOutputStream fOut = new FileOutputStream(filePath);
         FileChannel channel = fOut.getChannel();
-        channel.position(localFileBegin);
-        channel.write(outputBuffer, localBlockLength);
+        channel.write(localBuffer, localFileBegin);
         channel.close();
         fOut.close();
     }
