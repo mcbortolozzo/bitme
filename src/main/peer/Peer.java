@@ -218,10 +218,20 @@ public class Peer{
 
     public void updateBitfield(BitSet bitfield) {
         this.bitfield.updateBitfield(bitfield);
+        this.updateInterested();
     }
 
-    public boolean isInterested() {
-        return this.stateManager.updateInterested();
+    public boolean updateInterested() {
+        boolean prevInterested = this.stateManager.getAmInterested();
+        boolean currentInterested = this.stateManager.updateInterested();
+        if(currentInterested != prevInterested){
+            if(currentInterested){
+                this.sendStateChange(RequestTypes.INTERESTED);
+            } else {
+                this.sendStateChange(RequestTypes.NOT_INTERESTED);
+            }
+        }
+        return currentInterested;
     }
 
     public boolean isPeerChoking() {
@@ -234,6 +244,7 @@ public class Peer{
 
     public void setHavePiece(int pieceIndex) {
         this.bitfield.setHavePiece(pieceIndex);
+        this.updateInterested();
     }
 
     public boolean hasPiece(int pieceIndex) {

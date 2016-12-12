@@ -28,9 +28,6 @@ public class BitfieldRequest extends NonHandshakeRequest {
     public void processRequest() {
         this.bitfield = Bitfield.generateBitset(this.bitfieldBytes, this.peer.getBitfield().getBitfieldLength());
         this.peer.updateBitfield(this.bitfield);
-        if(this.peer.isInterested()){
-            this.peer.sendStateChange(RequestTypes.INTERESTED);
-        }
     }
 }
 
