@@ -4,8 +4,10 @@ import com.hypirion.bencode.BencodeWriter;
 import main.util.Utils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
@@ -54,20 +56,16 @@ public class MultipleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
-        Map<String, Object> torrent = super.generateTorrent();
+    public Map<String, Object> generateTorrent(List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
         List<Map<String, Object>> filesTorrent = new LinkedList<>();
-        for (SubFileStructure f : this.files) {
-            Map<String, Object> file = new HashMap<String, Object>();
-            file.put("length", f.length);
-            file.put("path", f.path);
-            if(f.md5sum != null){
-                file.put("md5sum", f.md5sum);
+        for (File f : file) {
+            for (Map<String, Object> fi : filesTorrent) {
+                fi.put("length", f.length());
+                fi.put("path", f.getPath());
             }
-            filesTorrent.add(file);
-
         }
-        torrent.put("files", filesTorrent);
+        this.information.put("files", filesTorrent);
+        Map<String, Object> torrent = super.generateTorrent( file, directoryName,  announce,  comment, piece_Length);
         return torrent;
 
     }
@@ -125,8 +123,8 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     @Override
     protected void prepareInfoField() {
-        List<Map> oldFiles = (List<Map>) this.info.get("files");
-        ArrayList<Map<String, Object>> filesList = oldFiles.stream().map((Function<Map, TreeMap<String, Object>>) TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Map<String, Object>> oldFiles = (ArrayList<Map<String, Object>>) this.info.get("files");
+        ArrayList<Map<String, Object>> filesList = oldFiles.stream().map(TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
         this.info.put("files", filesList);
     }
 

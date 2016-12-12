@@ -1,4 +1,4 @@
-package torrent.file;
+package test.torrent.file;
 
 import com.hypirion.bencode.BencodeReadException;
 import main.torrent.TorrentFile;
