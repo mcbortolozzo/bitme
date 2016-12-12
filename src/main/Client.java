@@ -52,7 +52,8 @@ public class Client implements Runnable {
     public static void main(String args[]) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         Client client = new Client(PORT);
         client.run();
-        //TorrentManager.getInstance().addTorrent("/home/marcelo/Documents/multipiece.torrent", "/home/marcelo/Downloads");
-        TorrentManager.getInstance().addTorrent("/home/aahdi/Bureau/hello.torrent", "/home/aahdi/Téléchargements");
+
+        TorrentManager.getInstance().addTorrent("/home/marcelo/Documents/multipiece.torrent", "/home/marcelo/Downloads", client.getSelector());
+
     }
 }

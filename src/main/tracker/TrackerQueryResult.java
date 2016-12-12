@@ -47,7 +47,41 @@ public class TrackerQueryResult {
             this.incompletePeers = (Long) dict.get("incomplete");
             this.peerInfo = TrackerPeerInfo.generatePeerInfo(dict.get("peers"));
         }
-
     }
 
+    public boolean isFailure() {
+        return failure;
+    }
+
+    public String getFailureReason() {
+        return failureReason;
+    }
+
+    public String getWarningMessage() {
+        return warningMessage;
+    }
+
+    public Long getInterval() {
+        return interval;
+    }
+
+    public Long getMinInterval() {
+        return minInterval;
+    }
+
+    public String getTrackerId() {
+        return trackerId;
+    }
+
+    public Long getCompletePeers() {
+        return completePeers;
+    }
+
+    public Long getIncompletePeers() {
+        return incompletePeers;
+    }
+
+    public TrackerPeerInfo getPeerInfo() {
+        return peerInfo;
+    }
 }

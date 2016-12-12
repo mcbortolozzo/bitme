@@ -75,11 +75,12 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     @Override
     public TorrentBlock getFileBlock(int index, int begin, int length) {
-        TorrentBlock torrentBlock = new TorrentBlock(index, begin, length);
+        int blockSize = this.getValidReadLength(index, begin, length);
+        TorrentBlock torrentBlock = new TorrentBlock(index, begin, blockSize);
         int startingPosition = (int) (index * this.pieceSize + begin);
         int position = startingPosition;
-        while(position - startingPosition < length){ //read < length
-            int lengthLeft =length - position - startingPosition;
+        while(position - startingPosition < blockSize){ //read < length
+            int lengthLeft = blockSize - position - startingPosition;
             FileBlockInfo nextBlock = getNextBlock(position, lengthLeft);
             if(nextBlock != null){
                 position += nextBlock.getLength();
@@ -125,8 +126,8 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     @Override
     protected void prepareInfoField() {
-        List<Map> oldFiles = (List<Map>) this.info.get("files");
-        ArrayList<Map<String, Object>> filesList = oldFiles.stream().map((Function<Map, TreeMap<String, Object>>) TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
+        ArrayList<Map<String, Object>> oldFiles = (ArrayList<Map<String, Object>>) this.info.get("files");
+        ArrayList<Map<String, Object>> filesList = oldFiles.stream().map(TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
         this.info.put("files", filesList);
     }
 }

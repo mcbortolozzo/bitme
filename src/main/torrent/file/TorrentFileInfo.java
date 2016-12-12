@@ -3,23 +3,13 @@ package main.torrent.file;
 import com.hypirion.bencode.BencodeWriter;
 import main.util.Utils;
 
-
 import java.io.*;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 
 /**
@@ -154,9 +144,12 @@ public abstract class TorrentFileInfo {
         return this.hash_pieces.length() / 20;
     }
 
+    public String getName() { return this.name; }
+
     public String getTrackerAnnounce() {
         return this.announce;
     }
+
 
     /**
      * Obtains the Read/Write structure helper, with one implementation for each of the torrent types
@@ -178,5 +171,18 @@ public abstract class TorrentFileInfo {
 
     public Long getPieceSize() {
         return pieceSize;
+    }
+
+    protected int calculateStartingPosition(int index, int begin){
+        return (int) (index * this.pieceSize + begin);
+    }
+
+    public int getValidReadLength(int index, int begin, int length) {
+        int expectedReadEnd = this.calculateStartingPosition(index, begin) + length;
+        if(expectedReadEnd > this.getLength()){
+            return (int) (this.getLength() - this.calculateStartingPosition(index, begin)); //limit the read to length of file
+        } else {
+            return length;
+        }
     }
 }

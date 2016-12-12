@@ -13,10 +13,12 @@ import java.util.ArrayList;
  */
 public abstract class TrackerPeerInfo {
 
-    protected class PeerTrackerData {
-        private HashId peerId;
-        private String peerIp;
-        private Long peerPort;
+    protected ArrayList<PeerTrackerData> peerList;
+
+    public class PeerTrackerData {
+        public HashId peerId;
+        public String peerIp;
+        public Long peerPort;
 
         public PeerTrackerData(HashId peerId, String peerIp, Long peerPort) {
             this.peerId = peerId;
@@ -35,5 +37,9 @@ public abstract class TrackerPeerInfo {
             return new TrackerPeerDictionary((ArrayList) peers);
         else
             return null;// TODO implement binary model (find an example of it first)
+    }
+
+    public ArrayList<PeerTrackerData> getPeers(){
+        return peerList;
     }
 }

@@ -14,8 +14,6 @@ import java.util.HashMap;
  */
 public class TrackerPeerDictionary extends TrackerPeerInfo {
 
-    private ArrayList<PeerTrackerData> peerList;
-
     public TrackerPeerDictionary(ArrayList peers) {
         peerList = new ArrayList<>();
         for(Object p : peers){

@@ -1,4 +1,4 @@
-package tracker;
+package test.tracker;
 
 import com.hypirion.bencode.BencodeReadException;
 import main.torrent.TorrentFile;
@@ -21,7 +21,7 @@ public class TrackerHelperTest {
 
     @Test
     public void trackerRequestGenerationTest() throws IOException, BencodeReadException, NoSuchAlgorithmException {
-        TorrentFile tf = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/");
+        TorrentFile tf = TorrentManager.getInstance().addTorrent("resource/torrent/test.torrent", "resource/files/", null);
         String expectedRequest = "http://127.0.0.1/announce?port=9999&info_hash=g%ffqp%26%f2e%0c%09%b5B%a2%2b2%91%20%84%c9%ad%8f"
                 + "&peer_id=" + tf.getPeerId().asURLEncodedString()
                 + "&uploaded=" + tf.getUploaded() + "&downloaded=" + tf.getDownloaded() + "&left=" + tf.getLeft()
