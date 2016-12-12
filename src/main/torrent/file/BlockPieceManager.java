@@ -75,7 +75,7 @@ public class BlockPieceManager {
             createAndSendRequest(index, i * BLOCK_SIZE, BLOCK_SIZE, p);
         }
         createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
-                , lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
+                , lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
 
     }
 
