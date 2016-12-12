@@ -113,7 +113,7 @@ public class BlockPieceManager {
             return false;
         }
         downloadingPieces.get(index).add((int) Math.floor(begin/ BLOCK_SIZE), block);
-        if(Math.floor(begin/ BLOCK_SIZE) == getNumberBlocksFromPiece(index)) {
+        if((int) Math.floor((begin + block.length)/ BLOCK_SIZE) == getNumberBlocksFromPiece(index)) {
             return validateAndSavePiece(index);
         }
         return false;
