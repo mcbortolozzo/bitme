@@ -245,7 +245,7 @@ public class MainWindow {
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
 			System.out.println("Opening: " + file.getAbsolutePath());
-			((TorrentTableModel)torrents.getModel()).addTorrent(file.getAbsolutePath());
+			((TorrentTableModel)torrents.getModel()).addTorrent(file.getAbsolutePath(), file.getAbsolutePath());
 		} else {
 			System.out.println("Open command cancelled by user.");
 		}
