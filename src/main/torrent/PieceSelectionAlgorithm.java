@@ -45,8 +45,16 @@ public class PieceSelectionAlgorithm implements Runnable {
                 pieceQuantity.set(i, pieceQuantity.get(i) + 1);
             }
         }
-        updatePieceDistribution(pieceDistribution);
-        updatePieceQuantity(pieceQuantity);
+    }
+
+    public synchronized void updatePiecesFromHave(int index, Peer p) {
+        if(index >= p.getBitfield().getBitfieldLength()) {
+            throw new IndexOutOfBoundsException();
+            //TODO Treat exception
+        }
+        pieceDistribution.computeIfAbsent(index, k -> new LinkedList<Peer>());
+        pieceDistribution.get(index).add(p);
+        pieceQuantity.set(index, pieceQuantity.get(index) + 1);
     }
 
     public synchronized void updatePieceDistribution(HashMap<Integer, LinkedList<Peer>> pieceDistribution) {
