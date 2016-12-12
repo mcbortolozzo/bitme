@@ -10,7 +10,7 @@ public enum Messages {
     SEND_STATE_CHANGE("Sending State Change Message"), SEND_HAVE("Sending Have Messages"),
     PEER_SHUTDOWN("Closing peer connection"), SOCKET_CLOSE_FAIL("Failed to close socket, ignoring..."),
     SOCKET_READ_FAIL("Failed to read from peer socket, closing connection"), SOCKET_WRITE_FAIL("Failed to write from peer socket, closing connection"),
-    FAILED_CONNECT_PEER("Failed to connect to Peer");
+    FAILED_CONNECT_PEER("Failed to connect to Peer"), TRACKER_UNREACHABLE("Can't Connect to Tracker"), TRACKER_CONNECT_SUCCCESS("Connected to tracker, rescheduling for default period");
 
     private final String text;
 
