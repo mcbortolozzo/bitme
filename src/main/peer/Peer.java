@@ -1,5 +1,6 @@
 package main.peer;
 
+import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
@@ -8,9 +9,11 @@ import main.torrent.file.TorrentBlock;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
+import main.util.Messages;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
@@ -19,23 +22,39 @@ import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.BitSet;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Created by marcelo on 07/11/16.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class Peer{
 
+    private static final Long MEASUREMENT_PERIOD = 1000l; // in milliseconds
+
+    Logger logger = Logger.getLogger(Peer.class.getName());
+
     private PeerConnection peerConnection;
+    private String peerIp;
+    private int peerPort;
 
     private TorrentFile torrentFile;
     private HashId otherPeerId;
     private HashId localPeerId;
 
-    private int uploaded;
-    private int downloaded;
+    private SpeedRateCalculations speedRateCalculations = new SpeedRateCalculations();
+    ScheduledFuture rateCalculationFuture;
+    private int uploaded = 0;
+    private LinkedList<Integer> uploadBytesLog = new LinkedList<>();
+    private int downloaded = 0;
+    private LinkedList<Integer> downloadBytesLog = new LinkedList<>();
 
     private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
     private Bitfield bitfield;
@@ -51,6 +70,7 @@ public class Peer{
      * @throws IOException thrown from peerConnection
      */
     public Peer(SocketChannel socket, Selector selector) throws IOException {
+        logger.log(Level.FINE, Messages.PEER_CONNECTION_ACCEPT.getText());
         this.peerConnection = new PeerConnection(socket, selector, this);
     }
 
@@ -61,13 +81,22 @@ public class Peer{
      * @param destAddr the address of the remote peer used for connection
      * @throws IOException thrown from peerConnection
      */
-    public Peer(Selector selector, TorrentFile torrentFile, SocketAddress destAddr) throws IOException {
+    public Peer(Selector selector, TorrentFile torrentFile, InetSocketAddress destAddr) throws IOException {
+        logger.log(Level.FINE, Messages.PEER_CONNECTION_AUTO_CREATE.getText());
+        this.peerIp = destAddr.getHostName();
+        this.peerPort = destAddr.getPort();
         this.torrentFile = torrentFile;
         this.torrentFile.addPeer(this);
         this.localPeerId = torrentFile.getPeerId();
         this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
         this.lastContact = Date.from(Instant.now());
+        this.launchSpeedMeasurement();
+        this.sendHandshake();
+    }
+
+    private void launchSpeedMeasurement() {
+        rateCalculationFuture = this.torrentFile.getExecutor().scheduleAtFixedRate(speedRateCalculations, 0, MEASUREMENT_PERIOD, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -109,25 +138,40 @@ public class Peer{
      * Creates and sends a handshake message based on the information this peer has
      */
     public void sendHandshake(){
+        logger.log(Level.FINE, Messages.SEND_HANDSHAKE.getText());
         this.handshakeSent = true;
         ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentFile.getTorrentId(), this.getLocalPeerId());
         this.sendMessage(message);
     }
 
+    /**
+     * Sends the local bitfield to the remote peer
+     */
     public void sendBitfield() {
+        logger.log(Level.FINE, Messages.SEND_BITFIELD.getText());
         ByteBuffer message = TorrentProtocolHelper.createBitfield(this.torrentFile.getBitfield());
         this.sendMessage(message);
     }
 
+    /**
+     * Sends the state change message, Choke, Unchoke, Interested, Not Interested
+     * @param state the type of state change used
+     */
     public void sendStateChange(RequestTypes state){
+        logger.log(Level.FINE, Messages.SEND_STATE_CHANGE.getText() + " - " + state.toString());
         ByteBuffer message = TorrentProtocolHelper.createStateChangeMessage(state);
         this.sendMessage(message);
     }
 
+    /**
+     * When this torrent is the target of the connection, it only knows which torrent to use when it receives the handshake
+     * @param torrentFile the torrent used on the handshake, only valid torrent files will be used (validation in handshake)
+     */
     public void setTorrentFile(TorrentFile torrentFile) {
         this.bitfield = new Bitfield(torrentFile);
         this.torrentFile = torrentFile;
         this.torrentFile.addPeer(this);
+        this.launchSpeedMeasurement();
     }
 
     /**
@@ -137,6 +181,11 @@ public class Peer{
         return localPeerId;
     }
 
+    /**
+     * Updates the local peer id, according to the torrent file which this peer is associated to
+     * @param localPeerId when creating the torrent this will be set automatically, but when receiving connection this
+     *                    will be known only when handshake is received
+     */
     public void setLocalPeerId(HashId localPeerId) {
         this.localPeerId = localPeerId;
     }
@@ -182,13 +231,62 @@ public class Peer{
         return this.bitfield.checkHavePiece(pieceIndex);
     }
 
+    public boolean isHandshakeSent() {
+        return handshakeSent;
+    }
+
+    /**
+     * Fetch a data block from the local file in order to send it to other peer
+     * @param pieceIndex the index of the piece
+     * @param begin the offset inside the piece block, in bytes
+     * @param length the length in bytes to be fetched
+     * @return the bytebuffer containing the data to be sent
+     * @throws IOException File read failures may cause this
+     */
     public ByteBuffer retrieveDataBlock(int pieceIndex, int begin, int length) throws IOException {
         TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, length);
         return tb.readFileBlock();
     }
 
-    public boolean isHandshakeSent() {
-        return handshakeSent;
+    /**
+     * Closes this connection and updates the torrent file by removing the peer from it
+     */
+    public void shutdown() {
+        logger.log(Level.INFO, Messages.PEER_SHUTDOWN.getText() + " - other peer: " + this.getOtherPeerId());
+        if(rateCalculationFuture != null)
+            rateCalculationFuture.cancel(true);
+        this.peerConnection.shutdown();
+        if(this.torrentFile != null)
+            this.torrentFile.removePeer(this);
+    }
+
+    public void addUploaded(int amount) {
+        this.uploaded += amount;
+    }
+
+    public void addDownloaded(int amount){
+        this.downloaded += amount;
+    }
+
+    public String getPeerIp() {
+        return peerIp;
+    }
+
+    public int getPeerPort() {
+        return peerPort;
+    }
+
+    private class SpeedRateCalculations implements Runnable {
+        private int lastUpload = 0;
+        private int lastDownload = 0;
+
+        @Override
+        public void run() {
+            downloadBytesLog.push(downloaded - this.lastDownload);
+            this.lastDownload = downloaded;
+            uploadBytesLog.push(uploaded - this.lastUpload);
+            this.lastUpload = uploaded;
+        }
     }
 
 }

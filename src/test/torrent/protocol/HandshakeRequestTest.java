@@ -1,4 +1,4 @@
-package torrent.protocol;
+package test.torrent.protocol;
 
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;

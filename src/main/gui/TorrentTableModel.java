@@ -1,6 +1,7 @@
 package main.gui;
 
 import com.hypirion.bencode.BencodeReadException;
+import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
@@ -17,12 +18,14 @@ import java.util.List;
  */
 public class TorrentTableModel extends AbstractTableModel {
 
+    private Client c;
+
     private TorrentManager tManager;
     private List<TorrentFile> torrents;
 
     private String[] title = {"Nom", "Taille", "Progression", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up", "Ratio", "Temps Restant"};
 
-    public TorrentTableModel(TorrentManager manager) {
+    public TorrentTableModel(TorrentManager manager, Client c) {
         this.tManager = manager;
         this.torrents = new ArrayList<>();
         for (HashId id : this.tManager.getTorrentList().keySet())
@@ -60,7 +63,7 @@ public class TorrentTableModel extends AbstractTableModel {
     public void addTorrent(String path, String saveFolder) {
         try {
             System.out.println(new File(path).getParent());
-            this.tManager.addTorrent(path, new File(path).getParent());
+            this.tManager.addTorrent(path, new File(path).getParent(), c.getSelector());
             this.fireTableDataChanged();
         } catch (IOException e) {
             e.printStackTrace();

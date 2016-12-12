@@ -1,6 +1,7 @@
 package main.gui;
 
 
+import main.Client;
 import main.torrent.TorrentManager;
 
 import javax.swing.*;
@@ -10,9 +11,8 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.IOException;
 
 public class MainWindow {
 
@@ -25,33 +25,38 @@ public class MainWindow {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					MainWindow window = new MainWindow();
-					window.frmBitme.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+        try {
+            final Client c = new Client(Client.PORT);
+            EventQueue.invokeLater(new Runnable() {
+                public void run() {
+                    try {
+                        MainWindow window = new MainWindow(c);
+                        window.frmBitme.setVisible(true);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }
+            });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 	}
 
 	/**
 	 * Create the application.
 	 */
-	public MainWindow() {
-		initialize();
+	public MainWindow(Client c) {
+		initialize(c);
 	}
 
 	/**
 	 * Initialize the contents of the frame.
 	 */
-	private void initialize() {
+	private void initialize(Client c) {
 		frmBitme = new JFrame();
 		frmBitme.setTitle("BitMe");
 		frmBitme.setBounds(100, 100, 450, 300);
-		frmBitme.setMinimumSize(new Dimension(450, 300));
+		frmBitme.setMinimumSize(new Dimension(650, 500));
 		frmBitme.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 
@@ -97,6 +102,7 @@ public class MainWindow {
             @Override
             public void actionPerformed(ActionEvent e) {
                 ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+                updateActiveTorrents();
             }
         });
 		mndition.add(mntmEffacer);
@@ -155,7 +161,7 @@ public class MainWindow {
 		sl_mainPanel.putConstraint(SpringLayout.EAST, scrollPane, 0, SpringLayout.EAST, mainPanel);
 		mainPanel.add(scrollPane);
 
-		torrents = new JTable(new TorrentTableModel(TorrentManager.getInstance()));
+		torrents = new JTable(new TorrentTableModel(TorrentManager.getInstance(), c));
 		torrents.getColumnModel().getColumn(2).setCellRenderer(new ProgressCellRenderer());
 		scrollPane.setViewportView(torrents);
 		springLayout.putConstraint(SpringLayout.SOUTH, buttonPanel, 45, SpringLayout.NORTH, frmBitme.getContentPane());
@@ -163,7 +169,7 @@ public class MainWindow {
 		springLayout.putConstraint(SpringLayout.NORTH, buttonPanel, 0, SpringLayout.NORTH, frmBitme.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, buttonPanel, 0, SpringLayout.WEST, bottomPanel);
 		springLayout.putConstraint(SpringLayout.EAST, buttonPanel, 0, SpringLayout.EAST, bottomPanel);
-		torrents.addKeyListener(new MyKeyListener());
+		//torrents.addKeyListener(new MyKeyListener());
 		torrents.setFillsViewportHeight(true);
 
 
@@ -206,6 +212,7 @@ public class MainWindow {
 		btnRemovetorrent.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+                updateActiveTorrents();
 			}
 		});
 
@@ -244,8 +251,15 @@ public class MainWindow {
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
 			File file = fc.getSelectedFile();
-			System.out.println("Opening: " + file.getAbsolutePath());
-			((TorrentTableModel)torrents.getModel()).addTorrent(file.getAbsolutePath(), file.getAbsolutePath());
+			fc.setDialogTitle("Ou enregistrer le fichier");
+			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
+			if (returnVal == JFileChooser.APPROVE_OPTION) {
+                System.out.println("Opening: " + file.getAbsolutePath());
+                System.out.println("Saving into: " + fc.getSelectedFile().getAbsolutePath());
+                ((TorrentTableModel) torrents.getModel()).addTorrent(file.getAbsolutePath(), fc.getSelectedFile().getAbsolutePath());
+                updateActiveTorrents();
+            }
 		} else {
 			System.out.println("Open command cancelled by user.");
 		}
@@ -277,7 +291,11 @@ public class MainWindow {
 		}
 	}
 
-	static class MyKeyListener extends KeyAdapter {
+	private void updateActiveTorrents() {
+        nbActiveTransfers.setText(torrents.getModel().getRowCount() + " transfers");
+    }
+
+	/* static class MyKeyListener extends KeyAdapter {
 		@Override
 		public void keyTyped(KeyEvent e) {
 			if (e.getKeyChar() == KeyEvent.VK_CAPS_LOCK ) {
@@ -301,5 +319,5 @@ public class MainWindow {
 				System.out.println("Key \"Delete\" Released");
 			}
 		}
-	}
+	}*/
 }

@@ -6,15 +6,27 @@ import main.peer.Peer;
 import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
 import main.tracker.TrackerHelper;
+import main.tracker.TrackerPeerDictionary;
+import main.tracker.TrackerPeerInfo;
 import main.tracker.TrackerQueryResult;
+import main.util.Messages;
+import org.omg.SendingContext.RunTime;
+import sun.util.logging.PlatformLogger;
+
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.Selector;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static main.tracker.TrackerPeerInfo.*;
 
 /**
  * Written by
@@ -24,6 +36,12 @@ import java.util.concurrent.TimeUnit;
  * Thibault Tourailles
  */
 public class TorrentFile {
+
+    private static final Long TRACKER_ANNOUNCE_PERIOD = 1800l; // in seconds
+
+    private final Logger logger = Logger.getLogger(this.getClass().getName());
+
+    private Selector selector;
 
     private final HashId peerId;
     private HashId torrentId;
@@ -39,28 +57,27 @@ public class TorrentFile {
     private List<Peer> peers = new LinkedList<>();
     private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
 
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1);
+    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors() + 1);
 
-    //TODO remove this constructor, keep only the other I guess
-    public TorrentFile(HashId torrentId) throws IOException {
-        this.torrentId = torrentId;
-        this.peerId = Peer.generatePeerId();
-        this.pieceCount = 2000; //TODO remove this
-    }
-
-    public TorrentFile(String filePath, TorrentFileInfo fileInfo) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+    public TorrentFile(String filePath, TorrentFileInfo fileInfo, Selector selector) throws IOException, BencodeReadException, NoSuchAlgorithmException {
         this.filePath = filePath;
         this.fileInfo = fileInfo;
         this.torrentId = new HashId(fileInfo.getInfoHash());
         this.peerId = Peer.generatePeerId();
         this.pieceCount = this.fileInfo.getPieceCount();
         this.pieceSize = this.fileInfo.getPieceSize();
+        this.selector = selector;
         this.updateBitfield();
         this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void addPeer(Peer p) {
         this.peers.add(p);
+        this.chokingAlgorithm.updatePeers(this.peers);
+    }
+
+    public void removePeer(Peer p) {
+        this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
     }
 
@@ -82,20 +99,17 @@ public class TorrentFile {
 
     private void updateBitfield() throws IOException, NoSuchAlgorithmException {
         this.bitfield = new Bitfield(this.getPieceCount());
-        TorrentBlock tb = this.fileInfo.getFileBlock(0, 0, Math.toIntExact(this.fileInfo.getLength()));
-        ByteBuffer pieceBuffer = tb.readFileBlock();
-        byte[] piece = new byte[Math.toIntExact(this.pieceSize)];
-        for(int i = 0; i < this.getPieceCount() - 1; i ++){ //read all pieces except for last one
-            pieceBuffer.get(piece);
-            if(this.fileInfo.isPieceValid(piece, i)){
-                this.bitfield.setHavePiece(i);
-            }
+        List<TorrentBlock> pieces = new LinkedList<>();
+        for(int i = 0; i < this.getPieceCount(); i++){
+            pieces.add(this.fileInfo.getFileBlock(i, 0, Math.toIntExact(this.fileInfo.getPieceSize())));
         }
-        //and for the last piece
-        piece = new byte[pieceBuffer.remaining()];
-        pieceBuffer.get(piece);
-        if(this.fileInfo.isPieceValid(piece, this.getPieceCount() - 1)){
-            this.bitfield.setHavePiece(this.getPieceCount() - 1);
+        int pieceIndex = 0;
+        for(TorrentBlock tb : pieces){ //read all pieces except for last one
+            ByteBuffer pieceBuffer = tb.readFileBlock();
+            if(this.fileInfo.isPieceValid(pieceBuffer.array(), pieceIndex)){
+                this.bitfield.setHavePiece(pieceIndex);
+            }
+            pieceIndex++;
         }
     }
 
@@ -116,7 +130,6 @@ public class TorrentFile {
         return 0;
     }
 
-
     public TorrentFileInfo getFileInfo() { return fileInfo; }
 
     private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
@@ -128,8 +141,51 @@ public class TorrentFile {
             String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
             String result = TrackerHelper.sendTrackerRequest(trackerRequest);
             TrackerQueryResult trackerResult = new TrackerQueryResult(result);
-            scheduleTrackerUpdate(5l, TimeUnit.SECONDS);
+            //connect to peers
+            if(!trackerResult.isFailure() && trackerResult.getPeerInfo() != null){
+                connectToPeers(trackerResult.getPeerInfo());
+            }
+            //reschedule for next get
+            if(trackerResult.getInterval() != null){
+                scheduleTrackerUpdate(trackerResult.getInterval(), TimeUnit.SECONDS);
+            } else {
+                scheduleTrackerUpdate(TRACKER_ANNOUNCE_PERIOD, TimeUnit.SECONDS);
+            }
         }
+    }
+
+    private void connectToPeers(TrackerPeerInfo peers){
+        List<TrackerPeerInfo.PeerTrackerData> newPeers = getNewPeers(peers);
+        for(TrackerPeerInfo.PeerTrackerData peer : newPeers){
+            try {
+                Peer p = new Peer(this.selector, this, new InetSocketAddress(peer.peerIp, Math.toIntExact(peer.peerPort)));
+                this.addPeer(p);
+            } catch (IOException e) {
+                logger.log(Level.FINE, Messages.FAILED_CONNECT_PEER.getText() + " - " + peer.peerIp + ":" + peer.peerPort);
+            }
+        }
+    }
+
+    private List<TrackerPeerInfo.PeerTrackerData> getNewPeers(TrackerPeerInfo peers) {
+        List<TrackerPeerInfo.PeerTrackerData> newPeers = new LinkedList<>();
+        for(TrackerPeerInfo.PeerTrackerData peer : peers.getPeers()){
+            if(this.getPeerByIpAndPort(peer.peerIp, peer.peerPort) == null){
+                newPeers.add(peer);
+            }
+        }
+        return newPeers;
+    }
+
+    private synchronized Peer getPeerByIpAndPort(String peerIp, Long peerPort) {
+        for(Peer p : this.peers){
+            if(p.getPeerIp().equals(peerIp) && p.getPeerPort() == peerPort)
+                return p;
+        }
+        return null;
+    }
+
+    public ScheduledExecutorService getExecutor() {
+        return this.scheduledExecutor;
     }
 
     private class TrackerUpdater implements Runnable {
@@ -138,7 +194,7 @@ public class TorrentFile {
         public void run() {
             try {
                 retrieveTrackerData(TrackerHelper.Event.UNSPECIFIED);
-            } catch (IOException e) {
+            } catch (IOException e) { //TODO treat these exceptions
                 e.printStackTrace();
             } catch (BencodeReadException e) {
                 e.printStackTrace();

@@ -38,9 +38,10 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     public TorrentBlock getFileBlock(int index, int begin, int length) {
-        TorrentBlock block = new TorrentBlock(index, begin, length);
+        int blockSize = this.getValidReadLength(index, begin, length);
+        TorrentBlock block = new TorrentBlock(index, begin, blockSize);
         Long blockBegin = index * this.pieceSize + begin;
-        block.addNextBlock(new FileBlockInfo(this.filesSaveFolder + '/' + this.name, blockBegin, length));
+        block.addNextBlock(new FileBlockInfo(this.filesSaveFolder + '/' + this.name, blockBegin, blockSize));
         return block;
     }
 
