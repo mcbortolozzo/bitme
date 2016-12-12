@@ -58,6 +58,9 @@ public class MainWindow {
 		frmBitme.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 
 
+		/**********************************************************************
+		 *                            MENU SETUP                              *
+		 **********************************************************************/
 		JMenuBar menuBar = new JMenuBar();
 		frmBitme.setJMenuBar(menuBar);
 
@@ -112,6 +115,9 @@ public class MainWindow {
 		SpringLayout springLayout = new SpringLayout();
 		frmBitme.getContentPane().setLayout(springLayout);
 
+        /**********************************************************************
+         *                          PANELS SETUP                              *
+         **********************************************************************/
 		JPanel bottomPanel = new JPanel();
 		springLayout.putConstraint(SpringLayout.WEST, bottomPanel, 0, SpringLayout.WEST, frmBitme.getContentPane());
 		springLayout.putConstraint(SpringLayout.SOUTH, bottomPanel, 0, SpringLayout.SOUTH, frmBitme.getContentPane());
@@ -132,12 +138,16 @@ public class MainWindow {
 		SpringLayout sl_mainPanel = new SpringLayout();
 		mainPanel.setLayout(sl_mainPanel);
 
-		JScrollPane scrollPane = new JScrollPane();
-		sl_mainPanel.putConstraint(SpringLayout.NORTH, scrollPane, 0, SpringLayout.NORTH, mainPanel);
-		sl_mainPanel.putConstraint(SpringLayout.WEST, scrollPane, 0, SpringLayout.WEST, mainPanel);
-		sl_mainPanel.putConstraint(SpringLayout.SOUTH, scrollPane, 0, SpringLayout.SOUTH, mainPanel);
-		sl_mainPanel.putConstraint(SpringLayout.EAST, scrollPane, 0, SpringLayout.EAST, mainPanel);
-		mainPanel.add(scrollPane);
+        JScrollPane scrollPane = new JScrollPane();
+        sl_mainPanel.putConstraint(SpringLayout.NORTH, scrollPane, 0, SpringLayout.NORTH, mainPanel);
+        sl_mainPanel.putConstraint(SpringLayout.WEST, scrollPane, 0, SpringLayout.WEST, mainPanel);
+        sl_mainPanel.putConstraint(SpringLayout.SOUTH, scrollPane, 0, SpringLayout.SOUTH, mainPanel);
+        sl_mainPanel.putConstraint(SpringLayout.EAST, scrollPane, 0, SpringLayout.EAST, mainPanel);
+        mainPanel.add(scrollPane);
+
+        /**********************************************************************
+         *                       TORRENT TABLE SETUP                          *
+         **********************************************************************/
 
 		torrents = new JTable(new TorrentTableModel(TorrentManager.getInstance(), c));
 		torrents.getColumnModel().getColumn(2).setCellRenderer(new ProgressCellRenderer());
@@ -147,19 +157,27 @@ public class MainWindow {
 		springLayout.putConstraint(SpringLayout.NORTH, buttonPanel, 0, SpringLayout.NORTH, frmBitme.getContentPane());
 		springLayout.putConstraint(SpringLayout.WEST, buttonPanel, 0, SpringLayout.WEST, bottomPanel);
 		springLayout.putConstraint(SpringLayout.EAST, buttonPanel, 0, SpringLayout.EAST, bottomPanel);
-		torrents.addKeyListener(new MyKeyListener());
 		torrents.setFillsViewportHeight(true);
 
 
-		nbActiveTransfers = new JTextField();
-		nbActiveTransfers.setHorizontalAlignment(SwingConstants.CENTER);
-		nbActiveTransfers.setText("0 transfert");
-		nbActiveTransfers.setBackground(SystemColor.window);
-		bottomPanel.add(nbActiveTransfers);
-		nbActiveTransfers.setColumns(10);
-		frmBitme.getContentPane().add(buttonPanel);
-		SpringLayout sl_buttonPanel = new SpringLayout();
-		buttonPanel.setLayout(sl_buttonPanel);
+        /**********************************************************************
+         *                      TORRENT ACTIVE SETUP                          *
+         **********************************************************************/
+
+        nbActiveTransfers = new JTextField();
+        nbActiveTransfers.setHorizontalAlignment(SwingConstants.CENTER);
+        nbActiveTransfers.setText("0 transfert");
+        nbActiveTransfers.setBackground(SystemColor.window);
+        bottomPanel.add(nbActiveTransfers);
+        nbActiveTransfers.setColumns(10);
+
+        frmBitme.getContentPane().add(buttonPanel);
+        SpringLayout sl_buttonPanel = new SpringLayout();
+        buttonPanel.setLayout(sl_buttonPanel);
+
+        /**********************************************************************
+         *                           BUTTONS SETUP                            *
+         **********************************************************************/
 
 		JButton btnCreatetorrent = new JButton("");
 		btnCreatetorrent.addActionListener(e -> MainWindow.this.createTorrentFile());
@@ -183,6 +201,15 @@ public class MainWindow {
             ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
             updateActiveTorrents();
         });
+        sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
+        btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/removeFile.png")));
+        sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnRemovetorrent, 5, SpringLayout.NORTH, buttonPanel);
+        sl_buttonPanel.putConstraint(SpringLayout.WEST, btnRemovetorrent, 45, SpringLayout.EAST, btnAddtorrent);
+        buttonPanel.add(btnRemovetorrent);
+
+        /**********************************************************************
+         *                    POST-INITIALIZATION SETUP                       *
+         **********************************************************************/
 
 		torrents.getSelectionModel().addListSelectionListener(e -> {
             if (torrents.getSelectedRow() == -1) {
@@ -196,15 +223,12 @@ public class MainWindow {
 
 		mntmToutSlectionner.addActionListener(e -> torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount() - 1));
 
-		sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
-		btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/removeFile.png")));
-		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnRemovetorrent, 5, SpringLayout.NORTH, buttonPanel);
-		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnRemovetorrent, 45, SpringLayout.EAST, btnAddtorrent);
-		buttonPanel.add(btnRemovetorrent);
-
         applyKeyListner(this.frmBitme);
 	}
 
+	/*
+	 * Method applying the KeyListener to all the components of the window
+	 */
 	private List<Component> applyKeyListner(final Container c) {
         Component[] comps = c.getComponents();
         List<Component> compList = new ArrayList<>();
@@ -217,6 +241,11 @@ public class MainWindow {
         return compList;
     }
 
+    /*
+     * Open a torrent file and add it to the TorrentManager
+     * Prompt the user twice. The first time for the torrent file, the second
+     * for the saving location.
+     */
 	private void openTorrentFile() {
 		fc.setDialogTitle("Ouvrir un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
@@ -238,6 +267,11 @@ public class MainWindow {
 		}
 	}
 
+    /*
+     * Create a torrent file and save it to the disk
+     * Prompt the user twice. The first time for the file to turn into torrent,
+     * the second for the saving location.
+     */
 	private void createTorrentFile() {
 		fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
@@ -264,12 +298,21 @@ public class MainWindow {
 		}
 	}
 
+	/*
+	 * Update the bottom number of active torrents in the bottom bar
+	 */
 	private void updateActiveTorrents() {
         nbActiveTransfers.setText(torrents.getModel().getRowCount() + " transfers");
     }
 
+    /*
+     * Action for the KeyListener
+     */
     enum ACTION { OPEN, CREATE, NONE}
 
+    /*
+     * KeyListener, can open and create a torrent (for now)
+     */
 	class MyKeyListener extends KeyAdapter {
 
 	    private List<Integer> events = new ArrayList<>();
