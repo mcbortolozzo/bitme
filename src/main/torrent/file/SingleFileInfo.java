@@ -1,5 +1,6 @@
 package main.torrent.file;
 
+import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
@@ -30,11 +31,10 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
-        Map<String, Object> torrent = super.generateTorrent();
-        torrent.put("length", this.len_file);
-        torrent.put("md5sum", this.md5sum);
-        return torrent;
+    public Map<String, Object> generateTorrent(File file, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+
+        this.info.put("length", file.length());
+        return super.generateTorrent(file, announce, comment, piece_Length);
     }
 
     public TorrentBlock getFileBlock(int index, int begin, int length) {

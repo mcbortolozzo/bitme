@@ -4,6 +4,7 @@ import com.hypirion.bencode.BencodeWriter;
 import main.util.Utils;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
@@ -54,17 +55,17 @@ public class MultipleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
-        Map<String, Object> torrent = super.generateTorrent();
+    public Map<String, Object> generateTorrent(File file, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        Map<String, Object> torrent = super.generateTorrent( file,  announce,  comment, piece_Length);
         List<Map<String, Object>> filesTorrent = new LinkedList<>();
         for (SubFileStructure f : this.files) {
-            Map<String, Object> file = new HashMap<String, Object>();
-            file.put("length", f.length);
-            file.put("path", f.path);
+            Map<String, Object> fi = new HashMap<String, Object>();
+            fi.put("length", f.length);
+            fi.put("path", f.path);
             if(f.md5sum != null){
-                file.put("md5sum", f.md5sum);
+                fi.put("md5sum", f.md5sum);
             }
-            filesTorrent.add(file);
+            filesTorrent.add(fi);
 
         }
         torrent.put("files", filesTorrent);

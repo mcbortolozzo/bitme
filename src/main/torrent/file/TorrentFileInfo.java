@@ -8,6 +8,8 @@ import java.io.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
@@ -89,23 +91,50 @@ public abstract class TorrentFileInfo {
 
     protected abstract void prepareInfoField();
 
-    public Map<String, Object> generateTorrent() throws NoSuchAlgorithmException {
+    public Map<String, Object> generateTorrent(File file,String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
 
         this.torrent = new HashMap<String,Object>();
-        this.torrent.put ("name",this.name);
-        this.torrent.put("piece length",this.len_piece);
-        this.hash_pieces = (Utils.calculateHash((this.pieces).getBytes())).toString();
-        this.torrent.put("pieces",this.hash_pieces);
-        this.torrent.put("announce",this.announce);
+        this.info = new TreeMap<String, Object>();
+
+        this.info.put ("name",file.getName());
+        this.info.put("piece length",piece_Length);
+        this.hash_pieces(file,piece_Length);
+        this.info.put("pieces",this.hash_pieces);
+        this.torrent.put("info",this.info);
+        this.torrent.put("announce",announce);
         this.torrent.put("announce-list",this.l_announce);
-        this.torrent.put("comment",this.comment);
-        this.torrent.put("created by",this.created_by);
-        this.date = new Date().getTime();
+        this.torrent.put("comment",comment);
+        this.torrent.put("created by","bitMe alpha v0.33");
+        this.date = (new Date().getTime())/1000;
         this.torrent.put("creation date",this.date);
         return this.torrent;
 
+    }
 
+
+    public void hash_pieces ( File file, int piece_length ) throws IOException, NoSuchAlgorithmException {
+        FileInputStream f = new FileInputStream(file);
+        ByteBuffer buffer = ByteBuffer.allocate(piece_length);
+        FileChannel channel = f.getChannel();
+        this.hash_pieces = "";
+        while ( channel.read(buffer) > 0){
+            byte [] piece= Utils.calculateHash(buffer.array());
+            this.hash_pieces += piece.toString();
+        }
+        if (buffer.position() > 0){
+            buffer.limit(buffer.position());
+            buffer.position(0);
+            byte [] piece= Utils.calculateHash(buffer.array());
+            this.hash_pieces += piece.toString();
+        }
+
+
+    }
+
+    public FileOutputStream generateFile(String torrentPath, File file,String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        this.generateTorrent(file, announce, comment, piece_Length);
+        return this.bencodedFile(torrentPath);
     }
 
     public FileOutputStream bencodedFile(String nameFile) throws IOException {
