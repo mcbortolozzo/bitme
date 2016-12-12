@@ -4,6 +4,7 @@ import main.peer.Bitfield;
 import main.peer.Peer;
 import main.torrent.protocol.TorrentProtocolHelper;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.HashMap;
  */
 public class BlockPieceManager {
 
-    private static final int blockSize = 2^14;
+    private static final int BLOCK_SIZE = (int) Math.pow(2,14);
 
     TorrentFileInfo fileInfo;
     private HashMap<Integer, ArrayList<byte[]>> downloadingPieces;
@@ -36,13 +37,13 @@ public class BlockPieceManager {
         this.lengthPiece = lengthPiece;
         this.lengthFile = lengthFile;
         this.lengthLastPiece = lengthFile - (nbPieces - 1)*lengthPiece;
-        this.nbBlocks = (int) Math.ceil(lengthPiece.intValue()/blockSize);
-        this.nbBlocksLastPiece = (int) Math.ceil(lengthLastPiece.intValue()/blockSize);
+        this.nbBlocks = (int) Math.ceil(lengthPiece.intValue()/ BLOCK_SIZE);
+        this.nbBlocksLastPiece = (int) Math.ceil(lengthLastPiece.intValue()/ BLOCK_SIZE);
         this.fileInfo = fileInfo;
 
         this.bitfield = bitfield;
 
-        for (int i = bitfield.getBitfield().nextClearBit(0); i >= 0; i = bitfield.getBitfield().nextClearBit(i+1)) {
+        for (int i = bitfield.getBitfield().nextClearBit(0); i < bitfield.getBitfieldLength(); i = bitfield.getBitfield().nextClearBit(i+1)) {
             notStartedPieces.add(i);
             if (i == Integer.MAX_VALUE) {
                 break;
@@ -61,7 +62,7 @@ public class BlockPieceManager {
                 createAndSendRequest(index, 0, lengthFile.intValue(), p);
             } else {
                 downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(nbBlocks));
-                createAndSendRequest(index, 0, blockSize, p);
+                createAndSendRequest(index, 0, BLOCK_SIZE, p);
             }
             notStartedPieces.remove(index);
         }
@@ -74,18 +75,18 @@ public class BlockPieceManager {
         }
         synchronized (this) {
             int indexBlock = downloadingPieces.get(index).indexOf(null);
-            int blockOffset = indexBlock * blockSize;
+            int blockOffset = indexBlock * BLOCK_SIZE;
             if(index != nbPieces - 1) {
                 if(indexBlock != nbBlocks - 1) {
-                    createAndSendRequest(index, blockOffset, blockSize, p);
+                    createAndSendRequest(index, blockOffset, BLOCK_SIZE, p);
                 } else {
-                    createAndSendRequest(index, blockOffset, lengthPiece.intValue() - blockSize * (nbBlocks - 1), p);
+                    createAndSendRequest(index, blockOffset, lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
                 }
             } else {
                 if(indexBlock != nbBlocksLastPiece - 1) {
-                    createAndSendRequest(index, blockOffset, blockSize, p);
+                    createAndSendRequest(index, blockOffset, BLOCK_SIZE, p);
                 } else {
-                    createAndSendRequest(index, blockOffset, lengthLastPiece.intValue() - blockSize * (nbBlocksLastPiece - 1), p);
+                    createAndSendRequest(index, blockOffset, lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
                 }
             }
         }
@@ -96,12 +97,12 @@ public class BlockPieceManager {
         p.sendMessage(message);
     }
 
-    public Boolean receiveBlock(int index, int begin, byte[] block) throws NoSuchAlgorithmException {
+    public Boolean receiveBlock(int index, int begin, byte[] block) throws NoSuchAlgorithmException, IOException {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
-        downloadingPieces.get(index).add((int) Math.floor(begin/blockSize), block);
-        if(Math.floor(begin/blockSize) == getNumberBlocksFromPiece(index)) {
+        downloadingPieces.get(index).add((int) Math.floor(begin/ BLOCK_SIZE), block);
+        if(Math.floor(begin/ BLOCK_SIZE) == getNumberBlocksFromPiece(index)) {
             return validateAndSavePiece(index);
         }
         return false;
@@ -123,7 +124,7 @@ public class BlockPieceManager {
         }
     }
 
-    public Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException {
+    public Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
         if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
             ByteBuffer pieceBuffer = ByteBuffer.allocate(getPieceSizeFromIndex(index));
             for(byte[] block : downloadingPieces.get(index)) {
@@ -132,7 +133,7 @@ public class BlockPieceManager {
             if(fileInfo.isPieceValid(pieceBuffer.array(), index)) {
                 TorrentBlock tb = fileInfo.getFileBlock(index, 0, getPieceSizeFromIndex(index));
                 pieceBuffer.flip();
-                //TODO tb.writeFileBlock(pieceBuffer);
+                tb.writeFileBlock(pieceBuffer);
                 return true;
             } else {
                 downloadingPieces.remove(index);

@@ -55,9 +55,6 @@ public class TorrentFile {
 
     private Bitfield bitfield;
 
-    private HashMap<Integer, LinkedList<Peer>> pieceDistribution;
-    private ArrayList<Integer> pieceQuantity;
-
     private List<Peer> peers = new LinkedList<>();
     private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
     private PieceSelectionAlgorithm pieceSelectionAlgorithm;
@@ -75,44 +72,37 @@ public class TorrentFile {
         this.selector = selector;
         this.updateBitfield();
         this.blockPieceManager = new BlockPieceManager(pieceCount, pieceSize, this.fileInfo.getLength(), bitfield, fileInfo);
-        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager);
-        this.pieceDistribution = new HashMap<>(this.pieceCount);
-        this.pieceQuantity = new ArrayList<>(this.pieceCount);
-        this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo);
         this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+        this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
     }
 
     public synchronized void addPeer(Peer p) {
         this.peers.add(p);
         this.chokingAlgorithm.updatePeers(this.peers);
-        for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
-            if(p.hasPiece(i)) {
-                pieceDistribution.computeIfAbsent(i, k -> new LinkedList<Peer>());
-                pieceDistribution.get(i).add(p);
-                pieceQuantity.set(i, pieceQuantity.get(i) + 1);
-            }
-        }
-        this.pieceSelectionAlgorithm.updatePeers(peers);
-        this.pieceSelectionAlgorithm.updatePieceDistribution(pieceDistribution);
-        this.pieceSelectionAlgorithm.updatePieceQuantity(pieceQuantity);
+        this.pieceSelectionAlgorithm.updatePeers(this.peers);
     }
 
     public void removePeer(Peer p) {
         this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
-        for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
+        /*for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
             if(p.hasPiece(i)) {
                 pieceDistribution.get(i).remove(p);
                 pieceQuantity.set(i, pieceQuantity.get(i) - 1);
             }
         }
-        this.pieceSelectionAlgorithm.updatePeers(peers);
         this.pieceSelectionAlgorithm.updatePieceDistribution(pieceDistribution);
-        this.pieceSelectionAlgorithm.updatePieceQuantity(pieceQuantity);
+        this.pieceSelectionAlgorithm.updatePieceQuantity(pieceQuantity);*/
+        this.pieceSelectionAlgorithm.updatePeers(peers);
     }
 
     public TorrentBlock getBlockInfo(int index, int begin, int length){
         return this.fileInfo.getFileBlock(index, begin, length);
+    }
+
+    public void updateAvailablePieces(Bitfield bitfield, Peer p) {
+        pieceSelectionAlgorithm.updateAvailablePieces(bitfield, p);
     }
 
     public HashId getTorrentId() {
@@ -166,10 +156,6 @@ public class TorrentFile {
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
-
-    public HashMap<Integer, LinkedList<Peer>> getPieceDistribution() {
-        return pieceDistribution;
-    }
 
     private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
         this.scheduledExecutor.schedule(new TrackerUpdater(), delay, unit);
