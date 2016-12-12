@@ -1,6 +1,10 @@
 package main.torrent.file;
 
+import main.util.Utils;
+
+import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 
@@ -49,5 +53,10 @@ public class SingleFileInfo extends TorrentFileInfo {
     public Long getLength() {
         return this.len_file;
 
+    }
+
+    @Override
+    public void verifyAndAllocateFiles() {
+        Utils.generateFile(this.filesSaveFolder + '/' + this.name, this.len_file);
     }
 }

@@ -2,6 +2,7 @@ package main.torrent.file;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -35,7 +36,7 @@ public class FileBlockInfo {
     /**
      * Access the disk according to the information specified above and reads the data to a buffer
      * @return the buffer containing the data
-     * @throws IOException throws exception in case of failure to read the file
+     * @throws IOException throws exception in case of failure to read the file or buffer
      */
     public ByteBuffer readFileData() throws IOException {
         ByteBuffer localBuffer = ByteBuffer.allocate(localBlockLength);
@@ -47,6 +48,20 @@ public class FileBlockInfo {
         fIn.close();
         localBuffer.flip();
         return localBuffer;
+    }
+
+    /**
+     * Write data from provided buffer to the corresponding file
+     * @param outputBuffer the buffer containing the data
+     * @throws IOException throws exception in case of failure to read the file or buffer
+     */
+    public void writeFileData(ByteBuffer outputBuffer) throws IOException {
+        FileOutputStream fOut = new FileOutputStream(filePath);
+        FileChannel channel = fOut.getChannel();
+        channel.position(localFileBegin);
+        channel.write(outputBuffer, localBlockLength);
+        channel.close();
+        fOut.close();
     }
 
     /**

@@ -3,6 +3,9 @@ package main.util;
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -64,5 +67,23 @@ public class Utils {
         crypt.reset();
         crypt.update(toHash);
         return crypt.digest();
+    }
+
+    public static void generateFile(String path, Long length){
+        File file = new File(path);
+        if(!file.isFile()) {
+            file.getParentFile().mkdirs();
+            try {
+                RandomAccessFile rFile = new RandomAccessFile(file.getAbsolutePath(), "rws");
+                rFile.setLength(length);
+                rFile.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static byte getBit(byte byteValue, int bitPosition){
+        return (byte) (((byteValue & 0xff) >>> (7 - bitPosition)) & 1);
     }
 }

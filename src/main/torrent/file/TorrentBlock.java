@@ -49,4 +49,15 @@ public class TorrentBlock {
         return blockBuffer;
     }
 
+    /**
+     * writes the data from the buffer to the specified file
+     * @param outputBuffer the buffer containing the data to be written
+     * @throws IOException in case of failure to read file or buffer
+     */
+    public void writeFileBlock(ByteBuffer outputBuffer) throws IOException {
+        for(FileBlockInfo blockInfo: this.blockList){
+            blockInfo.writeFileData(outputBuffer);
+        }
+    }
+
 }

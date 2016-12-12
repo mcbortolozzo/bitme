@@ -129,4 +129,11 @@ public class MultipleFileInfo extends TorrentFileInfo {
         ArrayList<Map<String, Object>> filesList = oldFiles.stream().map((Function<Map, TreeMap<String, Object>>) TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
         this.info.put("files", filesList);
     }
+
+    @Override
+    public void verifyAndAllocateFiles() {
+        for(SubFileStructure file : this.files){
+            Utils.generateFile(this.filesSaveFolder + '/' + file.getPath(), file.length);
+        }
+    }
 }

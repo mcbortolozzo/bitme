@@ -40,7 +40,6 @@ public abstract class TorrentFileInfo {
     private String hash_pieces;
     private String pieces;
     protected String name;
-    protected List<Long> len_file;
 
     public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
@@ -50,7 +49,6 @@ public abstract class TorrentFileInfo {
         this.name =(String) this.info.get("name");
         this.pieceSize = (Long) this.info.get("piece length");
         this.hash_pieces = (String) this.info.get("pieces");
-        this.len_file = new ArrayList<Long>();
 
         this.announce = (String) this.dict.get("announce");
         if ( this.dict.containsKey("creation date")) {
@@ -158,4 +156,6 @@ public abstract class TorrentFileInfo {
             return length;
         }
     }
+
+    public abstract void verifyAndAllocateFiles();
 }

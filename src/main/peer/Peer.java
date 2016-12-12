@@ -18,6 +18,7 @@ import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.BitSet;
@@ -56,7 +57,7 @@ public class Peer{
     private int downloaded = 0;
     private LinkedList<Integer> downloadBytesLog = new LinkedList<>();
 
-    private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
+    private PeerProtocolStateManager stateManager;
     private Bitfield bitfield;
 
     private Date lastContact;
@@ -85,13 +86,10 @@ public class Peer{
         logger.log(Level.FINE, Messages.PEER_CONNECTION_AUTO_CREATE.getText());
         this.peerIp = destAddr.getHostName();
         this.peerPort = destAddr.getPort();
-        this.torrentFile = torrentFile;
-        this.torrentFile.addPeer(this);
+        this.setTorrentFile(torrentFile);
         this.localPeerId = torrentFile.getPeerId();
-        this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
         this.lastContact = Date.from(Instant.now());
-        this.launchSpeedMeasurement();
         this.sendHandshake();
     }
 
@@ -163,6 +161,12 @@ public class Peer{
         this.sendMessage(message);
     }
 
+    public void sendHave(int pieceIndex) {
+        logger.log(Level.FINE, Messages.SEND_HAVE.getText() + " - " + pieceIndex);
+        ByteBuffer message = TorrentProtocolHelper.createHave(pieceIndex);
+        this.sendMessage(message);
+    }
+
     /**
      * When this torrent is the target of the connection, it only knows which torrent to use when it receives the handshake
      * @param torrentFile the torrent used on the handshake, only valid torrent files will be used (validation in handshake)
@@ -171,6 +175,7 @@ public class Peer{
         this.bitfield = new Bitfield(torrentFile);
         this.torrentFile = torrentFile;
         this.torrentFile.addPeer(this);
+        this.stateManager = new PeerProtocolStateManager(this.torrentFile.getBitfield(), this.bitfield);
         this.launchSpeedMeasurement();
     }
 
@@ -215,6 +220,10 @@ public class Peer{
         this.bitfield.updateBitfield(bitfield);
     }
 
+    public boolean isInterested() {
+        return this.stateManager.updateInterested();
+    }
+
     public boolean isPeerChoking() {
         return this.stateManager.isPeerChoking();
     }
@@ -246,6 +255,31 @@ public class Peer{
     public ByteBuffer retrieveDataBlock(int pieceIndex, int begin, int length) throws IOException {
         TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, length);
         return tb.readFileBlock();
+    }
+
+    /**
+     * Writes a buffer to a file from the data received from other peer
+     * @param pieceIndex the index of the piece
+     * @param begin the offset inside the piece block, in bytes
+     * @param block the block with the bytes to be written
+     * @throws IOException file or buffer read error
+     */
+    public void writeDataBlock(int pieceIndex, int begin, byte[] block) throws IOException {
+        ByteBuffer outBuffer = ByteBuffer.allocate(block.length);
+        outBuffer.put(block);
+        outBuffer.flip();
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, block.length);
+        tb.writeFileBlock(outBuffer);
+    }
+
+    public boolean verifyPieceHash(int pieceIndex) throws IOException, NoSuchAlgorithmException {
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, 0, Math.toIntExact(this.torrentFile.getPieceSize()));
+        ByteBuffer pieceBuffer = tb.readFileBlock();
+        if(torrentFile.getFileInfo().isPieceValid(pieceBuffer.array(), pieceIndex)){
+            this.torrentFile.setHavePiece(pieceIndex);
+            return true;
+        }
+        return false;
     }
 
     /**
