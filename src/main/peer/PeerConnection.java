@@ -1,8 +1,6 @@
 package main.peer;
 
-import main.reactor.DecodeProtocolTask;
 import main.reactor.Dispatcher;
-import main.torrent.TorrentManager;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 import main.util.Messages;
@@ -15,7 +13,6 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -67,16 +64,25 @@ public class PeerConnection implements Runnable {
         synchronized (readLock) {
             try {
                 socket.read(inputBuffer);
-                if(inputBuffer.position() > 0) {
-                    inputBuffer.flip();
-                    TorrentManager.executorService.execute(new DecodeProtocolTask(this.peer, inputBuffer));
-                    inputBuffer.clear();
-                } else {
-                    if(this.outputBuffer.size() > 0)
-                        this.selectionKey.interestOps(SelectionKey.OP_WRITE);
-                    else
-                        this.selectionKey.interestOps(0);
+                inputBuffer.flip();
+                if(!inputBuffer.hasRemaining()) {
+                    this.selectionKey.interestOps(this.selectionKey.interestOps() & ~SelectionKey.OP_READ);
                 }
+                while(inputBuffer.hasRemaining()) {
+                    TorrentRequest request = TorrentProtocolHelper.decodeMessage(inputBuffer);
+                    inputBuffer.compact();
+                    inputBuffer.flip();
+                    if(request != null) {
+                        this.peer.process(request);
+                    } else {
+                        break;
+                    }
+                    //TorrentManager.executorService.execute(new DecodeProtocolTask(this.peer, inputBuffer));
+                }
+                inputBuffer.compact();
+
+                if(this.outputBuffer.size() > 0)
+                    this.selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
             } catch (IOException e) {
                 logger.log(Level.INFO, e.getMessage());
                 logger.log(Level.INFO, Messages.SOCKET_READ_FAIL.getText());
@@ -97,8 +103,10 @@ public class PeerConnection implements Runnable {
             }
 
             if(outputBuffer.size() > 0) {
-                selectionKey.interestOps(SelectionKey.OP_WRITE);
-                selectionKey.selector().wakeup();
+                selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
+                synchronized (Dispatcher.SELECTOR_LOCK2) {
+                    selectionKey.selector().wakeup();
+                }
             } else {
                 selectionKey.interestOps(SelectionKey.OP_READ);
             }
@@ -109,8 +117,10 @@ public class PeerConnection implements Runnable {
         synchronized (writeLock) {
             data.flip();
             outputBuffer.add(data);
-            selectionKey.interestOps(SelectionKey.OP_WRITE);
-            selectionKey.selector().wakeup();
+            selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
+            synchronized (Dispatcher.SELECTOR_LOCK2) {
+                selectionKey.selector().wakeup();
+            }
         }
     }
 
@@ -123,6 +133,8 @@ public class PeerConnection implements Runnable {
             } else if (selectionKey.isWritable()) {
                 if(outputBuffer.size() > 0) {
                     write();
+                } else {
+                    this.selectionKey.interestOps(SelectionKey.OP_READ);
                 }
             }
         } catch(CancelledKeyException e){

@@ -71,7 +71,7 @@ public class HaveRequestTest {
         try {
             p1 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
             p1.sendHandshake();
-            p1.process(requests);
+            p1.process(haveRequest);
             int timeout = 0;
             while(p1.getOtherPeerId() == null && timeout < 10){
                 timeout++;

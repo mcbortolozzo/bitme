@@ -227,7 +227,8 @@ public class TorrentFile {
         List<TrackerPeerInfo.PeerTrackerData> newPeers = new LinkedList<>();
         for(TrackerPeerInfo.PeerTrackerData peer : peers.getPeers()){
             if(this.getPeerByIpAndPort(peer.peerIp, peer.peerPort) == null){
-                newPeers.add(peer);
+                if(peer.peerId != null && !peer.peerId.equals(this.getPeerId()))
+                    newPeers.add(peer);
             }
         }
         return newPeers;

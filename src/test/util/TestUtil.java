@@ -53,7 +53,8 @@ public class TestUtil {
         try {
             p1 = TestUtil.generatePeer(client, torrentFile, new InetSocketAddress("localhost", 9999));
             p1.sendHandshake();
-            p1.process(requests);
+            for(TorrentRequest req: requests)
+                p1.process(req);
             int timeout = 0;
             while(p1.getOtherPeerId() == null && timeout < 10){
                 timeout++;

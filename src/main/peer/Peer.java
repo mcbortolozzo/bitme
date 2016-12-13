@@ -1,9 +1,7 @@
 package main.peer;
 
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import main.Client;
 import main.torrent.HashId;
-import main.torrent.PieceSelectionAlgorithm;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 import main.torrent.file.TorrentBlock;
@@ -15,7 +13,6 @@ import main.util.Messages;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -25,7 +22,6 @@ import java.time.Instant;
 import java.util.BitSet;
 import java.util.Date;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -115,13 +111,11 @@ public class Peer{
 
     /**
      * Executes the requests generated when receiving a message, launches it as a new thread in a pool
-     * @param requests list of requests received
+     * @param req list of requests received
      */
-    public void process(List<TorrentRequest> requests){
-        for(TorrentRequest req : requests){
-            req.setPeer(this);
-            TorrentManager.executorService.execute(req);
-        }
+    public void process(TorrentRequest req){
+        req.setPeer(this);
+        TorrentManager.executorService.execute(req);
         this.lastContact = Date.from(Instant.now());
     }
 

@@ -8,6 +8,12 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Written by
@@ -19,7 +25,14 @@ import java.util.*;
 public class BlockPieceManager {
 
     private static final int BLOCK_SIZE = (int) Math.pow(2,14);
-    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 18));
+    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 15));
+    private static final long REQUEST_TIMEOUT = 10000;
+
+    public static final int CAP_REACHED = 1234;
+
+    Logger logger = Logger.getLogger(this.getClass().getName());
+
+    private static ScheduledExecutorService timeoutExecutor = new ScheduledThreadPoolExecutor(Runtime.getRuntime().availableProcessors() + 1);
 
     TorrentFileInfo fileInfo;
     private HashMap<Integer, ArrayList<byte[]>> downloadingPieces;
@@ -35,6 +48,33 @@ public class BlockPieceManager {
     private BitSet requestsSent;
 
     private Long bytesBeingDownloaded = 0l;
+
+    private LinkedList<BlockRequest> requestsList = new LinkedList<>();
+
+    private class BlockRequest {
+        public long blockLength;
+        public int pieceIndex;
+        public int blockNb;
+        public Peer peer;
+        private Future timeout;
+
+        BlockRequest(int pieceIndex, int blockNb, int blockLength, Peer p){
+            this.blockLength = blockLength;
+            this.pieceIndex = pieceIndex;
+            this.blockNb = blockNb;
+            this.peer = p;
+            this.timeout = timeoutExecutor.schedule(new Runnable() {
+                @Override
+                public void run() {
+                    cancelBlockRequest(pieceIndex, blockNb);
+                }
+            }, REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
+        }
+
+        public void finish(){
+            this.timeout.cancel(false);
+        }
+    }
 
     public BlockPieceManager(int nbPieces, Long lengthPiece, Long lengthFile, Bitfield bitfield, TorrentFileInfo fileInfo) {
         this.downloadingPieces = new HashMap<>();
@@ -60,34 +100,24 @@ public class BlockPieceManager {
         return (nbPieces - 1) * nbBlocks + nbBlocksLastPiece;
     }
 
-    public void beginDownloading(int index, Peer p) {
+    public int beginDownloading(int index, Peer p) {
         if(index >= nbPieces) {
             throw new IndexOutOfBoundsException();
             //TODO add exception treatment
         }
         synchronized (this) {
-            while (getBytesBeginDownloaded() < MAX_DOWNLOAD_CAP) {
+            while (getBytesBeginDownloaded(p) < MAX_DOWNLOAD_CAP) {
                 downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(getNumberBlocksFromPiece(index), null)));
                 try {
                     int nextPieceBlock = getNextMissingBlock(index);
                     createAndSendRequest(index, nextPieceBlock, getBlockSize(index, nextPieceBlock), p);
                 } catch (IllegalArgumentException e) { //No more blocks available for request
                     this.notStartedPieces.remove(new Integer(index));
-                    return;
+                    return -1;
                 }
             }
         }
-        /*
-        if(index == nbPieces - 1) {
-
-            createAndSendAllRequest(index, p);
-            //createAndSendRequest(index, 0, lengthFile.intValue(), p);
-        } else {
-            downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocks, null)));
-            createAndSendAllRequest(index, p);
-            //createAndSendRequest(index, 0, BLOCK_SIZE, p);
-        }
-        */
+        return CAP_REACHED;
     }
 
     private int getNextMissingBlock(int index) {
@@ -100,68 +130,71 @@ public class BlockPieceManager {
         }
     }
 
-    public void createAndSendAllRequest(int index, Peer p) {
-        for(int i = 0; i < getNumberBlocksFromPiece(index); i++) {
-            int blockSize = getBlockSize(index, i);
-            createAndSendRequest(index, i * BLOCK_SIZE, blockSize , p);
-            increaseBytesDownloaded(blockSize);
-            requestsSent.set(index * nbBlocks + i);
+    private synchronized void cancelBlockRequest(int pieceIndex, int blockNb){
+        logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
+        requestsSent.clear(pieceIndex * nbBlocks + blockNb);
+        removeBlockRequest(pieceIndex, blockNb);
+        if(!notStartedPieces.contains(pieceIndex)){
+            notStartedPieces.add(pieceIndex);
         }
     }
 
-    private synchronized void increaseBytesDownloaded(int blockSize) {
+    private synchronized void addBlockRequest(int pieceIndex, int blockNb, int blockSize, Peer p) {
         this.bytesBeingDownloaded += blockSize;
+        this.requestsList.add(new BlockRequest(pieceIndex, blockNb, blockSize, p));
     }
 
-    private synchronized void decreaseBytesDownloaded(int blockSize){
-        this.bytesBeingDownloaded -= blockSize;
-    }
-
-    public synchronized Long getBytesBeginDownloaded(){
-        return bytesBeingDownloaded;
-    }
-
-    public void continueDownloading(int index, Peer p) {
-        if(index >= nbPieces) {
-            throw new IndexOutOfBoundsException();
-            //TODO add exception treatment
-        }
-        synchronized (this) {
-            int indexBlock = downloadingPieces.get(index).indexOf(null);
-            int blockOffset = indexBlock * BLOCK_SIZE;
-            if(index != nbPieces - 1) {
-                if(indexBlock != nbBlocks - 1) {
-                    createAndSendRequest(index, blockOffset, BLOCK_SIZE, p);
-                } else {
-                    createAndSendRequest(index, blockOffset, lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
-                }
-            } else {
-                if(indexBlock != nbBlocksLastPiece - 1) {
-                    createAndSendRequest(index, blockOffset, BLOCK_SIZE, p);
-                } else {
-                    createAndSendRequest(index, blockOffset, lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
-                }
+    private synchronized void removeBlockRequest(int pieceIndex, int blockNb){
+        Iterator<BlockRequest> iterator = requestsList.iterator();
+        while(iterator.hasNext()){
+            BlockRequest br = iterator.next();
+            this.bytesBeingDownloaded -= br.blockLength;
+            if(br.pieceIndex == pieceIndex && br.blockNb == blockNb){
+                br.finish();
+                iterator.remove();
             }
         }
     }
 
+    public synchronized Long getBytesBeginDownloaded(Peer p){
+        return this.bytesBeingDownloaded;
+        /*Long totalBytes = 0l;
+        for(BlockRequest br : requestsList){
+            if(br.peer.getOtherPeerId().equals(p.getOtherPeerId())){
+                totalBytes += br.blockLength;
+            }
+        }
+        return totalBytes;*/
+    }
+
     public void createAndSendRequest(int index, int blockNb, int length, Peer p) {
         ByteBuffer message = TorrentProtocolHelper.createRequest(index, blockNb * BLOCK_SIZE, length);
-        increaseBytesDownloaded(length);
+        addBlockRequest(index, blockNb, length, p);
         requestsSent.set(index * nbBlocks + blockNb);
         p.sendMessage(message);
     }
 
-    public Boolean receiveBlock(int index, int begin, byte[] block) throws NoSuchAlgorithmException, IOException {
+    public synchronized Boolean receiveBlock(int index, int begin, byte[] block) throws NoSuchAlgorithmException, IOException {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
-        decreaseBytesDownloaded(block.length);
+        removeBlockRequest(index, (int) Math.floor((float)begin/ BLOCK_SIZE));
         downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
         if(isPieceComplete(downloadingPieces.get(index))) {
-            return validateAndSavePiece(index);
+            try {
+                return validateAndSavePiece(index);
+            } catch(NullPointerException | IOException e){
+                rollBackPiece(index);
+            }
         }
         return false;
+    }
+
+    private synchronized void rollBackPiece(int index) {
+        this.notStartedPieces.add(index);
+        for(int i = 0; i < getNumberBlocksFromPiece(index); i++){
+            this.requestsSent.clear(index * nbBlocks + i);
+        }
     }
 
     private boolean isPieceComplete(ArrayList pieceBlocks){

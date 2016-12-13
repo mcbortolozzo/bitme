@@ -23,7 +23,7 @@ public class PieceSelectionAlgorithm implements Runnable {
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
-    public static final int RUN_PERIOD = 100; // in miliseconds;
+    public static final int RUN_PERIOD = 50; // in miliseconds;
     private static final int MAX_REQUESTS = 1;
 
     private List<Peer> peers;
@@ -74,25 +74,17 @@ public class PieceSelectionAlgorithm implements Runnable {
         try {
             synchronized (this) {
                 LinkedList<Peer> peersWithPiece = new LinkedList<>();
-                if (blockPieceManager.getBytesBeginDownloaded() < BlockPieceManager.MAX_DOWNLOAD_CAP && !blockPieceManager.getNotStartedPieces().isEmpty()) {
-                    int index = blockPieceManager.getNotStartedPieces().peek();
-                    peersWithPiece = pieceDistribution.get(index);
-                    if (peersWithPiece != null) {
-                        for (Peer p : peersWithPiece) {
-                            if (!p.isPeerChoking()) {
-                                blockPieceManager.beginDownloading(index, p);
-                                break;
-                            }
-                        }
-                    }
-                } else {
-                    for (int i : blockPieceManager.getDownloadingPieces().keySet()) {
-                        peersWithPiece = pieceDistribution.get(i);
+                int result = -1;
+                while(result != BlockPieceManager.CAP_REACHED){
+                    result = BlockPieceManager.CAP_REACHED;
+                    if (!blockPieceManager.getNotStartedPieces().isEmpty()) {
+                        int index = blockPieceManager.getNotStartedPieces().peek();
+                        peersWithPiece = pieceDistribution.get(index);
                         if (peersWithPiece != null) {
                             for (Peer p : peersWithPiece) {
                                 if (!p.isPeerChoking()) {
-                                    //blockPieceManager.continueDownloading(i, p);
-                                    break;
+                                    result = blockPieceManager.beginDownloading(index, p);
+                                    continue;
                                 }
                             }
                         }
