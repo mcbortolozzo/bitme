@@ -23,7 +23,7 @@ public class PieceRequest extends NonHandshakeRequest {
         super(requestBuffer);
         this.pieceIndex = requestBuffer.getInt();
         this.begin = requestBuffer.getInt();
-        block = new byte[this.messageLength - 9];
+        block = new byte[Math.toIntExact(this.messageLength - 9)];
         requestBuffer.get(block);
     }
 

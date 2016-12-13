@@ -70,7 +70,7 @@ public class Bitfield {
 
     public static BitSet generateBitset(byte[] bitfieldBytes, int bitsetLength) {
         BitSet bitset = new BitSet(bitsetLength);
-        for(int byteIndex = 0; byteIndex < Math.ceil(bitsetLength/8); byteIndex++){
+        for(int byteIndex = 0; byteIndex < Math.ceil((float)bitsetLength/8); byteIndex++){
             for(int i = 0; i < 8; i ++){
                 byte bit = Utils.getBit(bitfieldBytes[byteIndex], i);
                 if(bit == 1)

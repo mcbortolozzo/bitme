@@ -24,7 +24,7 @@ public class PieceSelectionAlgorithm implements Runnable {
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     public static final int RUN_PERIOD = 100; // in miliseconds;
-    private static final int MAX_REQUESTS = 10;
+    private static final int MAX_REQUESTS = 1;
 
     private List<Peer> peers;
     private HashMap<Integer, LinkedList<Peer>> pieceDistribution;
@@ -74,13 +74,13 @@ public class PieceSelectionAlgorithm implements Runnable {
         try {
             synchronized (this) {
                 LinkedList<Peer> peersWithPiece = new LinkedList<>();
-                if (blockPieceManager.getDownloadingPieces().size() < MAX_REQUESTS && !blockPieceManager.getNotStartedPieces().isEmpty()) {
+                if (blockPieceManager.getBytesBeginDownloaded() < BlockPieceManager.MAX_DOWNLOAD_CAP && !blockPieceManager.getNotStartedPieces().isEmpty()) {
                     int index = blockPieceManager.getNotStartedPieces().peek();
                     peersWithPiece = pieceDistribution.get(index);
                     if (peersWithPiece != null) {
                         for (Peer p : peersWithPiece) {
                             if (!p.isPeerChoking()) {
-                                blockPieceManager.beginDownloading(blockPieceManager.getNotStartedPieces().pop(), p);
+                                blockPieceManager.beginDownloading(index, p);
                                 break;
                             }
                         }

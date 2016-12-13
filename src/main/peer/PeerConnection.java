@@ -10,6 +10,7 @@ import main.util.Messages;
 import java.io.IOException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class PeerConnection implements Runnable {
 
-    public static final int PEER_BUFFER_SIZE = 4 * 65532;
+    public static final int PEER_BUFFER_SIZE = (int) Math.pow(2, 18);
     Logger logger = Logger.getLogger(PeerConnection.class.getName());
 
     private final Object readLock = new Object(), writeLock = new Object();
@@ -116,12 +117,17 @@ public class PeerConnection implements Runnable {
     @Override
     public void run() {
         //do stuff
-        if(selectionKey.isReadable()){
-            read();
-       } else if (selectionKey.isWritable()) {
-            if(outputBuffer.size() > 0) {
-                write();
+        try{
+            if(selectionKey.isReadable()){
+                read();
+            } else if (selectionKey.isWritable()) {
+                if(outputBuffer.size() > 0) {
+                    write();
+                }
             }
+        } catch(CancelledKeyException e){
+            logger.log(Level.INFO, "cancelled key exception");
+            this.shutdown();
         }
     }
 

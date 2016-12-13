@@ -20,7 +20,7 @@ public class BitfieldRequest extends NonHandshakeRequest {
 
     public BitfieldRequest(ByteBuffer requestBuffer) {
         super(requestBuffer);
-        bitfieldBytes = new byte[this.getMessageLength() - 1]; // length minus id = received bitfield length
+        bitfieldBytes = new byte[Math.toIntExact(this.getMessageLength() - 1)]; // length minus id = received bitfield length
         requestBuffer.get(bitfieldBytes);
     }
 

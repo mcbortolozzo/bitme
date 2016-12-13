@@ -7,10 +7,7 @@ import main.torrent.protocol.TorrentProtocolHelper;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
+import java.util.*;
 
 /**
  * Written by
@@ -22,6 +19,7 @@ import java.util.LinkedList;
 public class BlockPieceManager {
 
     private static final int BLOCK_SIZE = (int) Math.pow(2,14);
+    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 18));
 
     TorrentFileInfo fileInfo;
     private HashMap<Integer, ArrayList<byte[]>> downloadingPieces;
@@ -34,6 +32,10 @@ public class BlockPieceManager {
     private int nbBlocks;
     private int nbBlocksLastPiece;
 
+    private BitSet requestsSent;
+
+    private Long bytesBeingDownloaded = 0l;
+
     public BlockPieceManager(int nbPieces, Long lengthPiece, Long lengthFile, Bitfield bitfield, TorrentFileInfo fileInfo) {
         this.downloadingPieces = new HashMap<>();
         this.nbPieces = nbPieces;
@@ -43,9 +45,9 @@ public class BlockPieceManager {
         this.nbBlocks = (int) Math.ceil(lengthPiece.floatValue()/ BLOCK_SIZE);
         this.nbBlocksLastPiece = (int) Math.ceil(lengthLastPiece.floatValue()/ BLOCK_SIZE);
         this.fileInfo = fileInfo;
-
         this.bitfield = bitfield;
 
+        this.requestsSent = new BitSet(getTotalNbBlocks());
         for (int i = bitfield.getBitfield().nextClearBit(0); i < bitfield.getBitfieldLength(); i = bitfield.getBitfield().nextClearBit(i+1)) {
             notStartedPieces.add(i);
             if (i == Integer.MAX_VALUE) {
@@ -54,36 +56,69 @@ public class BlockPieceManager {
         }
     }
 
+    private int getTotalNbBlocks() {
+        return (nbPieces - 1) * nbBlocks + nbBlocksLastPiece;
+    }
+
     public void beginDownloading(int index, Peer p) {
         if(index >= nbPieces) {
             throw new IndexOutOfBoundsException();
             //TODO add exception treatment
         }
         synchronized (this) {
-            if(index == nbPieces - 1) {
-                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocksLastPiece, null)));
-                createAndSendAllRequest(index, p);
-                //createAndSendRequest(index, 0, lengthFile.intValue(), p);
-            } else {
-                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocks, null)));
-                createAndSendAllRequest(index, p);
-                //createAndSendRequest(index, 0, BLOCK_SIZE, p);
+            while (getBytesBeginDownloaded() < MAX_DOWNLOAD_CAP) {
+                downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(getNumberBlocksFromPiece(index), null)));
+                try {
+                    int nextPieceBlock = getNextMissingBlock(index);
+                    createAndSendRequest(index, nextPieceBlock, getBlockSize(index, nextPieceBlock), p);
+                } catch (IllegalArgumentException e) { //No more blocks available for request
+                    this.notStartedPieces.remove(new Integer(index));
+                    return;
+                }
             }
+        }
+        /*
+        if(index == nbPieces - 1) {
+
+            createAndSendAllRequest(index, p);
+            //createAndSendRequest(index, 0, lengthFile.intValue(), p);
+        } else {
+            downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(nbBlocks, null)));
+            createAndSendAllRequest(index, p);
+            //createAndSendRequest(index, 0, BLOCK_SIZE, p);
+        }
+        */
+    }
+
+    private int getNextMissingBlock(int index) {
+        int pieceBeginIndex = index * nbBlocks;
+        int nextBlock = requestsSent.nextClearBit(pieceBeginIndex);
+        if(nextBlock < pieceBeginIndex + nbBlocks){
+            return nextBlock - pieceBeginIndex;
+        } else {
+            throw new IllegalArgumentException();
         }
     }
 
     public void createAndSendAllRequest(int index, Peer p) {
-        for(int i = 0; i < getNumberBlocksFromPiece(index) - 1; i++) {
-            createAndSendRequest(index, i * BLOCK_SIZE, BLOCK_SIZE, p);
+        for(int i = 0; i < getNumberBlocksFromPiece(index); i++) {
+            int blockSize = getBlockSize(index, i);
+            createAndSendRequest(index, i * BLOCK_SIZE, blockSize , p);
+            increaseBytesDownloaded(blockSize);
+            requestsSent.set(index * nbBlocks + i);
         }
-        if(index != nbPieces - 1) {
-            createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
-                    , lengthPiece.intValue() - BLOCK_SIZE * (nbBlocks - 1), p);
-        } else {
-            createAndSendRequest(index, (getNumberBlocksFromPiece(index)-1) * BLOCK_SIZE
-                    , lengthLastPiece.intValue() - BLOCK_SIZE * (nbBlocksLastPiece - 1), p);
-        }
+    }
 
+    private synchronized void increaseBytesDownloaded(int blockSize) {
+        this.bytesBeingDownloaded += blockSize;
+    }
+
+    private synchronized void decreaseBytesDownloaded(int blockSize){
+        this.bytesBeingDownloaded -= blockSize;
+    }
+
+    public synchronized Long getBytesBeginDownloaded(){
+        return bytesBeingDownloaded;
     }
 
     public void continueDownloading(int index, Peer p) {
@@ -110,8 +145,10 @@ public class BlockPieceManager {
         }
     }
 
-    public void createAndSendRequest(int index, int begin, int length, Peer p) {
-        ByteBuffer message = TorrentProtocolHelper.createRequest(index, begin, length);
+    public void createAndSendRequest(int index, int blockNb, int length, Peer p) {
+        ByteBuffer message = TorrentProtocolHelper.createRequest(index, blockNb * BLOCK_SIZE, length);
+        increaseBytesDownloaded(length);
+        requestsSent.set(index * nbBlocks + blockNb);
         p.sendMessage(message);
     }
 
@@ -119,6 +156,7 @@ public class BlockPieceManager {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
+        decreaseBytesDownloaded(block.length);
         downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
         if(isPieceComplete(downloadingPieces.get(index))) {
             return validateAndSavePiece(index);
@@ -134,7 +172,7 @@ public class BlockPieceManager {
         return true;
     }
 
-    public int getNumberBlocksFromPiece(int index) {
+    private int getNumberBlocksFromPiece(int index) {
         if(index != nbPieces - 1) {
             return nbBlocks;
         } else {
@@ -142,7 +180,7 @@ public class BlockPieceManager {
         }
     }
 
-    public int getPieceSizeFromIndex(int index) {
+    private int getPieceSizeFromIndex(int index) {
         if(index != nbPieces - 1) {
             return lengthPiece.intValue();
         } else {
@@ -150,7 +188,15 @@ public class BlockPieceManager {
         }
     }
 
-    public Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
+    private int getBlockSize(int pieceIndex, int blockNb){
+        int pieceSize = getPieceSizeFromIndex(pieceIndex);
+        if(blockNb == getNumberBlocksFromPiece(pieceIndex) - 1 && pieceSize % BLOCK_SIZE != 0 ){
+            return pieceSize % BLOCK_SIZE;
+        }
+        return BLOCK_SIZE;
+    }
+
+    private Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
         if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
             ByteBuffer pieceBuffer = ByteBuffer.allocate(getPieceSizeFromIndex(index));
             for(byte[] block : downloadingPieces.get(index)) {
