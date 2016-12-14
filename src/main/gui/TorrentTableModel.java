@@ -45,7 +45,8 @@ public class TorrentTableModel extends AbstractTableModel {
 
             @Override
             public void actionPerformed(ActionEvent e) {
-                TorrentTableModel.this.fireTableDataChanged();
+                if (tManager.getTorrentList().size() > 0)
+                    TorrentTableModel.this.fireTableRowsUpdated(0, tManager.getTorrentList().size() - 1);
             }
         });
 
@@ -81,18 +82,22 @@ public class TorrentTableModel extends AbstractTableModel {
 
     }
 
-    public void addTorrent(String path, String saveFolder) {
-        try {
-            System.out.println(new File(path).getParent());
-            this.tManager.addTorrent(path, saveFolder, c.getSelector());
-            this.fireTableDataChanged();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (BencodeReadException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+    public void addTorrent(final String path, final String saveFolder) {
+        Runnable r = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    TorrentTableModel.this.tManager.addTorrent(path, saveFolder, c.getSelector());
+                } catch (IOException e) {
+                    e.printStackTrace();
+                } catch (BencodeReadException e) {
+                    e.printStackTrace();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+        r.run();
     }
 
     @Override
