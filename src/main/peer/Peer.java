@@ -318,6 +318,10 @@ public class Peer{
         return peerPort;
     }
 
+    public int getLastUDowloadSpeed() { return this.downloadBytesLog.peek();}
+
+    public int getLastUploadSpeed() { return this.uploadBytesLog.peek();}
+
     public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
         this.addDownloaded(block.length);
         boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
