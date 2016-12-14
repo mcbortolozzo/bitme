@@ -162,6 +162,8 @@ public class TorrentFile {
         this.scheduledExecutor.schedule(new TrackerUpdater(), delay, unit);
     }
 
+    public List<Peer> getPeers() {return this.peers;}
+
     /**
      * Update tracker information, and retrieve torrent data
      * @param event type of event announced to tracker: STARTED, STOPPED, UNSPECIFIED

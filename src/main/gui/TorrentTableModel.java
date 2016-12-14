@@ -2,6 +2,7 @@ package main.gui;
 
 import com.hypirion.bencode.BencodeReadException;
 import main.Client;
+import main.peer.Peer;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
@@ -82,6 +83,8 @@ public class TorrentTableModel extends AbstractTableModel {
             torrents.add(this.tManager.getTorrentList().get(id));
         }
         TorrentFile current = this.torrents.get(rowIndex);
+        List<Peer> peers = current.getPeers();
+        int speed;
         switch (columnIndex) {
             case 0: // Name
                 return current.getFileInfo().getName();
@@ -92,11 +95,17 @@ public class TorrentTableModel extends AbstractTableModel {
             case 3: // Reçu
                 return current.getDownloaded();
             case 4: // Vitesse Reception
-                return "dl speed " + rowIndex;
+                speed = 0;
+                for (Peer p : peers)
+                    speed += p.getLastUDowloadSpeed();
+                return speed + "/s";
             case 5: // Uploadé
                 return prettySizePrint(current.getUploaded());
             case 6: // Vitesse Upload
-                return "up speed " + rowIndex;
+                speed = 0;
+                for (Peer p : peers)
+                    speed += p.getLastUploadSpeed();
+                return speed + "/s";
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
             case 8: // Temps restant
