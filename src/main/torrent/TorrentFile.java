@@ -143,17 +143,24 @@ public class TorrentFile {
         return bitfield;
     }
 
-    //TODO get uploaded, downloaded and left according to peers
-    public int getUploaded() {
-        return 0;
+    public int getDownloaded(){
+        int downloaded = 0;
+        for(Peer p: this.getPeers()){
+            downloaded += p.getDownloaded();
+        }
+        return downloaded;
     }
 
-    public int getDownloaded(){
-        return 0;
+    public int getUploaded(){
+        int uploaded = 0;
+        for(Peer p: this.getPeers()){
+            uploaded += p.getUploaded();
+        }
+        return uploaded;
     }
 
     public int getLeft(){
-        return 0;
+        return Math.toIntExact((this.getPieceCount() - this.getBitfield().getBitfield().cardinality()) * this.getFileInfo().getPieceSize());
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }

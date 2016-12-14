@@ -1,7 +1,6 @@
 package main.gui;
 
 import com.hypirion.bencode.BencodeReadException;
-import com.oracle.tools.packager.Log;
 import main.Client;
 import main.peer.Peer;
 import main.torrent.HashId;
@@ -98,10 +97,11 @@ public class TorrentTableModel extends AbstractTableModel {
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
+        torrents.clear();
         for (HashId id : this.tManager.getTorrentList().keySet()) {
             torrents.add(this.tManager.getTorrentList().get(id));
         }
-        TorrentFile current = this.torrents.get(rowIndex);
+        TorrentFile current  = this.torrents.get(rowIndex);
         List<Peer> peers = current.getPeers();
         int speed;
         switch (columnIndex) {
@@ -170,7 +170,6 @@ public class TorrentTableModel extends AbstractTableModel {
             for (int i : log)
                 speed += i;
             speed /= log.size();
-            System.out.println("Speed less than 1 minute : " + speed);
         } else {
             int last = log.get(0), last30sec = 0, last1min = 0;
             for(int i = 0 ; i < 60 ; ++i) {
@@ -181,7 +180,6 @@ public class TorrentTableModel extends AbstractTableModel {
                     last1min += log.get(i);
             }
             speed = (int)(last * 0.5 + last30sec/30 * 0.3 + last1min/60 * 0.2);
-            System.out.println("Speed more than 1 minute : " + speed);
         }
         return speed;
     }

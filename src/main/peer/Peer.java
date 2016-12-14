@@ -307,9 +307,13 @@ public class Peer{
         this.uploaded += amount;
     }
 
+    public int getUploaded(){ return this.uploaded; }
+
     public void addDownloaded(int amount){
         this.downloaded += amount;
     }
+
+    public int getDownloaded(){ return this.downloaded; }
 
     public String getPeerIp() {
         return peerIp;

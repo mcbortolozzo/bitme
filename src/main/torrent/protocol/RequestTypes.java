@@ -67,7 +67,7 @@ public enum RequestTypes {
         int messageLength = messageBuffer.getInt();
         byte id = messageBuffer.get();
         messageBuffer.rewind();
-        if(messageBuffer.remaining() >= messageLength && messageLength > 0)
+        if(messageBuffer.remaining() - 4 >= messageLength && messageLength > 0)
             return getById(id, messageLength);
         else
             return NONE;
