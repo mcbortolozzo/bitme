@@ -1,6 +1,7 @@
 package main.gui;
 
 import com.hypirion.bencode.BencodeReadException;
+import com.oracle.tools.packager.Log;
 import main.Client;
 import main.peer.Peer;
 import main.torrent.HashId;
@@ -9,6 +10,7 @@ import main.torrent.TorrentManager;
 
 import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -114,14 +116,14 @@ public class TorrentTableModel extends AbstractTableModel {
             case 4: // Vitesse Reception
                 speed = 0;
                 for (Peer p : peers)
-                    speed += p.getLastUDowloadSpeed();
+                    speed += getSpeedFromLog(p.getUDowloadLog());
                 return prettySizePrint(speed) + "/s";
             case 5: // Uploadé
                 return prettySizePrint(current.getUploaded());
             case 6: // Vitesse Upload
                 speed = 0;
                 for (Peer p : peers)
-                    speed += p.getLastUploadSpeed();
+                    speed += getSpeedFromLog(p.getUploadLog());
                 return prettySizePrint(speed) + "/s";
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
@@ -158,5 +160,29 @@ public class TorrentTableModel extends AbstractTableModel {
     protected static String format(long value, long divider, String unit){
         final double result = divider > 1 ? (double) value / (double) divider : (double) value;
         return String.format("%.1f %s", Double.valueOf(result), unit);
+    }
+
+    private int getSpeedFromLog(List<Integer> log) {
+        if (log.size() == 0)
+            return 0;
+        int speed = 0;
+        if (log.size() < 60) {
+            for (int i : log)
+                speed += i;
+            speed /= log.size();
+            System.out.println("Speed less than 1 minute : " + speed);
+        } else {
+            int last = log.get(0), last30sec = 0, last1min = 0;
+            for(int i = 0 ; i < 60 ; ++i) {
+                if (i < 30) {
+                    last30sec += log.get(i);
+                    last1min += log.get(i);
+                } else
+                    last1min += log.get(i);
+            }
+            speed = (int)(last * 0.5 + last30sec/30 * 0.3 + last1min/60 * 0.2);
+            System.out.println("Speed more than 1 minute : " + speed);
+        }
+        return speed;
     }
 }
