@@ -28,6 +28,7 @@ public class MainWindow {
 	public static void main(String[] args) {
         try {
             final Client c = new Client(Client.PORT);
+			c.run();
             EventQueue.invokeLater(() -> {
                 try {
                     MainWindow window = new MainWindow(c);

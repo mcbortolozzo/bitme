@@ -101,6 +101,7 @@ public class TrackerHelper {
         fileParameters.add(new HttpField(Field.UPLOADED, torrentFile.getUploaded()));
         fileParameters.add(new HttpField(Field.DOWNLOADED, torrentFile.getDownloaded()));
         fileParameters.add(new HttpField(Field.LEFT, torrentFile.getLeft()));
+        fileParameters.add(new HttpField(Field.NUMWANT, 50));
         return fileParameters;
     }
 
