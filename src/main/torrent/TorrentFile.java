@@ -159,8 +159,8 @@ public class TorrentFile {
         return uploaded;
     }
 
-    public int getLeft(){
-        return Math.toIntExact((this.getPieceCount() - this.getBitfield().getBitfield().cardinality()) * this.getFileInfo().getPieceSize());
+    public Long getLeft(){
+        return this.getPieceCount() - this.getBitfield().getBitfield().cardinality()*this.getFileInfo().getPieceSize();
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
