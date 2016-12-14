@@ -274,8 +274,8 @@ public class MainWindow {
      * the second for the saving location.
      */
 	private void createTorrentFile() {
-	    AddTorrentDialog dial = new AddTorrentDialog();
-	    AddTorrentDialog.main(null);
+	    //AddTorrentDialog dial = new AddTorrentDialog();
+	    //AddTorrentDialog.main(null);
 		/*fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);

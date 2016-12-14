@@ -78,7 +78,6 @@ public class TorrentTableModel extends AbstractTableModel {
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         for (HashId id : this.tManager.getTorrentList().keySet()) {
-            System.out.println("BOUMMMMMMMM");
             torrents.add(this.tManager.getTorrentList().get(id));
         }
         TorrentFile current = this.torrents.get(rowIndex);
