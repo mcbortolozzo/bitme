@@ -81,11 +81,10 @@ public class PieceSelectionAlgorithm implements Runnable {
                         int index = blockPieceManager.getNotStartedPieces().peek();
                         peersWithPiece = pieceDistribution.get(index);
                         if (peersWithPiece != null) {
-                            for (Peer p : peersWithPiece) {
-                                if (!p.isPeerChoking()) {
-                                    result = blockPieceManager.beginDownloading(index, p);
-                                    continue;
-                                }
+                            int randPeer = new Random().nextInt(peersWithPiece.size());
+                            if (!peersWithPiece.get(randPeer).isPeerChoking()) {
+                                result = blockPieceManager.beginDownloading(index, peersWithPiece.get(randPeer));
+                                continue;
                             }
                         }
                     }
