@@ -3,6 +3,7 @@ package main.gui;
 
 import main.Client;
 import main.torrent.TorrentManager;
+import main.torrent.file.TorrentFileInfo;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -273,7 +274,9 @@ public class MainWindow {
      * the second for the saving location.
      */
 	private void createTorrentFile() {
-		fc.setDialogTitle("Créer un fichier Torrent");
+	    AddTorrentDialog dial = new AddTorrentDialog();
+	    AddTorrentDialog.main();
+		/*fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -291,11 +294,10 @@ public class MainWindow {
             returnVal = fc.showSaveDialog(MainWindow.this.frmBitme);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 System.out.println("Save file to " + fc.getSelectedFile().getAbsolutePath() + ".torrent");
-                // TODO Do the actual saving
             }
 		} else {
 			System.out.println("Open command cancelled by user.");
-		}
+		}*/
 	}
 
 	/*
