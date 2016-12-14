@@ -14,22 +14,22 @@ public class ProgressCellRenderer extends JProgressBar implements TableCellRende
         this.setValue(0);
         this.setString("0%");
         this.setStringPainted(true);
-        this.setBackground(Color.RED);
+        //this.setBackground(Color.RED);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {
-        final String sValue = value.toString();
+        final String sValue = value.toString().substring(0,4) + "%";
         int index = sValue.indexOf('%');
         if (index != -1) {
-            int p = 0;
+            float p = 0;
             try {
-                p = Integer.parseInt(sValue.substring(0, index));
+                p = Float.parseFloat(sValue.substring(0, index));
             } catch(NumberFormatException e) {
-                System.err.println("Inpossible to parse");
+                System.err.println("Impossible to parse");
             }
-            this.setValue(p);
+            this.setValue((int) p);
             this.setString(sValue);
         }
         return this;
