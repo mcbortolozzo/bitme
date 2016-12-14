@@ -275,7 +275,7 @@ public class MainWindow {
      */
 	private void createTorrentFile() {
 	    AddTorrentDialog dial = new AddTorrentDialog();
-	    AddTorrentDialog.main();
+	    AddTorrentDialog.main(null);
 		/*fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);

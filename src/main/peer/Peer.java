@@ -334,7 +334,7 @@ public class Peer{
 
         @Override
         public void run() {
-            logger.log(Level.INFO, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
+            logger.log(Level.FINE, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
             downloadBytesLog.push(downloaded - this.lastDownload);
             this.lastDownload = downloaded;
             uploadBytesLog.push(uploaded - this.lastUpload);

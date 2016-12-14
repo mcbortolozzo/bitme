@@ -30,6 +30,7 @@ public class TorrentTableModel extends AbstractTableModel {
         this.torrents = new ArrayList<>();
         for (HashId id : this.tManager.getTorrentList().keySet())
             torrents.add(this.tManager.getTorrentList().get(id));
+        this. c = c;
     }
 
     private void updateList() {
@@ -63,7 +64,7 @@ public class TorrentTableModel extends AbstractTableModel {
     public void addTorrent(String path, String saveFolder) {
         try {
             System.out.println(new File(path).getParent());
-            this.tManager.addTorrent(path, new File(path).getParent(), c.getSelector());
+            this.tManager.addTorrent(path, saveFolder, c.getSelector());
             this.fireTableDataChanged();
         } catch (IOException e) {
             e.printStackTrace();
