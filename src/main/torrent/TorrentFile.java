@@ -258,6 +258,13 @@ public class TorrentFile {
         return this.blockPieceManager.receiveBlock(pieceIndex, begin, block);
     }
 
+    public void shutdown() {
+        for(Peer p : peers) {
+            p.shutdown();
+        }
+        scheduledExecutor.shutdown();
+    }
+
     private class TrackerUpdater implements Runnable {
 
         @Override

@@ -52,6 +52,6 @@ public class Client implements Runnable {
     public static void main(String args[]) throws IOException, BencodeReadException, NoSuchAlgorithmException, InterruptedException {
         Client client = new Client(PORT);
         client.run();
-        TorrentManager.getInstance().addTorrent("/home/marcelo/Downloads/HorribleSubs-Cheating-Craft-11-480p.mkv.torrent", "/home/marcelo/Downloads/torrent", client.getSelector());
+        TorrentManager.getInstance().addTorrent("C:\\Users\\rasc42\\Desktop\\1.torrent", "C:\\Users\\rasc42\\Downloads\\bin64", client.getSelector());
     }
 }

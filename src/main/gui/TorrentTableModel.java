@@ -74,9 +74,9 @@ public class TorrentTableModel extends AbstractTableModel {
     }
 
     public void removeTorrent(int[] is) {
-        // TODO Implement torrent removal
-        // Should remove the torrent from the manager
-        // And then refresh torrents
+        for(int i = is.length - 1; i >= 0; i--) {
+            torrents.get(is[i]).shutdown();
+        }
         System.out.println("Not Implmented Yet, thanks to the Network team #Brazil");
 
     }
