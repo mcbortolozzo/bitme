@@ -22,6 +22,7 @@ import java.time.Instant;
 import java.util.BitSet;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -318,9 +319,9 @@ public class Peer{
         return peerPort;
     }
 
-    public int getLastUDowloadSpeed() { return this.downloadBytesLog.peek();}
+    public List<Integer> getUDowloadLog() { return this.downloadBytesLog;}
 
-    public int getLastUploadSpeed() { return this.uploadBytesLog.peek();}
+    public List<Integer> getUploadLog() { return this.uploadBytesLog;}
 
     public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
         this.addDownloaded(block.length);
