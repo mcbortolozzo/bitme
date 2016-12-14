@@ -146,9 +146,11 @@ public class PeerConnection implements Runnable {
         } catch(CancelledKeyException e){
             logger.log(Level.INFO, "cancelled key exception");
             this.shutdown();
-        } catch (IOException | NoConnectionPendingException e) {
-            logger.log(Level.INFO, e.getMessage() + "\n " + this.peer.getPeerIp() + ":" + this.peer.getPeerPort());
+        } catch (IOException e) {
+            logger.log(Level.INFO, e + "\n" + this.peer.getPeerIp() + ":" + this.peer.getPeerPort());
             this.shutdown();
+        } catch (NoConnectionPendingException e) {
+            logger.log(Level.FINE, "Finish connect called before connect, waiting for next run");
         }
     }
 

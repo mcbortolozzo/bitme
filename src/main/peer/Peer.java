@@ -167,12 +167,14 @@ public class Peer{
      * When this torrent is the target of the connection, it only knows which torrent to use when it receives the handshake
      * @param torrentFile the torrent used on the handshake, only valid torrent files will be used (validation in handshake)
      */
-    public void setTorrentFile(TorrentFile torrentFile) {
-        this.bitfield = new Bitfield(torrentFile);
-        this.torrentFile = torrentFile;
-        this.torrentFile.addPeer(this);
-        this.stateManager = new PeerProtocolStateManager(this.torrentFile.getBitfield(), this.bitfield);
-        this.launchSpeedMeasurement();
+    public synchronized void setTorrentFile(TorrentFile torrentFile) {
+        if(this.torrentFile == null) {
+            this.bitfield = new Bitfield(torrentFile);
+            this.torrentFile = torrentFile;
+            this.torrentFile.addPeer(this);
+            this.stateManager = new PeerProtocolStateManager(this.torrentFile.getBitfield(), this.bitfield);
+            this.launchSpeedMeasurement();
+        }
     }
 
     /**
@@ -303,17 +305,17 @@ public class Peer{
             this.torrentFile.removePeer(this);
     }
 
-    public void addUploaded(int amount) {
+    public synchronized void addUploaded(int amount) {
         this.uploaded += amount;
     }
 
-    public int getUploaded(){ return this.uploaded; }
+    public synchronized int getUploaded(){ return this.uploaded; }
 
-    public void addDownloaded(int amount){
+    public synchronized void addDownloaded(int amount){
         this.downloaded += amount;
     }
 
-    public int getDownloaded(){ return this.downloaded; }
+    public synchronized int getDownloaded(){ return this.downloaded; }
 
     public String getPeerIp() {
         return peerIp;
@@ -343,11 +345,13 @@ public class Peer{
 
         @Override
         public void run() {
+            int localDownloaded = getDownloaded();
+            int localUploaded = getUploaded();
             logger.log(Level.FINE, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
-            downloadBytesLog.push(downloaded - this.lastDownload);
-            this.lastDownload = downloaded;
-            uploadBytesLog.push(uploaded - this.lastUpload);
-            this.lastUpload = uploaded;
+            downloadBytesLog.push(localDownloaded - this.lastDownload);
+            this.lastDownload = localDownloaded;
+            uploadBytesLog.push(localUploaded - this.lastUpload);
+            this.lastUpload = localUploaded;
         }
     }
 
