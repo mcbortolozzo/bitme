@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 public class BlockPieceManager {
 
     private static final int BLOCK_SIZE = (int) Math.pow(2,14);
-    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 16));
+    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 20));
     private static final long REQUEST_TIMEOUT = 10000;
 
     public static final int CAP_REACHED = 1234;
@@ -131,7 +131,7 @@ public class BlockPieceManager {
     }
 
     private synchronized void cancelBlockRequest(int pieceIndex, int blockNb){
-        //logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
+        logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
         requestsSent.clear(pieceIndex * nbBlocks + blockNb);
         removeBlockRequest(pieceIndex, blockNb);
         if(!notStartedPieces.contains(pieceIndex)){
