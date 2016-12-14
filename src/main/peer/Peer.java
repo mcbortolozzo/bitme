@@ -80,7 +80,7 @@ public class Peer{
      * @throws IOException thrown from peerConnection
      */
     public Peer(Selector selector, TorrentFile torrentFile, InetSocketAddress destAddr) throws IOException {
-        logger.log(Level.FINE, Messages.PEER_CONNECTION_AUTO_CREATE.getText());
+        logger.log(Level.INFO, Messages.PEER_CONNECTION_AUTO_CREATE.getText() + " - " + destAddr);
         this.peerIp = destAddr.getHostName();
         this.peerPort = destAddr.getPort();
         this.setTorrentFile(torrentFile);
@@ -333,6 +333,7 @@ public class Peer{
 
         @Override
         public void run() {
+            logger.log(Level.FINE, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
             downloadBytesLog.push(downloaded - this.lastDownload);
             this.lastDownload = downloaded;
             uploadBytesLog.push(uploaded - this.lastUpload);

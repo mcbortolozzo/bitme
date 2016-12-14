@@ -5,11 +5,7 @@ import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.LinkedList;
@@ -58,22 +54,29 @@ public class TrackerHelper {
 
     //TODO compact response, accept or not?
     //TODO ip, numwant, key and tracker id are optional, should we add?
-    public static String sendTrackerRequest(String requestURL) throws IOException {
+    public static byte[] sendTrackerRequest(String requestURL) throws IOException {
         URL request = new URL(requestURL);
+        InputStream in = new BufferedInputStream(request.openStream());
+
+        /*
         HttpURLConnection conn = (HttpURLConnection) request.openConnection();
         conn.setRequestMethod("GET");
         BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        return getRequestReply(reader);
+        */
+        return getRequestReply(in);
     }
 
-    private static String getRequestReply(BufferedReader reader) throws IOException {
-        StringBuilder reply = new StringBuilder();
-        String line;
-        while((line = reader.readLine()) != null){
-            reply.append(line);
+    private static byte[] getRequestReply(InputStream in) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        byte[] buf = new byte[1024];
+        int n = 0;
+        while(-1 != (n = in.read(buf))){
+            out.write(buf, 0, n);
         }
-        reader.close();
-        return reply.toString();
+        in.close();
+        out.close();
+        byte[] result = out.toByteArray();
+        return result;
     }
 
     private static List<HttpField> getRequestParameters(HashId torrentId, Event event) throws UnsupportedEncodingException {

@@ -172,7 +172,7 @@ public class TorrentFile {
         if(this.fileInfo.getTrackerAnnounce() != null) {
             String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
             try {
-                String result = TrackerHelper.sendTrackerRequest(trackerRequest);
+                byte[] result = TrackerHelper.sendTrackerRequest(trackerRequest);
                 TrackerQueryResult trackerResult = new TrackerQueryResult(result);
                 logger.log(Level.FINE, Messages.TRACKER_CONNECT_SUCCCESS.getText());
                 //connect to peers
@@ -227,8 +227,7 @@ public class TorrentFile {
         List<TrackerPeerInfo.PeerTrackerData> newPeers = new LinkedList<>();
         for(TrackerPeerInfo.PeerTrackerData peer : peers.getPeers()){
             if(this.getPeerByIpAndPort(peer.peerIp, peer.peerPort) == null){
-                if(peer.peerId != null && !peer.peerId.equals(this.getPeerId()))
-                    newPeers.add(peer);
+                newPeers.add(peer);
             }
         }
         return newPeers;

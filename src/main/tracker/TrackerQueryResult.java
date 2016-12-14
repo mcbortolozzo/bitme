@@ -30,8 +30,8 @@ public class TrackerQueryResult {
     private Long incompletePeers;
     private TrackerPeerInfo peerInfo;
 
-    public TrackerQueryResult(String reply) throws IOException, BencodeReadException {
-        InputStream in = new ByteArrayInputStream(reply.getBytes());
+    public TrackerQueryResult(byte[] reply) throws IOException, BencodeReadException {
+        InputStream in = new ByteArrayInputStream(reply);
         BencodeReader bReader = new BencodeReader(in, StandardCharsets.ISO_8859_1);
 
         Map<String, Object> dict = bReader.readDict();

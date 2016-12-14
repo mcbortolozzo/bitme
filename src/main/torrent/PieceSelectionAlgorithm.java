@@ -23,7 +23,7 @@ public class PieceSelectionAlgorithm implements Runnable {
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
-    public static final int RUN_PERIOD = 50; // in miliseconds;
+    public static final int RUN_PERIOD = 500; // in miliseconds;
     private static final int MAX_REQUESTS = 1;
 
     private List<Peer> peers;

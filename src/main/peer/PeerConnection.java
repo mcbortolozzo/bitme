@@ -6,6 +6,7 @@ import main.torrent.protocol.TorrentRequest;
 import main.util.Messages;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.CancelledKeyException;
@@ -39,22 +40,22 @@ public class PeerConnection implements Runnable {
     public PeerConnection(SocketChannel socket, Selector selector, Peer peer) throws IOException {
         this.socket = socket;
         this.peer = peer;
-        this.configureSocket(socket, selector);
+        this.configureSocket(socket, selector, SelectionKey.OP_READ);
     }
 
     public PeerConnection(Selector selector, SocketAddress destAddr, Peer peer) throws IOException {
         this.socket = SocketChannel.open();
         this.peer = peer;
+        this.configureSocket(socket, selector, SelectionKey.OP_CONNECT);
         this.socket.connect(destAddr);
-        this.configureSocket(socket, selector);
     }
 
-    private void configureSocket(SocketChannel socket, Selector selector) throws IOException {
+    private void configureSocket(SocketChannel socket, Selector selector, int keyOp) throws IOException {
         this.socket.configureBlocking(false);
         synchronized (Dispatcher.SELECTOR_LOCK2) {
             selector.wakeup();
             synchronized (Dispatcher.SELECTOR_LOCK) {
-                this.selectionKey = socket.register(selector, SelectionKey.OP_READ);
+                this.selectionKey = socket.register(selector, keyOp);
                 this.selectionKey.attach(this);
             }
         }
@@ -117,7 +118,8 @@ public class PeerConnection implements Runnable {
         synchronized (writeLock) {
             data.flip();
             outputBuffer.add(data);
-            selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
+            if(this.socket.isConnected())
+                selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
             synchronized (Dispatcher.SELECTOR_LOCK2) {
                 selectionKey.selector().wakeup();
             }
@@ -136,9 +138,19 @@ public class PeerConnection implements Runnable {
                 } else {
                     this.selectionKey.interestOps(SelectionKey.OP_READ);
                 }
+            } else if (selectionKey.isConnectable()){
+                this.socket.finishConnect();
+                logger.log(Level.INFO, "Peer connected - " + this.socket.getRemoteAddress());
+                this.selectionKey.interestOps(SelectionKey.OP_READ & ~SelectionKey.OP_CONNECT);
+                if(!this.outputBuffer.isEmpty()){
+                    this.selectionKey.interestOps(this.selectionKey.interestOps() | SelectionKey.OP_WRITE);
+                }
             }
         } catch(CancelledKeyException e){
             logger.log(Level.INFO, "cancelled key exception");
+            this.shutdown();
+        } catch (IOException e) {
+            logger.log(Level.INFO, e.getMessage());
             this.shutdown();
         }
     }
