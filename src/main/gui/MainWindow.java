@@ -274,8 +274,13 @@ public class MainWindow {
      * the second for the saving location.
      */
 	private void createTorrentFile() {
-	    AddTorrentDialog dial = new AddTorrentDialog();
-	    AddTorrentDialog.main(null);
+        fc.setDialogTitle("Créer un fichier Torrent");
+        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selected = fc.getSelectedFile();
+            AddTorrentDialog.display(selected, TorrentManager.getInstance());
+        }
 		/*fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
@@ -351,7 +356,8 @@ public class MainWindow {
 
 		@Override
 		public void keyReleased(KeyEvent e) {
-            this.events.remove(this.events.indexOf(e.getKeyCode()));
+		    if (this.events.indexOf(e.getKeyCode()) != -1)
+                this.events.remove(this.events.indexOf(e.getKeyCode()));
 		}
 	}
 }

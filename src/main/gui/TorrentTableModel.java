@@ -7,7 +7,10 @@ import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
@@ -32,6 +35,17 @@ public class TorrentTableModel extends AbstractTableModel {
         for (HashId id : this.tManager.getTorrentList().keySet())
             torrents.add(this.tManager.getTorrentList().get(id));
         this. c = c;
+
+        Timer timer = new Timer(0, new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                TorrentTableModel.this.fireTableDataChanged();
+            }
+        });
+
+        timer.setDelay(1000); // delay for 30 seconds
+        timer.start();
     }
 
     private void updateList() {
@@ -98,14 +112,14 @@ public class TorrentTableModel extends AbstractTableModel {
                 speed = 0;
                 for (Peer p : peers)
                     speed += p.getLastUDowloadSpeed();
-                return speed + "/s";
+                return prettySizePrint(speed) + "/s";
             case 5: // Uploadé
                 return prettySizePrint(current.getUploaded());
             case 6: // Vitesse Upload
                 speed = 0;
                 for (Peer p : peers)
                     speed += p.getLastUploadSpeed();
-                return speed + "/s";
+                return prettySizePrint(speed) + "/s";
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
             case 8: // Temps restant
@@ -120,7 +134,7 @@ public class TorrentTableModel extends AbstractTableModel {
     private static final long G = M * K;
     private static final long T = G * K;
 
-    protected String prettySizePrint(long value) {
+    static String prettySizePrint(long value) {
         final long[] dividers = new long[] { T, G, M, K, 1 };
         final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
         if (value == 0)
