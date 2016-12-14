@@ -1,5 +1,6 @@
 package main.peer;
 
+import com.sun.org.apache.bcel.internal.generic.Select;
 import main.reactor.Dispatcher;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
@@ -9,10 +10,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.nio.channels.CancelledKeyException;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,7 +76,6 @@ public class PeerConnection implements Runnable {
                     } else {
                         break;
                     }
-                    //TorrentManager.executorService.execute(new DecodeProtocolTask(this.peer, inputBuffer));
                 }
                 inputBuffer.compact();
 
@@ -119,7 +116,7 @@ public class PeerConnection implements Runnable {
             data.flip();
             outputBuffer.add(data);
             if(this.socket.isConnected())
-                selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
+                selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps() & ~SelectionKey.OP_CONNECT);
             synchronized (Dispatcher.SELECTOR_LOCK2) {
                 selectionKey.selector().wakeup();
             }
@@ -127,7 +124,7 @@ public class PeerConnection implements Runnable {
     }
 
     @Override
-    public void run() {
+    public synchronized void run() {
         //do stuff
         try{
             if(selectionKey.isReadable()){
@@ -149,8 +146,8 @@ public class PeerConnection implements Runnable {
         } catch(CancelledKeyException e){
             logger.log(Level.INFO, "cancelled key exception");
             this.shutdown();
-        } catch (IOException e) {
-            logger.log(Level.INFO, e.getMessage());
+        } catch (IOException | NoConnectionPendingException e) {
+            logger.log(Level.INFO, e.getMessage() + "\n " + this.peer.getPeerIp() + ":" + this.peer.getPeerPort());
             this.shutdown();
         }
     }

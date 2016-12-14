@@ -319,6 +319,7 @@ public class Peer{
     }
 
     public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
+        this.addDownloaded(block.length);
         boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
         if(pieceDone){
             this.torrentFile.setHavePiece(pieceIndex);
@@ -333,7 +334,7 @@ public class Peer{
 
         @Override
         public void run() {
-            logger.log(Level.FINE, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
+            logger.log(Level.INFO, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
             downloadBytesLog.push(downloaded - this.lastDownload);
             this.lastDownload = downloaded;
             uploadBytesLog.push(uploaded - this.lastUpload);
