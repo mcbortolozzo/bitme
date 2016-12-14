@@ -4,20 +4,24 @@ import main.torrent.TorrentManager;
 import main.torrent.file.TorrentFileInfo;
 
 import javax.swing.*;
+import javax.swing.text.NumberFormatter;
 import java.awt.event.*;
 import java.io.File;
+import java.text.NumberFormat;
 
 public class AddTorrentDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
-    private JTextArea textArea1;
-    private JTextArea textArea2;
+    private JTextArea trackers;
+    private JTextArea comments;
     private JButton modifierButton;
     private JCheckBox ouvrirAprèsLaCréationCheckBox;
     private JLabel filenameLabel;
     private JLabel sizeLabel;
     private JLabel localisationLabel;
+    private JTextField tailleDesPiècesTextField;
+    private JFormattedTextField pieceSize;
 
     private final JFileChooser fc = new JFileChooser();
     private File toSave;
@@ -30,13 +34,24 @@ public class AddTorrentDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        this.filenameLabel.setText(f.getName());
+        this.filenameLabel.setText(f.getName() + ".torrent");
         this.sizeLabel.setText(TorrentTableModel.prettySizePrint(f.length()));
         this.localisationLabel.setText(f.getParent());
 
         this.toSave = f;
         this.destination = f.getParentFile();
         this.tManager = t;
+        this.tailleDesPiècesTextField.setText(256 + "");
+
+        NumberFormat format = NumberFormat.getInstance();
+        NumberFormatter formatter = new NumberFormatter(format);
+        formatter.setValueClass(Integer.class);
+        formatter.setMinimum(0);
+        formatter.setMaximum(Integer.MAX_VALUE);
+        formatter.setAllowsInvalid(false);
+        // If you want the value to be committed on each keystroke instead of focus lost
+        formatter.setCommitsOnValidEdit(true);
+        //this.pieceSize.setFormatterFactory(new);
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
@@ -79,7 +94,8 @@ public class AddTorrentDialog extends JDialog {
     }
 
     private void onOK() {
-
+        String trackers = this.trackers.getText();
+        String comments = this.comments.getText();
         dispose();
     }
 
