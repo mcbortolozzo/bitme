@@ -23,18 +23,29 @@ public class PieceSelectionAlgorithm implements Runnable {
 
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
-    public static final int RUN_PERIOD = 100; // in miliseconds;
+    public static final int RUN_PERIOD = 25; // in miliseconds;
     private static final int MAX_REQUESTS = 1;
 
     private List<Peer> peers;
     private HashMap<Integer, LinkedList<Peer>> pieceDistribution;
     private ArrayList<Integer> pieceQuantity;
     private BlockPieceManager blockPieceManager;
+    private int nbPieces;
 
-    public PieceSelectionAlgorithm(BlockPieceManager blockPieceManager, TorrentFileInfo fileInfo){
+    private BitSet piecesRequested;
+
+
+    public PieceSelectionAlgorithm(BlockPieceManager blockPieceManager, TorrentFileInfo fileInfo, Bitfield bitfield){
         this.blockPieceManager = blockPieceManager;
         this.pieceDistribution = new HashMap<>(fileInfo.getPieceCount());
         this.pieceQuantity = new ArrayList<>((Collections.nCopies(fileInfo.getPieceCount(), 0)));
+        this.nbPieces = fileInfo.getPieceCount();
+        this.piecesRequested = generatePiecesRequested(bitfield);
+
+    }
+
+    private BitSet generatePiecesRequested(Bitfield bitfield) {
+        return (BitSet) bitfield.getBitfield().clone();
     }
 
     public synchronized void updatePeers(List<Peer> peers){
@@ -69,22 +80,40 @@ public class PieceSelectionAlgorithm implements Runnable {
         this.pieceQuantity = pieceQuantity;
     }
 
+    private synchronized boolean checkEndGame() {
+        return this.piecesRequested.nextClearBit(0) >= this.nbPieces;
+    }
+
     @Override
-    public void run() {
+    public synchronized void run() {
         try {
             synchronized (this) {
                 LinkedList<Peer> peersWithPiece = new LinkedList<>();
                 int result = -1;
-                while(result != BlockPieceManager.CAP_REACHED){
-                    result = BlockPieceManager.CAP_REACHED;
-                    if (!blockPieceManager.getNotStartedPieces().isEmpty()) {
-                        int index = blockPieceManager.getNotStartedPieces().peek();
-                        peersWithPiece = pieceDistribution.get(index);
-                        if (peersWithPiece != null) {
-                            int randPeer = new Random().nextInt(peersWithPiece.size());
-                            if (!peersWithPiece.get(randPeer).isPeerChoking()) {
-                                result = blockPieceManager.beginDownloading(index, peersWithPiece.get(randPeer));
-                                continue;
+                if(checkEndGame()){
+                    Iterator<Integer> iterator = this.blockPieceManager.getNotStartedPieces().iterator();
+                    while (iterator.hasNext()){
+                        int index = iterator.next();
+                        for(Peer p : this.peers){
+                            if(!p.isPeerChoking()){
+                                blockPieceManager.sendEndGame(index, p);
+                            }
+                        }
+                        iterator.remove();
+                    }
+                } else {
+                    while (result != BlockPieceManager.CAP_REACHED) {
+                        result = BlockPieceManager.CAP_REACHED;
+                        if (!blockPieceManager.getNotStartedPieces().isEmpty()) {
+                            int index = blockPieceManager.getNotStartedPieces().peek();
+                            peersWithPiece = pieceDistribution.get(index);
+                            if (peersWithPiece != null) {
+                                int randPeer = new Random().nextInt(peersWithPiece.size());
+                                if (!peersWithPiece.get(randPeer).isPeerChoking()) {
+                                    this.piecesRequested.set(index);
+                                    result = blockPieceManager.beginDownloading(index, peersWithPiece.get(randPeer));
+                                    continue;
+                                }
                             }
                         }
                     }

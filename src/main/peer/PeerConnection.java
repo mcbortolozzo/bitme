@@ -1,16 +1,16 @@
 package main.peer;
 
-import com.sun.org.apache.bcel.internal.generic.Select;
 import main.reactor.Dispatcher;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
+import main.torrent.protocol.requests.RequestRequest;
 import main.util.Messages;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.*;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -33,7 +33,7 @@ public class PeerConnection implements Runnable {
     private SocketChannel socket;
     private SelectionKey selectionKey;
     private ByteBuffer inputBuffer = ByteBuffer.allocate(PEER_BUFFER_SIZE);
-    private LinkedList<ByteBuffer> outputBuffer = new LinkedList<>();
+    private LinkedList<TorrentRequest.OutboundMessage> outputBuffer = new LinkedList<>();
 
     public PeerConnection(SocketChannel socket, Selector selector, Peer peer) throws IOException {
         this.socket = socket;
@@ -92,8 +92,16 @@ public class PeerConnection implements Runnable {
     private void write(){
         synchronized (writeLock) {
             try {
-               if(outputBuffer.size() > 0)
-                    socket.write(outputBuffer.pop());
+               if(outputBuffer.size() > 0){
+                   TorrentRequest.OutboundMessage message = outputBuffer.pop();
+                   message.started = true;
+                   socket.write(message.buffer);
+                   if(message.buffer.hasRemaining()){
+                       message.buffer.compact();
+                       message.buffer.flip();
+                       outputBuffer.push(message);
+                   }
+               }
             } catch (IOException e) {
                 logger.log(Level.FINE, e.getMessage());
                 logger.log(Level.FINE, Messages.SOCKET_WRITE_FAIL.getText());
@@ -111,14 +119,29 @@ public class PeerConnection implements Runnable {
         }
     }
 
-    public synchronized void addToBuffer(ByteBuffer data){
+    public synchronized void addToBuffer(TorrentRequest.OutboundMessage message){
         synchronized (writeLock) {
-            data.flip();
-            outputBuffer.add(data);
+            message.buffer.flip();
+            outputBuffer.add(message);
             if(this.socket.isConnected())
                 selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps() & ~SelectionKey.OP_CONNECT);
             synchronized (Dispatcher.SELECTOR_LOCK2) {
                 selectionKey.selector().wakeup();
+            }
+        }
+    }
+
+    public synchronized void cancelRequest(int index, int begin){
+        synchronized (writeLock) {
+            Iterator<TorrentRequest.OutboundMessage> iterator = this.outputBuffer.iterator();
+            while(iterator.hasNext()){
+                TorrentRequest.OutboundMessage message = iterator.next();
+                if(message.request != null && message.request instanceof RequestRequest){
+                    RequestRequest request = (RequestRequest) message.request;
+                    if(request.getPieceIndex() == index && request.getBegin() == begin){
+                        iterator.remove();
+                    }
+                }
             }
         }
     }
@@ -158,7 +181,7 @@ public class PeerConnection implements Runnable {
         return peer;
     }
 
-    public void shutdown(){
+    public synchronized void shutdown(){
         try {
             this.socket.close();
         } catch (IOException e) {
