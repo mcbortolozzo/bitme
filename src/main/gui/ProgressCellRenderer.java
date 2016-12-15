@@ -5,14 +5,18 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 
 /**
- * Created by aval0n on 28/11/2016.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class ProgressCellRenderer extends JProgressBar implements TableCellRenderer {
 
     public ProgressCellRenderer() {
         super(0, 100);
         this.setValue(0);
-        this.setString("0%");
+        this.setString("0 %");
         this.setStringPainted(true);
         //this.setBackground(Color.RED);
     }
@@ -20,7 +24,7 @@ public class ProgressCellRenderer extends JProgressBar implements TableCellRende
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {
-        final String sValue = value.toString().substring(0,4) + "%";
+        final String sValue = value.toString().substring(0,2) + "%";
         int index = sValue.indexOf('%');
         if (index != -1) {
             float p = 0;

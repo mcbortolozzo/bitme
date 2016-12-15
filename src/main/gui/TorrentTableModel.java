@@ -21,7 +21,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Created by aval0n on 28/11/2016.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class TorrentTableModel extends AbstractTableModel {
 
@@ -41,13 +45,9 @@ public class TorrentTableModel extends AbstractTableModel {
             torrents.add(this.tManager.getTorrentList().get(id));
         this. c = c;
 
-        Timer timer = new Timer(0, new ActionListener() {
-
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (tManager.getTorrentList().size() > 0)
-                    TorrentTableModel.this.fireTableRowsUpdated(0, tManager.getTorrentList().size() - 1);
-            }
+        Timer timer = new Timer(0, e -> {
+            if (tManager.getTorrentList().size() > 0)
+                TorrentTableModel.this.fireTableRowsUpdated(0, tManager.getTorrentList().size() - 1);
         });
 
         timer.setDelay(1000); // delay for 30 seconds
@@ -83,21 +83,15 @@ public class TorrentTableModel extends AbstractTableModel {
     }
 
     public void addTorrent(final String path, final String saveFolder) {
-        Runnable r = new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    TorrentTableModel.this.tManager.addTorrent(path, saveFolder, c.getSelector());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } catch (BencodeReadException e) {
-                    e.printStackTrace();
-                } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                }
+        System.out.println("Parent : " + Thread.currentThread().getName());
+        EventQueue.invokeLater(() -> {
+            System.out.println("Enfant : " + Thread.currentThread().getName());
+            try {
+                TorrentTableModel.this.tManager.addTorrent(path, saveFolder, c.getSelector());
+            } catch (IOException | BencodeReadException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
             }
-        };
-        r.run();
+        });
     }
 
     @Override

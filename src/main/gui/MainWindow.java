@@ -15,6 +15,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
+ */
 public class MainWindow {
 
 	private JFrame frmBitme;
@@ -26,13 +34,15 @@ public class MainWindow {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+        System.out.println("Parent : " + Thread.currentThread().getName());
         try {
             final Client c = new Client(Client.PORT);
 			c.run();
-            EventQueue.invokeLater(() -> {
+            SwingUtilities.invokeLater(() -> {
                 try {
                     MainWindow window = new MainWindow(c);
                     window.frmBitme.setVisible(true);
+                    System.out.println("Enfant : " + Thread.currentThread().getName());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -259,8 +269,6 @@ public class MainWindow {
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-                System.out.println("Opening: " + file.getAbsolutePath());
-                System.out.println("Saving into: " + fc.getSelectedFile().getAbsolutePath());
                 ((TorrentTableModel) torrents.getModel()).addTorrent(file.getAbsolutePath(), fc.getSelectedFile().getAbsolutePath());
                 updateActiveTorrents();
             }

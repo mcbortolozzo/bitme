@@ -9,6 +9,14 @@ import java.awt.event.*;
 import java.io.File;
 import java.text.NumberFormat;
 
+
+/**
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
+ */
 public class AddTorrentDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
