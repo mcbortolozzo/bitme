@@ -96,7 +96,9 @@ public class ChokingAlgorithm implements Runnable{
         while(peerIterator.hasNext() && interestedPeers < MAX_DOWNLOADERS){
             Peer nextPeer = peerIterator.next();
             if(nextPeer.isPeerInterested()) interestedPeers++;
-            toUnchoke.add(nextPeer);
+            if(!nextPeer.isPeerConnectionNull()) {
+                toUnchoke.add(nextPeer);
+            }
         }
         return toUnchoke;
     }

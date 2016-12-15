@@ -82,9 +82,9 @@ public class Peer{
         logger.log(Level.INFO, Messages.PEER_CONNECTION_AUTO_CREATE.getText() + " - " + destAddr);
         this.peerIp = destAddr.getHostName();
         this.peerPort = destAddr.getPort();
-        this.setTorrentFile(torrentFile);
         this.localPeerId = torrentFile.getPeerId();
         this.peerConnection = new PeerConnection(selector, destAddr, this);
+        this.setTorrentFile(torrentFile);
         this.lastContact = Date.from(Instant.now());
         this.sendHandshake(null);
     }
@@ -355,6 +355,10 @@ public class Peer{
             this.sendHave(pieceIndex);
             this.updateInterested();
         }
+    }
+
+    public Boolean isPeerConnectionNull(){
+        return this.peerConnection == null;
     }
 
     public void cancelRequest(int pieceIndex, int begin) {
