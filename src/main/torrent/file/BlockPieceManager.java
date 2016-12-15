@@ -26,7 +26,7 @@ public class BlockPieceManager {
 
     private static final int BLOCK_SIZE = (int) Math.pow(2,14);
     public static final int MAX_DOWNLOAD_CAP = (int) (10 * Math.pow(2, 14));
-    private static final long REQUEST_TIMEOUT = 90000;
+    private static final long REQUEST_TIMEOUT = 60000;
 
     public static final int CAP_REACHED = 1234;
 
@@ -48,17 +48,16 @@ public class BlockPieceManager {
     private BitSet requestsSent;
     private BitSet blocksReceived;
 
-    private Long bytesBeingDownloaded = 0l;
-
     private LinkedList<BlockRequest> requestsList = new LinkedList<>();
+    private boolean endGame;
 
     private class BlockRequest {
+
         public long blockLength;
         public int pieceIndex;
         public int blockNb;
         public Peer peer;
         private Future timeout;
-
         BlockRequest(int pieceIndex, int blockNb, int blockLength, Peer p){
             this.blockLength = blockLength;
             this.pieceIndex = pieceIndex;
@@ -67,7 +66,7 @@ public class BlockPieceManager {
             this.timeout = timeoutExecutor.schedule(new Runnable() {
                 @Override
                 public void run() {
-                    cancelBlockRequest(pieceIndex, blockNb);
+                    cancelBlockRequest(pieceIndex, blockNb, peer);
                 }
             }, REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
         }
@@ -75,8 +74,8 @@ public class BlockPieceManager {
         public void finish(){
             this.timeout.cancel(false);
         }
-    }
 
+    }
     public BlockPieceManager(int nbPieces, Long lengthPiece, Long lengthFile, Bitfield bitfield, TorrentFileInfo fileInfo) {
         this.downloadingPieces = new HashMap<>();
         this.nbPieces = nbPieces;
@@ -123,7 +122,7 @@ public class BlockPieceManager {
             while (getBytesBeginDownloaded(p) < MAX_DOWNLOAD_CAP) {
                 downloadingPieces.computeIfAbsent(index, k -> new ArrayList<>(Collections.nCopies(getNumberBlocksFromPiece(index), null)));
                 try {
-                    int nextPieceBlock = getNextMissingBlock(index);
+                    int nextPieceBlock = getNextMissingBlock(index, p);
                     createAndSendRequest(index, nextPieceBlock, getBlockSize(index, nextPieceBlock), p);
                 } catch (IllegalArgumentException e) { //No more blocks available for request
                     this.notStartedPieces.remove(new Integer(index));
@@ -134,40 +133,96 @@ public class BlockPieceManager {
         return CAP_REACHED;
     }
 
-    private int getNextMissingBlock(int index) {
-        int pieceBeginIndex = index * nbBlocks;
-        int nextBlock = requestsSent.nextClearBit(pieceBeginIndex);
-        if(nextBlock < pieceBeginIndex + nbBlocks){
-            return nextBlock - pieceBeginIndex;
-        } else {
-            throw new IllegalArgumentException();
+    public synchronized void sendEndGame(int index, Peer p) {
+        if(!this.endGame) logger.log(Level.INFO, "Entering EndGame");
+        this.endGame = true;
+        while(true) {
+            try {
+                int nextBlock = getNextMissingBlock(index, p);
+                createAndSendRequest(index, nextBlock, getBlockSize(index, nextBlock), p);
+            } catch (IllegalArgumentException ignored) {
+                return;
+            }
         }
     }
 
-    private synchronized void cancelBlockRequest(int pieceIndex, int blockNb){
+    private List<Integer> getEndGameBlocks(int index) {
+        List<Integer> blocks = new LinkedList<>();
+        int pieceBeginIndex = index * nbBlocks;
+        int pieceEnd = pieceBeginIndex + getNumberBlocksFromPiece(index);
+        while((pieceBeginIndex = this.blocksReceived.nextClearBit(pieceBeginIndex)) < pieceEnd){
+            blocks.add(pieceBeginIndex);
+            pieceBeginIndex++;
+        }
+        return blocks;
+    }
+
+    private synchronized int getNextMissingBlock(int index, Peer p) {
+        int pieceBeginIndex = index * nbBlocks;
+        if(!endGame){
+            int nextBlock = requestsSent.nextClearBit(pieceBeginIndex);
+            if(nextBlock < pieceBeginIndex + nbBlocks){
+                return nextBlock - pieceBeginIndex;
+            } else {
+                throw new IllegalArgumentException();
+            }
+        } else {
+            int nextBlock = this.blocksReceived.nextClearBit(pieceBeginIndex);
+            int blockOffset = nextBlock - pieceBeginIndex;
+            while(getBlockRequest(index, blockOffset, p) != null && blockOffset < getNumberBlocksFromPiece(index)){
+                blockOffset ++;
+            }
+            if(blockOffset >= getNumberBlocksFromPiece(index)){
+                throw new IllegalArgumentException();
+            } else {
+                return blockOffset;
+            }
+        }
+    }
+
+    private synchronized void cancelBlockRequest(int pieceIndex, int blockNb, Peer p){
         logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
         requestsSent.clear(pieceIndex * nbBlocks + blockNb);
-        removeBlockRequest(pieceIndex, blockNb);
+        removeBlockRequest(pieceIndex, blockNb, p, true);
         if(!notStartedPieces.contains(pieceIndex)){
             notStartedPieces.add(pieceIndex);
         }
     }
 
     private synchronized void addBlockRequest(int pieceIndex, int blockNb, int blockSize, Peer p) {
-        this.bytesBeingDownloaded += blockSize;
         this.requestsList.add(new BlockRequest(pieceIndex, blockNb, blockSize, p));
     }
 
-    private synchronized void removeBlockRequest(int pieceIndex, int blockNb){
+    private synchronized void removeBlockRequest(int pieceIndex, int blockNb, Peer receivingPeer, boolean timeout){
         Iterator<BlockRequest> iterator = requestsList.iterator();
         while(iterator.hasNext()){
             BlockRequest br = iterator.next();
-            this.bytesBeingDownloaded -= br.blockLength;
             if(br.pieceIndex == pieceIndex && br.blockNb == blockNb){
                 br.finish();
                 iterator.remove();
+                if(this.endGame && !br.peer.equals(receivingPeer)){
+                    int blockSize = getBlockSize(pieceIndex, blockNb);
+                    int blockBegin = blockNb * blockSize;
+                    if(!timeout){
+                        br.peer.sendCancelMessage(pieceIndex, blockBegin, blockSize);
+                    } else {
+                        if(getBlockRequest(pieceIndex, blockNb, null) != null){
+                            this.notStartedPieces.add(pieceIndex);
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private BlockRequest getBlockRequest(int pieceIndex, int blockNb, Peer p){
+        for(BlockRequest b: this.requestsList){
+            if(b.pieceIndex == pieceIndex && b.blockNb == blockNb) {
+                if (p == null || p.equals(b.peer))
+                    return b;
+            }
+        }
+        return null;
     }
 
     public synchronized Long getBytesBeginDownloaded(Peer p){
@@ -187,12 +242,12 @@ public class BlockPieceManager {
         p.sendMessage(message);
     }
 
-    public synchronized Boolean receiveBlock(int index, int begin, byte[] block) throws NoSuchAlgorithmException, IOException {
+    public synchronized Boolean receiveBlock(int index, int begin, byte[] block, Peer p) throws NoSuchAlgorithmException, IOException {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
         blocksReceived.set(index * nbBlocks + (int) Math.floor((float)begin/ BLOCK_SIZE));
-        removeBlockRequest(index, (int) Math.floor((float) begin / BLOCK_SIZE));
+        removeBlockRequest(index, (int) Math.floor((float) begin / BLOCK_SIZE), p, false);
         writeToDisk(index, begin, block);
         //downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
         if(isPieceComplete(index)) {
@@ -261,25 +316,6 @@ public class BlockPieceManager {
             notStartedPieces.add(index);
         }
         return false;
-        /*
-        if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
-            ByteBuffer pieceBuffer = ByteBuffer.allocate(getPieceSizeFromIndex(index));
-            for(byte[] block : downloadingPieces.get(index)) {
-                pieceBuffer.put(block);
-            }
-            if(fileInfo.isPieceValid(pieceBuffer.array(), index)) {
-                TorrentBlock tb = fileInfo.getFileBlock(index, 0, getPieceSizeFromIndex(index));
-                pieceBuffer.flip();
-                tb.writeFileBlock(pieceBuffer);
-                this.downloadingPieces.remove(index);
-                return true;
-            } else {
-                downloadingPieces.remove(index);
-                notStartedPieces.add(index);
-            }
-        }
-        return false;
-        */
     }
 
     public HashMap<Integer, ArrayList<byte[]>> getDownloadingPieces() {

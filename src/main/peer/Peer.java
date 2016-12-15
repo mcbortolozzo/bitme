@@ -170,6 +170,12 @@ public class Peer{
         this.sendMessage(message);
     }
 
+    public void sendCancelMessage(int pieceIndex, int begin, int length) {
+        logger.log(Level.FINE, Messages.SEND_CANCEL.getText() + " - index " + pieceIndex + " - begin " + begin + " peer - " + this.getPeerIp());
+        ByteBuffer message = TorrentProtocolHelper.createCancel(pieceIndex, begin, length);
+        this.sendMessage(message);
+    }
+
     /**
      * When this torrent is the target of the connection, it only knows which torrent to use when it receives the handshake
      * @param torrentFile the torrent used on the handshake, only valid torrent files will be used (validation in handshake)
@@ -338,7 +344,7 @@ public class Peer{
 
     public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
         this.addDownloaded(block.length);
-        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
+        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block, this);
         if(pieceDone){
             this.torrentFile.setHavePiece(pieceIndex);
             this.sendHave(pieceIndex);

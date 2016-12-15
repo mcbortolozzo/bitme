@@ -69,7 +69,7 @@ public class TorrentFile {
         this.selector = selector;
         this.updateBitfield();
         this.blockPieceManager = new BlockPieceManager(pieceCount, pieceSize, this.fileInfo.getLength(), bitfield, fileInfo);
-        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo);
+        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo, bitfield);
         this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
         this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
     }
@@ -165,8 +165,8 @@ public class TorrentFile {
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
 
-    private void scheduleTrackerUpdate(Long delay, TimeUnit unit) {
-        this.scheduledExecutor.schedule(new TrackerUpdater(), delay, unit);
+    public void scheduleTrackerUpdate(Long delay, TimeUnit unit, TrackerHelper.Event event) {
+        this.scheduledExecutor.schedule(new TrackerUpdater(event), delay, unit);
     }
 
     public List<Peer> getPeers() {return this.peers;}
@@ -191,14 +191,14 @@ public class TorrentFile {
                 //reschedule tracker request
                 resetTrackerDelay();
                 if(trackerResult.getInterval() != null){
-                    scheduleTrackerUpdate(trackerResult.getInterval(), TimeUnit.SECONDS);
+                    scheduleTrackerUpdate(trackerResult.getInterval(), TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
                 } else {
-                    scheduleTrackerUpdate(TRACKER_ANNOUNCE_PERIOD, TimeUnit.SECONDS);
+                    scheduleTrackerUpdate(TRACKER_ANNOUNCE_PERIOD, TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
                 }
             } catch(ConnectException e){
                 logger.log(Level.INFO, Messages.TRACKER_UNREACHABLE.getText() + " - " + this.fileInfo.getTrackerAnnounce() + " repeating in: " + this.nextTrackerErrorDelay + " seconds");
                 increaseTrackerDelay();
-                scheduleTrackerUpdate(this.nextTrackerErrorDelay, TimeUnit.SECONDS);
+                scheduleTrackerUpdate(this.nextTrackerErrorDelay, TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
             }
         }
     }
@@ -253,16 +253,22 @@ public class TorrentFile {
         return this.scheduledExecutor;
     }
 
-    public boolean receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
-        return this.blockPieceManager.receiveBlock(pieceIndex, begin, block);
+    public boolean receivePieceBlock(int pieceIndex, int begin, byte[] block, Peer p) throws IOException, NoSuchAlgorithmException {
+        return this.blockPieceManager.receiveBlock(pieceIndex, begin, block, p);
     }
 
     private class TrackerUpdater implements Runnable {
 
+        private TrackerHelper.Event event;
+
+        public TrackerUpdater(TrackerHelper.Event event) {
+            this.event = event;
+        }
+
         @Override
         public void run() {
             try {
-                retrieveTrackerData(TrackerHelper.Event.UNSPECIFIED);
+                retrieveTrackerData(event);
             } catch (IOException e) { //TODO treat these exceptions
                 e.printStackTrace();
             } catch (BencodeReadException e) {
