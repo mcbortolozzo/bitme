@@ -73,7 +73,7 @@ public class ChokingAlgorithm implements Runnable{
     //TODO add optimistic unchoking here
     private List<Peer> getToUnchoke(){
         List<Peer> allPeers = this.getPeers();
-        allPeers.sort(PeerSpeedComparator);
+        allPeers.sort(Utils.PeerSpeedComparator);
 
         List<Peer> toUnchoke = new LinkedList<>();
         Iterator<Peer> peerIterator = allPeers.iterator();
@@ -90,13 +90,4 @@ public class ChokingAlgorithm implements Runnable{
         return this.getPeers().stream().filter(Peer::isPeerInterested).collect(Collectors.toCollection(LinkedList::new));
     }
 
-    private static Comparator<Peer> PeerSpeedComparator = new Comparator<Peer>() {
-        //TODO implement download speed calculation and then compare here
-        @Override
-        public int compare(Peer p1, Peer p2) {
-            Integer p1DownSpeed = Utils.getSpeedFromLog(p1.getUDowloadLog());
-            Integer p2DownSpeed = Utils.getSpeedFromLog(p2.getUDowloadLog());
-            return p1DownSpeed.compareTo(p2DownSpeed);
-        }
-    };
 }
