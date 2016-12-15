@@ -260,11 +260,13 @@ public class TorrentFile {
     }
 
     public void start() {
-
+        this.pieceSelectionAlgorithm.setPause(false);
+        this.chokingAlgorithm.setPause(false);
     }
 
-    public void pause() {
-
+    public synchronized void pause() {
+        this.pieceSelectionAlgorithm.setPause(true);
+        this.chokingAlgorithm.setPause(true);
     }
 
     public synchronized void shutdown() {

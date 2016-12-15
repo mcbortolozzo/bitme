@@ -33,6 +33,7 @@ public class PieceSelectionAlgorithm implements Runnable {
     private int nbPieces;
 
     private BitSet piecesRequested;
+    private boolean pause;
 
 
     public PieceSelectionAlgorithm(BlockPieceManager blockPieceManager, TorrentFileInfo fileInfo, Bitfield bitfield){
@@ -88,19 +89,13 @@ public class PieceSelectionAlgorithm implements Runnable {
     public synchronized void run() {
         try {
             synchronized (this) {
+                if(pause){
+                    return;
+                }
                 LinkedList<Peer> peersWithPiece = new LinkedList<>();
                 int result = -1;
                 if(checkEndGame()){
-                    Iterator<Integer> iterator = this.blockPieceManager.getNotStartedPieces().iterator();
-                    while (iterator.hasNext()){
-                        int index = iterator.next();
-                        for(Peer p : this.peers){
-                            if(!p.isPeerChoking()){
-                                blockPieceManager.sendEndGame(index, p);
-                            }
-                        }
-                        iterator.remove();
-                    }
+                    this.blockPieceManager.runEndGame(this.peers);
                 } else {
                     while (result != BlockPieceManager.CAP_REACHED) {
                         result = BlockPieceManager.CAP_REACHED;
@@ -122,5 +117,9 @@ public class PieceSelectionAlgorithm implements Runnable {
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    public synchronized void setPause(boolean pause) {
+        this.pause = pause;
     }
 }

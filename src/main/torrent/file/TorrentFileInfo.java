@@ -6,8 +6,8 @@ import main.util.Utils;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidParameterException;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.logging.Logger;
@@ -46,8 +46,9 @@ public abstract class TorrentFileInfo {
 
 
     Logger logger = Logger.getLogger(TorrentFileInfo.class.getName());
-    public TorrentFileInfo(){
-
+    public TorrentFileInfo(String filesSaveFolder, String name){
+        this.filesSaveFolder = filesSaveFolder;
+        this.name = name;
         this.torrent = new HashMap<String,Object>();
         this.information = new HashMap<String, Object>();
     }
@@ -93,7 +94,7 @@ public abstract class TorrentFileInfo {
     /**
      * generates the dictionnary that contains the torrent to be informations
      * @param file : list of sources files
-     * @param DirectoryName : source
+     * @param directoryName : source
      * @param announce
      * @param comment
      * @param piece_Length
@@ -101,55 +102,45 @@ public abstract class TorrentFileInfo {
      * @throws NoSuchAlgorithmException
      * @throws IOException
      */
-    public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-
+    public TorrentFileInfo generateTorrent(File file, String directoryName, String[] announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        this.pieceSize = (long) (piece_Length * 1024);
         logger.info("generate dictionnary");
-        this.information.put ("name",DirectoryName);
+        this.information.put ("name", directoryName);
         this.information.put("piece length",piece_Length);
-        this.hash_pieces(file,piece_Length);
+        this.hash_pieces();
         this.information.put("pieces",this.hash_pieces);
         this.torrent.put("info",this.information);
-        this.torrent.put("announce",announce);
-        this.torrent.put("announce-list",this.l_announce);
+        this.torrent.put("announce",announce[0]);
+        if(announce.length > 1){
+            String[] l_announce = Arrays.copyOfRange(announce, 1, announce.length);
+            this.torrent.put("announce-list",l_announce);
+        }
         this.torrent.put("comment",comment);
         this.torrent.put("created by","bitMe alpha v0.33");
         this.date = (new Date().getTime())/1000;
         this.torrent.put("creation date",this.date);
         logger.info("dicttionnary: "+this.torrent.toString());
-        return this.torrent;
-
+        return this;
     }
 
     /**
      * hash piece per piece
-     * @param file list of source files
+     * @param files list of source files
      * @param piece_length
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public void hash_pieces ( List<File> file, int piece_length ) throws IOException, NoSuchAlgorithmException {
+    public void hash_pieces () throws IOException, NoSuchAlgorithmException {
         logger.info("hash pieces ");
         this.hash_pieces = "";
-        for ( File f : file ) {
-            FileInputStream inputf = new FileInputStream(f);
-            ByteBuffer buffer = ByteBuffer.allocate(piece_length);
-            FileChannel channel = inputf.getChannel();
-
-            while (channel.read(buffer) > 0) {
-                byte[] piece = Utils.calculateHash(buffer.array());
-                this.hash_pieces += piece.toString();
-            }
-            if (buffer.position() > 0) {
-                buffer.limit(buffer.position());
-                buffer.position(0);
-                byte[] piece = Utils.calculateHash(buffer.array());
-                this.hash_pieces += piece.toString();
-            }
+        int piece = 0;
+        while(calculateStartingPosition(piece, 0) < this.getLength()){
+            TorrentBlock tb = this.getFileBlock(piece, 0, Math.toIntExact(this.getPieceSize()));
+            ByteBuffer buffer = tb.readFileBlock();
+            hash_pieces += new String(Utils.calculateHash(buffer.array()), StandardCharsets.ISO_8859_1);
+            piece++;
         }
-
-
     }
-
 
     /**
      * Creates a bencoded file based on a dictionnary

@@ -54,6 +54,7 @@ public class BlockPieceManager {
     private class BlockRequest {
 
         public long blockLength;
+
         public int pieceIndex;
         public int blockNb;
         public Peer peer;
@@ -70,12 +71,12 @@ public class BlockPieceManager {
                 }
             }, REQUEST_TIMEOUT, TimeUnit.MILLISECONDS);
         }
-
         public void finish(){
             this.timeout.cancel(false);
         }
 
     }
+
     public BlockPieceManager(int nbPieces, Long lengthPiece, Long lengthFile, Bitfield bitfield, TorrentFileInfo fileInfo) {
         this.downloadingPieces = new HashMap<>();
         this.nbPieces = nbPieces;
@@ -96,7 +97,6 @@ public class BlockPieceManager {
             }
         }
     }
-
     private BitSet getBlocksReceived() {
         BitSet blocksReceived = new BitSet(this.getTotalNbBlocks());
         int pieceIndex = 0;
@@ -133,6 +133,19 @@ public class BlockPieceManager {
         return CAP_REACHED;
     }
 
+    public synchronized void runEndGame(List<Peer> peers) {
+        Iterator<Integer> iterator = this.getNotStartedPieces().iterator();
+        while (iterator.hasNext()) {
+            int index = iterator.next();
+            for (Peer p : peers) {
+                if (!p.isPeerChoking()) {
+                    this.sendEndGame(index, p);
+                }
+            }
+            iterator.remove();
+        }
+    }
+
     public synchronized void sendEndGame(int index, Peer p) {
         if(!this.endGame) logger.log(Level.INFO, "Entering EndGame");
         this.endGame = true;
@@ -144,17 +157,6 @@ public class BlockPieceManager {
                 return;
             }
         }
-    }
-
-    private List<Integer> getEndGameBlocks(int index) {
-        List<Integer> blocks = new LinkedList<>();
-        int pieceBeginIndex = index * nbBlocks;
-        int pieceEnd = pieceBeginIndex + getNumberBlocksFromPiece(index);
-        while((pieceBeginIndex = this.blocksReceived.nextClearBit(pieceBeginIndex)) < pieceEnd){
-            blocks.add(pieceBeginIndex);
-            pieceBeginIndex++;
-        }
-        return blocks;
     }
 
     private synchronized int getNextMissingBlock(int index, Peer p) {
@@ -181,7 +183,7 @@ public class BlockPieceManager {
     }
 
     private synchronized void cancelBlockRequest(int pieceIndex, int blockNb, Peer p){
-        logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
+        logger.log(Level.FINE, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
         requestsSent.clear(pieceIndex * nbBlocks + blockNb);
         removeBlockRequest(pieceIndex, blockNb, p, true);
         if(!notStartedPieces.contains(pieceIndex)){

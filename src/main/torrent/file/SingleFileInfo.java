@@ -3,9 +3,7 @@ package main.torrent.file;
 import main.util.Utils;
 import java.io.File;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.security.NoSuchAlgorithmException;
-import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -22,8 +20,8 @@ public class SingleFileInfo extends TorrentFileInfo {
 
     Logger logger = Logger.getLogger(SingleFileInfo.class.getName());
 
-    public SingleFileInfo(){
-        super();
+    public SingleFileInfo(String filesSaveFolder, String name){
+        super(filesSaveFolder, name);
     }
 
     public SingleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
@@ -41,10 +39,10 @@ public class SingleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent(List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        this.information.put("length", file.get(0).length());
-
-        return super.generateTorrent(file,directoryName, announce, comment, piece_Length);
+    public TorrentFileInfo generateTorrent(File file, String directoryName, String[] announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        this.information.put("length", file.length());
+        super.generateTorrent(file,directoryName, announce, comment, piece_Length);
+        return this;
     }
 
 

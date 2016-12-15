@@ -24,6 +24,7 @@ public class ChokingAlgorithm implements Runnable{
     private List<Peer> peers;
     private List<Peer> unchoked = new LinkedList<>();
     private int counter = 0;
+    private boolean pause = false;
 
     public ChokingAlgorithm(List<Peer> peers) {
         this.peers = peers;
@@ -73,6 +74,8 @@ public class ChokingAlgorithm implements Runnable{
     }
 
     private synchronized List<Peer> getToUnchoke(){
+        if(pause) return new LinkedList<>();
+
         List<Peer> allPeers = new LinkedList<>();
         allPeers.addAll(peers);
         allPeers.sort(PeerSpeedComparator);
@@ -113,4 +116,8 @@ public class ChokingAlgorithm implements Runnable{
             return p1DownSpeed.compareTo(p2DownSpeed);
         }
     };
+
+    public synchronized void setPause(boolean pause) {
+        this.pause = pause;
+    }
 }

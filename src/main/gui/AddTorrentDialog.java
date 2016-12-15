@@ -102,7 +102,9 @@ public class AddTorrentDialog extends JDialog {
     private void onOK() throws IOException, NoSuchAlgorithmException {
         String trackers = this.trackers.getText();
         String comments = this.comments.getText();
-        TorrentManager.getInstance().createTorrent(destination,toSave.getName()+".torrent" ,toSave ,trackers,comments,Integer.parseInt(pieceSize.getText()));
+        String[] track = new String[1];
+        track[0] = trackers;
+        TorrentManager.getInstance().createTorrent(destination,toSave.getName()+".torrent" ,toSave ,track,comments,Integer.parseInt(pieceSize.getText()));
         dispose();
     }
 

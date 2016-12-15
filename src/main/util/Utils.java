@@ -139,6 +139,13 @@ public class Utils {
         return String.format("%.1f %s", Double.valueOf(result), unit);
     }
 
+    public static String buildPath(List<String> pathList){
+        StringBuilder sb = new StringBuilder();
+        for(String path : pathList)
+            sb.append(path).append("/");
+        return sb.toString();
+    }
+
     public static Comparator<Peer> PeerSpeedComparator = new Comparator<Peer>() {
         @Override
         public int compare(Peer p1, Peer p2) {

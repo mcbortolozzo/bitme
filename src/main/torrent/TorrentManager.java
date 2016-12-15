@@ -2,13 +2,9 @@ package main.torrent;
 
 import com.hypirion.bencode.BencodeReadException;
 import com.hypirion.bencode.BencodeReader;
-import com.sun.xml.internal.messaging.saaj.util.Base64;
-import com.sun.xml.internal.messaging.saaj.util.ByteInputStream;
 import main.torrent.file.MultipleFileInfo;
 import main.torrent.file.SingleFileInfo;
 import main.torrent.file.TorrentFileInfo;
-import main.torrent.HashId;
-import main.torrent.TorrentFile;
 import main.tracker.TrackerHelper;
 
 import java.io.*;
@@ -86,21 +82,19 @@ public class TorrentManager {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public FileOutputStream createTorrent(File destination,String nameTorrent, File source, String announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
+    public void createTorrent(File destination, String nameTorrent, File source, String[] announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
 
-        List<File> file = new ArrayList<File>();
-        if( source.isFile()){
-            file.add(source);
-            new SingleFileInfo().generateTorrent(file,source.getName(), announce, comment, piece_length);
+        TorrentFileInfo fileInfo = null;
+        if(source.isFile()){
+             fileInfo = new SingleFileInfo(destination.getAbsolutePath(), source.getName()).generateTorrent(source, source.getName(), announce, comment, piece_length);
         }
         else {
             if (source.isDirectory()) {
-                file.addAll(Arrays.asList(source.listFiles())) ;
-                new MultipleFileInfo().generateTorrent(file,source.getName(), announce, comment, piece_length);
+                fileInfo = new MultipleFileInfo(destination.getAbsolutePath(), source.getName()).generateTorrent(source,source.getName(), announce, comment, piece_length);
             }
         }
 
-        return new SingleFileInfo().bencodedFile(destination.getAbsolutePath()+"/"+nameTorrent);
+        fileInfo.bencodedFile(destination + "/" + nameTorrent);
     }
 
 

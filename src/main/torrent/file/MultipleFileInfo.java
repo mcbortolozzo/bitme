@@ -1,17 +1,11 @@
 package main.torrent.file;
 
-import com.hypirion.bencode.BencodeWriter;
 import main.util.Utils;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -37,7 +31,7 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
         public String getPath(){
             String pathString = "";
-            for(String p : this.path){ pathString += p; }
+            for(String p : this.path){ pathString += p + "/"; }
             return pathString;
         }
 
@@ -49,8 +43,9 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     }
 
-    public MultipleFileInfo(){
-        super();
+    public MultipleFileInfo(String filesSaveFolder, String name){
+        super(filesSaveFolder, name);
+        this.files = new LinkedList<>();
     }
 
     public MultipleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
@@ -58,6 +53,10 @@ public class MultipleFileInfo extends TorrentFileInfo {
         this.files = new LinkedList<>();
         List<Map<String, Object>> fileDataList = (List<Map<String,Object>>) this.info.get("files");
 
+        extractFiles(fileDataList);
+    }
+
+    private void extractFiles(List<Map<String, Object>> fileDataList) {
         for (Map<String,Object> f : fileDataList){
             SubFileStructure subFile = new SubFileStructure((ArrayList<String>) f.get("path"), (Long) f.get("length"));
             this.files.add(subFile);
@@ -68,22 +67,33 @@ public class MultipleFileInfo extends TorrentFileInfo {
     }
 
     @Override
-    public Map<String, Object> generateTorrent(List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        List<Map<String, Object>> filesTorrent = new LinkedList<>();
-        for (File f : file) {
-            for (Map<String, Object> fi : filesTorrent) {
-                fi.put("length", f.length());
-                Pattern p = Pattern.compile("/");
-                String[] path = p.split(f.getPath());
-                List<String> L_path = Arrays.asList(path);
-                fi.put("path", L_path);
+    public TorrentFileInfo generateTorrent(File file, String directoryName, String[] announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
+        this.pieceSize = (long) piece_Length;
+        List<Map<String, Object>> filesTorrent = getFiles(file, file.getPath());
+        this.information.put("files", filesTorrent);
+        this.extractFiles(filesTorrent);
+        super.generateTorrent(file, directoryName,  announce,  comment, piece_Length);
+        return this;
+    }
 
+    private List<Map<String, Object>> getFiles(File file, String parentPath){
+        List<Map<String, Object>> result = new LinkedList<>();
+        List<File> subFiles = Arrays.asList(file.listFiles());
+        Collections.sort(subFiles);
+        for(File f : subFiles){
+            if(f.isFile()){
+                Map<String, Object> fileMap = new TreeMap<>();
+                fileMap.put("length", f.length());
+                Pattern p = Pattern.compile("/");
+                String[] path = p.split(f.getPath().replace(parentPath + "/", ""));
+                List<String> L_path = new ArrayList<>(Arrays.asList(path));
+                fileMap.put("path", L_path);
+                result.add(fileMap);
+            } else if (f.isDirectory()){
+                result.addAll(getFiles(f, parentPath));
             }
         }
-        this.information.put("files", filesTorrent);
-        Map<String, Object> torrent = super.generateTorrent( file, directoryName,  announce,  comment, piece_Length);
-        return torrent;
-
+        return result;
     }
 
     @Override
