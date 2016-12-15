@@ -189,9 +189,19 @@ public class MainWindow {
         peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
         peersScrollPane.setViewportView(peersTable);
 
+        JPanel piecePanel = new JPanel();
+        tabbedPane.addTab("Pieces", null, piecePanel, null);
+        SpringLayout sl_piecePanel = new SpringLayout();
+        piecePanel.setLayout(sl_piecePanel);
+
         JScrollPane pieceScrollPane = new JScrollPane();
+        sl_piecePanel.putConstraint(SpringLayout.NORTH, pieceScrollPane, 0, SpringLayout.NORTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.WEST, pieceScrollPane, 0, SpringLayout.WEST, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.SOUTH, pieceScrollPane, 0, SpringLayout.SOUTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.EAST, pieceScrollPane, 0, SpringLayout.EAST, piecePanel);
+        piecePanel.add(pieceScrollPane);
+
         JPanel piecesPanel = new PiecesPanel();
-        tabbedPane.addTab("Pieces", null, pieceScrollPane, null);
         pieceScrollPane.setViewportView(piecesPanel);
 
         /**********************************************************************

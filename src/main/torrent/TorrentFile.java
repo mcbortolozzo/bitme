@@ -160,7 +160,7 @@ public class TorrentFile {
     }
 
     public Long getLeft(){
-        return this.getPieceCount() - this.getBitfield().getBitfield().cardinality()*this.getFileInfo().getPieceSize();
+        return (this.getPieceCount() - this.getBitfield().getBitfield().cardinality())*this.getFileInfo().getPieceSize();
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }

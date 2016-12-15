@@ -96,9 +96,7 @@ public class TorrentTableModel extends AbstractTableModel {
     }
 
     public void addTorrent(final String path, final String saveFolder) {
-        System.out.println("Parent : " + Thread.currentThread().getName());
         EventQueue.invokeLater(() -> {
-            System.out.println("Enfant : " + Thread.currentThread().getName());
             try {
                 TorrentTableModel.this.tManager.addTorrent(path, saveFolder, c.getSelector());
             } catch (IOException | BencodeReadException | NoSuchAlgorithmException e) {
@@ -128,11 +126,11 @@ public class TorrentTableModel extends AbstractTableModel {
             case 0: // Name
                 return current.getFileInfo().getName();
             case 1: // Taille
-                return Utils.prettySizePrint(current.getFileInfo().getLength());
+                return Utils.prettySizePrint(current.getPieceCount()*current.getPieceSize());
             case 2: // Progression
                 return 100 * ((float)current.getBitfield().getBitfield().cardinality()/current.getPieceCount());
             case 3: // Reçu
-                return Utils.prettySizePrint(current.getDownloaded());
+                return Utils.prettySizePrint(current.getBitfield().getBitfield().cardinality()*current.getPieceSize());
             case 4: // Vitesse Reception
                 speed = 0;
                 for (Peer p : peers)
@@ -148,7 +146,14 @@ public class TorrentTableModel extends AbstractTableModel {
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : new DecimalFormat("#.###").format(((float) current.getUploaded() / current.getDownloaded()));
             case 8: // Temps restant
-                return "tmps restant " + rowIndex;
+                long left = current.getLeft();
+                speed = 0;
+                for (Peer p : peers)
+                    speed += Utils.getSpeedFromLog(p.getUDowloadLog());
+                String restant = Character.toString('\u221E');
+                if (speed > 0)
+                    restant = Utils.prettyTimePrint(left / speed);
+                return restant;
             default:
                 return null;
         }
