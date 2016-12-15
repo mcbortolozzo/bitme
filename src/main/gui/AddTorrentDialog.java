@@ -94,9 +94,19 @@ public class AddTorrentDialog extends JDialog {
     }
 
     private void onOK() {
+        if (this.trackers.getText().isEmpty()) {
+            JOptionPane.showMessageDialog(null, "Veuillez ajouter au moins un tracker");
+            return;
+        }
+
         String[] trackers = this.trackers.getText().split("\n");
         String comments = this.comments.getText();
-        int psize = Integer.parseInt(pieceSize.getText());
+        try {
+            int psize = Integer.parseInt(pieceSize.getText());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(null, "La taille des pièces doit être un entier.");
+            return;
+        }
         //TorrentManager.getInstance().createTorrent(destination, destinationName.getText() + ".torrent", toSave, trackers, comments, psize);
         if (ouvrirAprèsLaCréationCheckBox.isSelected()) {
             try {

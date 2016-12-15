@@ -217,7 +217,9 @@ public class Peer{
     }
 
     public String getPeerClient(){
-        return this.getOtherPeerId().getClient();
+        if (this.getOtherPeerId() != null)
+            return this.getOtherPeerId().getClient();
+        return null;
     }
 
     public void setState(RequestTypes type) {

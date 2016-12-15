@@ -330,6 +330,8 @@ public class MainWindow {
                 peersModel.fireTableDataChanged();
 
                 ((PiecesPanel)piecesPanel).setTorrentFile(t);
+
+                pieceScrollPane.repaint();
             }
         });
 
@@ -338,6 +340,7 @@ public class MainWindow {
         applyKeyListner(this.frmBitme);
 	}
 
+	// Can only do that in a method after the main window has been displayed
 	private void finish() {
         splitPanel.setDividerLocation(splitPanel.getSize().height /2);
     }
