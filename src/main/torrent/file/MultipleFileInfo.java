@@ -11,6 +11,8 @@ import java.nio.file.Files;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -71,7 +73,11 @@ public class MultipleFileInfo extends TorrentFileInfo {
         for (File f : file) {
             for (Map<String, Object> fi : filesTorrent) {
                 fi.put("length", f.length());
-                fi.put("path", f.getPath());
+                Pattern p = Pattern.compile("/");
+                String[] path = p.split(f.getPath());
+                List<String> L_path = Arrays.asList(path);
+                fi.put("path", L_path);
+
             }
         }
         this.information.put("files", filesTorrent);
