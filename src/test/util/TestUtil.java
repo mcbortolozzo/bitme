@@ -52,7 +52,7 @@ public class TestUtil {
 
         try {
             p1 = TestUtil.generatePeer(client, torrentFile, new InetSocketAddress("localhost", 9999));
-            p1.sendHandshake();
+            p1.sendHandshake(null);
             for(TorrentRequest req: requests)
                 p1.process(req);
             int timeout = 0;
