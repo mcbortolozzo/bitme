@@ -2,13 +2,24 @@ package main.gui;
 
 import main.torrent.TorrentManager;
 import main.torrent.file.TorrentFileInfo;
+import main.util.Utils;
 
 import javax.swing.*;
 import javax.swing.text.NumberFormatter;
 import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 
+
+/**
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
+ */
 public class AddTorrentDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
@@ -35,13 +46,13 @@ public class AddTorrentDialog extends JDialog {
         getRootPane().setDefaultButton(buttonOK);
 
         this.filenameLabel.setText(f.getName() + ".torrent");
-        this.sizeLabel.setText(TorrentTableModel.prettySizePrint(f.length()));
+        this.sizeLabel.setText(Utils.prettySizePrint(f.length()));
         this.localisationLabel.setText(f.getParent());
 
         this.toSave = f;
         this.destination = f.getParentFile();
         this.tManager = t;
-        this.tailleDesPiècesTextField.setText(256 + "");
+        //this.tailleDesPiècesTextField.setText(256 + "");
 
         NumberFormat format = NumberFormat.getInstance();
         NumberFormatter formatter = new NumberFormatter(format);
@@ -55,15 +66,17 @@ public class AddTorrentDialog extends JDialog {
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                onOK();
+                try {
+                    onOK();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (NoSuchAlgorithmException e1) {
+                    e1.printStackTrace();
+                }
             }
         });
 
-        buttonCancel.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        });
+        buttonCancel.addActionListener(e -> onCancel());
 
         // call onCancel() when cross is clicked
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
@@ -74,28 +87,22 @@ public class AddTorrentDialog extends JDialog {
         });
 
         // call onCancel() on ESCAPE
-        contentPane.registerKeyboardAction(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                onCancel();
-            }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-        modifierButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                fc.setDialogTitle("Selectionnez où enregistrer votre fichier torrent");
-                fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                int returnVal = fc.showOpenDialog(AddTorrentDialog.this);
-                if (returnVal == JFileChooser.APPROVE_OPTION) {
-                    AddTorrentDialog.this.destination = fc.getSelectedFile();
-                    AddTorrentDialog.this.localisationLabel.setText(fc.getSelectedFile().getAbsolutePath());
-                }
+        contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        modifierButton.addActionListener(e -> {
+            fc.setDialogTitle("Selectionnez où enregistrer votre fichier torrent");
+            fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int returnVal = fc.showOpenDialog(AddTorrentDialog.this);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                AddTorrentDialog.this.destination = fc.getSelectedFile();
+                AddTorrentDialog.this.localisationLabel.setText(fc.getSelectedFile().getAbsolutePath());
             }
         });
     }
 
-    private void onOK() {
+    private void onOK() throws IOException, NoSuchAlgorithmException {
         String trackers = this.trackers.getText();
         String comments = this.comments.getText();
+        TorrentManager.getInstance().createTorrent(destination,toSave.getName()+".torrent" ,toSave ,trackers,comments,Integer.parseInt(pieceSize.getText()));
         dispose();
     }
 

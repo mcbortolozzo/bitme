@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.logging.Logger;
 
 
 /**
@@ -28,6 +29,7 @@ public abstract class TorrentFileInfo {
     //The .torrent to create
     protected Map<String,Object> torrent;
     protected Map<String,Object> information;
+    private String hash_pieces;
 
     private Map<String,Object> dict;
     protected TreeMap<String,Object> info;
@@ -38,9 +40,17 @@ public abstract class TorrentFileInfo {
     private String comment;
     private String created_by;
     private Long len_piece;
-    private String hash_pieces;
     private String pieces;
     protected String name;
+
+
+
+    Logger logger = Logger.getLogger(TorrentFileInfo.class.getName());
+    public TorrentFileInfo(){
+
+        this.torrent = new HashMap<String,Object>();
+        this.information = new HashMap<String, Object>();
+    }
 
     public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
@@ -80,29 +90,45 @@ public abstract class TorrentFileInfo {
 
     protected abstract void prepareInfoField();
 
+    /**
+     * generates the dictionnary that contains the torrent to be informations
+     * @param file : list of sources files
+     * @param DirectoryName : source
+     * @param announce
+     * @param comment
+     * @param piece_Length
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     */
     public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
-
-        this.torrent = new HashMap<String,Object>();
-        this.information = new HashMap<String, Object>();
-
+        logger.info("generate dictionnary");
         this.information.put ("name",DirectoryName);
         this.information.put("piece length",piece_Length);
         this.hash_pieces(file,piece_Length);
         this.information.put("pieces",this.hash_pieces);
-        this.torrent.put("info",this.info);
+        this.torrent.put("info",this.information);
         this.torrent.put("announce",announce);
         this.torrent.put("announce-list",this.l_announce);
         this.torrent.put("comment",comment);
         this.torrent.put("created by","bitMe alpha v0.33");
         this.date = (new Date().getTime())/1000;
         this.torrent.put("creation date",this.date);
+        logger.info("dicttionnary: "+this.torrent.toString());
         return this.torrent;
 
     }
 
-
+    /**
+     * hash piece per piece
+     * @param file list of source files
+     * @param piece_length
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
     public void hash_pieces ( List<File> file, int piece_length ) throws IOException, NoSuchAlgorithmException {
+        logger.info("hash pieces ");
         this.hash_pieces = "";
         for ( File f : file ) {
             FileInputStream inputf = new FileInputStream(f);
@@ -121,19 +147,25 @@ public abstract class TorrentFileInfo {
             }
         }
 
+
     }
 
-    public FileOutputStream generateFile(String torrentPath, List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        this.generateTorrent(file,directoryName, announce, comment, piece_Length);
-        return this.bencodedFile(torrentPath);
-    }
 
+    /**
+     * Creates a bencoded file based on a dictionnary
+     * @param nameFile : name of the torrent file to create
+     * @return
+     * @throws IOException
+     */
     public FileOutputStream bencodedFile(String nameFile) throws IOException {
+        logger.info("bencode file");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.torrent);
+        logger.info("namefile: "+nameFile);
         FileOutputStream file = new FileOutputStream(new File(nameFile));
         out.writeTo(file);
+
         return file;
     }
 

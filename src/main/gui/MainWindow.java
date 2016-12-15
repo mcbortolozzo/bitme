@@ -15,11 +15,21 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
+ */
 public class MainWindow {
 
 	private JFrame frmBitme;
 	private JTextField nbActiveTransfers;
 	private JTable torrents;
+    private JTable peersTable;
+    private JSplitPane splitPanel;
 	private final JFileChooser fc = new JFileChooser();
 
 	/**
@@ -29,10 +39,11 @@ public class MainWindow {
         try {
             final Client c = new Client(Client.PORT);
 			c.run();
-            EventQueue.invokeLater(() -> {
+            SwingUtilities.invokeLater(() -> {
                 try {
                     MainWindow window = new MainWindow(c);
                     window.frmBitme.setVisible(true);
+                    window.finish();
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -128,15 +139,18 @@ public class MainWindow {
 		springLayout.putConstraint(SpringLayout.NORTH, bottomPanel, -40, SpringLayout.SOUTH, frmBitme.getContentPane());
 		frmBitme.getContentPane().add(bottomPanel);
 
+		splitPanel = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        springLayout.putConstraint(SpringLayout.WEST, splitPanel, 0, SpringLayout.WEST, bottomPanel);
+        springLayout.putConstraint(SpringLayout.SOUTH, splitPanel, 0, SpringLayout.NORTH, bottomPanel);
+        springLayout.putConstraint(SpringLayout.EAST, splitPanel, 0, SpringLayout.EAST, bottomPanel);
+        frmBitme.getContentPane().add(splitPanel);
+
 		JPanel mainPanel = new JPanel();
 		mainPanel.setBackground(SystemColor.text);
-		springLayout.putConstraint(SpringLayout.WEST, mainPanel, 0, SpringLayout.WEST, bottomPanel);
-		springLayout.putConstraint(SpringLayout.SOUTH, mainPanel, 0, SpringLayout.NORTH, bottomPanel);
-		springLayout.putConstraint(SpringLayout.EAST, mainPanel, 0, SpringLayout.EAST, bottomPanel);
-		frmBitme.getContentPane().add(mainPanel);
+		splitPanel.setTopComponent(mainPanel);
 
 		JPanel buttonPanel = new JPanel();
-		springLayout.putConstraint(SpringLayout.NORTH, mainPanel, 45, SpringLayout.NORTH, buttonPanel);
+		springLayout.putConstraint(SpringLayout.NORTH, splitPanel, 45, SpringLayout.NORTH, buttonPanel);
 		SpringLayout sl_mainPanel = new SpringLayout();
 		mainPanel.setLayout(sl_mainPanel);
 
@@ -146,6 +160,36 @@ public class MainWindow {
         sl_mainPanel.putConstraint(SpringLayout.SOUTH, scrollPane, 0, SpringLayout.SOUTH, mainPanel);
         sl_mainPanel.putConstraint(SpringLayout.EAST, scrollPane, 0, SpringLayout.EAST, mainPanel);
         mainPanel.add(scrollPane);
+
+        JPanel infoPanel = new JPanel();
+        splitPanel.setRightComponent(infoPanel);
+        SpringLayout sl_infoPanel = new SpringLayout();
+        infoPanel.setLayout(sl_infoPanel);
+
+        JTabbedPane tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+        sl_infoPanel.putConstraint(SpringLayout.NORTH, tabbedPane, 0, SpringLayout.NORTH, infoPanel);
+        sl_infoPanel.putConstraint(SpringLayout.WEST, tabbedPane, 0, SpringLayout.WEST, infoPanel);
+        sl_infoPanel.putConstraint(SpringLayout.SOUTH, tabbedPane, 0, SpringLayout.SOUTH, infoPanel);
+        sl_infoPanel.putConstraint(SpringLayout.EAST, tabbedPane, 0, SpringLayout.EAST, infoPanel);
+        infoPanel.add(tabbedPane);
+
+        JPanel peersPanel = new JPanel();
+        tabbedPane.addTab("Peers", null, peersPanel, null);
+        SpringLayout sl_peersPanel = new SpringLayout();
+        peersPanel.setLayout(sl_peersPanel);
+
+        JScrollPane peersScrollPane = new JScrollPane();
+        sl_peersPanel.putConstraint(SpringLayout.NORTH, peersScrollPane, 0, SpringLayout.NORTH, peersPanel);
+        sl_peersPanel.putConstraint(SpringLayout.WEST, peersScrollPane, 0, SpringLayout.WEST, peersPanel);
+        sl_peersPanel.putConstraint(SpringLayout.SOUTH, peersScrollPane, 0, SpringLayout.SOUTH, peersPanel);
+        sl_peersPanel.putConstraint(SpringLayout.EAST, peersScrollPane, 0, SpringLayout.EAST, peersPanel);
+        peersPanel.add(peersScrollPane);
+
+        peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
+        peersScrollPane.setViewportView(peersTable);
+
+        JPanel piecesPanel = new JPanel();
+        tabbedPane.addTab("Pieces", null, piecesPanel, null);
 
         /**********************************************************************
          *                       TORRENT TABLE SETUP                          *
@@ -194,20 +238,43 @@ public class MainWindow {
 		btnAddtorrent.setToolTipText("Ajouter un fichier Torrent");
 		sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnAddtorrent, 5, SpringLayout.NORTH, buttonPanel);
 		sl_buttonPanel.putConstraint(SpringLayout.WEST, btnAddtorrent, 5, SpringLayout.EAST, btnCreatetorrent);
-		btnAddtorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/openFilemin.png")));
+		btnAddtorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/openFile.png")));
 		buttonPanel.add(btnAddtorrent);
 
-		JButton btnRemovetorrent = new JButton("");
-		btnRemovetorrent.setEnabled(false);
-		btnRemovetorrent.addActionListener(e -> {
+        JButton btnRemovetorrent = new JButton("");
+        btnRemovetorrent.setEnabled(false);
+        btnRemovetorrent.setToolTipText("Supprimer un fichier Torrent");
+        btnRemovetorrent.addActionListener(e -> {
             ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
             updateActiveTorrents();
         });
         sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
-        btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/removeFile.png")));
+        btnRemovetorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/remove.png")));
         sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnRemovetorrent, 5, SpringLayout.NORTH, buttonPanel);
         sl_buttonPanel.putConstraint(SpringLayout.WEST, btnRemovetorrent, 45, SpringLayout.EAST, btnAddtorrent);
         buttonPanel.add(btnRemovetorrent);
+
+        JButton btnPauseTorrent = new JButton("");
+        btnPauseTorrent.setToolTipText("Mettre en pause");
+        btnPauseTorrent.addActionListener(e -> {
+            ((TorrentTableModel)torrents.getModel()).pauseTorrent(torrents.getSelectedRows());
+        });
+        sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnPauseTorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
+        btnPauseTorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/pause.png")));
+        sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnPauseTorrent, 5, SpringLayout.NORTH, buttonPanel);
+        sl_buttonPanel.putConstraint(SpringLayout.WEST, btnPauseTorrent, 45, SpringLayout.EAST, btnRemovetorrent);
+        buttonPanel.add(btnPauseTorrent);
+
+        JButton btnStartTorrent = new JButton("");
+        btnStartTorrent.setToolTipText("Demarrer le téléchargement");
+        btnStartTorrent.addActionListener(e -> {
+            ((TorrentTableModel)torrents.getModel()).startTorrent(torrents.getSelectedRows());
+        });
+        sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnStartTorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
+        btnStartTorrent.setIcon(new ImageIcon(MainWindow.class.getResource("/main/assets/start.png")));
+        sl_buttonPanel.putConstraint(SpringLayout.NORTH, btnStartTorrent, 5, SpringLayout.NORTH, buttonPanel);
+        sl_buttonPanel.putConstraint(SpringLayout.WEST, btnStartTorrent, 5, SpringLayout.EAST, btnPauseTorrent);
+        buttonPanel.add(btnStartTorrent);
 
         /**********************************************************************
          *                    POST-INITIALIZATION SETUP                       *
@@ -220,6 +287,10 @@ public class MainWindow {
             } else {
                 btnRemovetorrent.setEnabled(true);
                 mntmEffacer.setEnabled(true);
+
+                PeersTableModel peersModel = (PeersTableModel)peersTable.getModel();
+                peersModel.setTorrent(((TorrentTableModel)torrents.getModel()).getTorrentAt(torrents.getSelectedRow()));
+                peersModel.fireTableDataChanged();
             }
         });
 
@@ -227,6 +298,10 @@ public class MainWindow {
 
         applyKeyListner(this.frmBitme);
 	}
+
+	private void finish() {
+        splitPanel.setDividerLocation(splitPanel.getSize().height /2);
+    }
 
 	/*
 	 * Method applying the KeyListener to all the components of the window
@@ -259,8 +334,6 @@ public class MainWindow {
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-                System.out.println("Opening: " + file.getAbsolutePath());
-                System.out.println("Saving into: " + fc.getSelectedFile().getAbsolutePath());
                 ((TorrentTableModel) torrents.getModel()).addTorrent(file.getAbsolutePath(), fc.getSelectedFile().getAbsolutePath());
                 updateActiveTorrents();
             }
@@ -282,28 +355,6 @@ public class MainWindow {
             File selected = fc.getSelectedFile();
             AddTorrentDialog.display(selected, TorrentManager.getInstance());
         }
-		/*fc.setDialogTitle("Créer un fichier Torrent");
-		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
-		if (returnVal == JFileChooser.APPROVE_OPTION) {
-            File file = fc.getSelectedFile();
-            System.out.println("Opening: " + file.getAbsolutePath());
-            String originName = file.getName();
-            if (file.isFile())
-                originName = originName.substring(0, originName.lastIndexOf('.'));
-            String outName = originName + ".torrent";
-            fc.setDialogTitle("Enregistrer le fichier torrent");
-            fc.setFileSelectionMode(JFileChooser.FILES_ONLY);
-            fc.setFileFilter(new FileNameExtensionFilter("Fichier Torrent", "torrent"));
-            fc.setCurrentDirectory(new File(file.getParentFile().getPath() + "/" + outName));
-            System.out.println(file.getParentFile().getPath() + "/" + outName);
-            returnVal = fc.showSaveDialog(MainWindow.this.frmBitme);
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                System.out.println("Save file to " + fc.getSelectedFile().getAbsolutePath() + ".torrent");
-            }
-		} else {
-			System.out.println("Open command cancelled by user.");
-		}*/
 	}
 
 	/*
