@@ -10,6 +10,7 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.logging.Logger;
 
 
 /**
@@ -42,6 +43,9 @@ public abstract class TorrentFileInfo {
     private String pieces;
     protected String name;
 
+
+
+    Logger logger = Logger.getLogger(TorrentFileInfo.class.getName());
     public TorrentFileInfo(){
 
         this.torrent = new HashMap<String,Object>();
@@ -99,7 +103,7 @@ public abstract class TorrentFileInfo {
      */
     public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
-
+        logger.info("generate dictionnary");
         this.information.put ("name",DirectoryName);
         this.information.put("piece length",piece_Length);
         this.hash_pieces(file,piece_Length);
@@ -111,6 +115,7 @@ public abstract class TorrentFileInfo {
         this.torrent.put("created by","bitMe alpha v0.33");
         this.date = (new Date().getTime())/1000;
         this.torrent.put("creation date",this.date);
+        logger.info("dicttionnary: "+this.torrent.toString());
         return this.torrent;
 
     }
@@ -123,6 +128,7 @@ public abstract class TorrentFileInfo {
      * @throws NoSuchAlgorithmException
      */
     public void hash_pieces ( List<File> file, int piece_length ) throws IOException, NoSuchAlgorithmException {
+        logger.info("hash pieces ");
         this.hash_pieces = "";
         for ( File f : file ) {
             FileInputStream inputf = new FileInputStream(f);
@@ -141,6 +147,7 @@ public abstract class TorrentFileInfo {
             }
         }
 
+
     }
 
 
@@ -151,11 +158,14 @@ public abstract class TorrentFileInfo {
      * @throws IOException
      */
     public FileOutputStream bencodedFile(String nameFile) throws IOException {
+        logger.info("bencode file");
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);
         benWriter.writeDict(this.torrent);
+        logger.info("namefile: "+nameFile);
         FileOutputStream file = new FileOutputStream(new File(nameFile));
         out.writeTo(file);
+
         return file;
     }
 

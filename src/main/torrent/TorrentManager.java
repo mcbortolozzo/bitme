@@ -71,7 +71,7 @@ public class TorrentManager {
     }
 
     /**
-     * Creates the .torrent file 
+     * Creates the .torrent file
      * @param destination
      * @param source
      * @param announce
@@ -81,7 +81,7 @@ public class TorrentManager {
      * @throws IOException
      * @throws NoSuchAlgorithmException
      */
-    public FileOutputStream createTorrent(File destination, File source, String announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
+    public FileOutputStream createTorrent(File destination,String nameTorrent, File source, String announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
 
         List<File> file = new ArrayList<File>();
         if( source.isFile()){
@@ -95,7 +95,7 @@ public class TorrentManager {
             }
         }
 
-        return new SingleFileInfo().bencodedFile(destination.getAbsolutePath());
+        return new SingleFileInfo().bencodedFile(destination.getAbsolutePath()+"/"+nameTorrent);
     }
 
 
