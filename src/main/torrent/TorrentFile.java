@@ -257,6 +257,14 @@ public class TorrentFile {
         return this.blockPieceManager.receiveBlock(pieceIndex, begin, block);
     }
 
+    public void start() {
+
+    }
+
+    public void pause() {
+
+    }
+
     public synchronized void shutdown() {
         while(!peers.isEmpty()) {
             peers.get(0).shutdown();

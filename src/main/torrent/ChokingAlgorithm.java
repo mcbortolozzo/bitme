@@ -72,7 +72,6 @@ public class ChokingAlgorithm implements Runnable{
         }
     }
 
-    //TODO add optimistic unchoking here
     private synchronized List<Peer> getToUnchoke(){
         List<Peer> allPeers = new LinkedList<>();
         allPeers.addAll(peers);

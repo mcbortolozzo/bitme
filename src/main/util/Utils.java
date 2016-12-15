@@ -1,5 +1,6 @@
 package main.util;
 
+import main.peer.Peer;
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 
@@ -9,6 +10,7 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -108,4 +110,41 @@ public class Utils {
         }
         return speed;
     }
+
+    private static final long K = 1024;
+    private static final long M = K * K;
+    private static final long G = M * K;
+    private static final long T = G * K;
+
+    public static String prettySizePrint(long value) {
+        final long[] dividers = new long[] { T, G, M, K, 1 };
+        final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
+        if (value == 0)
+            return "0 kb";
+        if (value < 0)
+            throw new IllegalArgumentException("Invalid file size: " + value);
+        String result = null;
+        for(int i = 0; i < dividers.length; i++){
+            final long divider = dividers[i];
+            if(value >= divider){
+                result = format(value, divider, units[i]);
+                break;
+            }
+        }
+        return result;
+    }
+
+    protected static String format(long value, long divider, String unit){
+        final double result = divider > 1 ? (double) value / (double) divider : (double) value;
+        return String.format("%.1f %s", Double.valueOf(result), unit);
+    }
+
+    public static Comparator<Peer> PeerSpeedComparator = new Comparator<Peer>() {
+        @Override
+        public int compare(Peer p1, Peer p2) {
+            Integer p1DownSpeed = Utils.getSpeedFromLog(p1.getUDowloadLog());
+            Integer p2DownSpeed = Utils.getSpeedFromLog(p2.getUDowloadLog());
+            return p2DownSpeed.compareTo(p1DownSpeed);
+        }
+    };
 }

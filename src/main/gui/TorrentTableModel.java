@@ -16,6 +16,7 @@ import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -81,6 +82,18 @@ public class TorrentTableModel extends AbstractTableModel {
         }
     }
 
+    public void pauseTorrent(int[] is) {
+        for (int index : is) {
+            this.torrents.get(index).pause();
+        }
+    }
+
+    public void startTorrent(int[] is) {
+        for (int index : is) {
+            this.torrents.get(index).start();
+        }
+    }
+
     public void addTorrent(final String path, final String saveFolder) {
         System.out.println("Parent : " + Thread.currentThread().getName());
         EventQueue.invokeLater(() -> {
@@ -91,6 +104,14 @@ public class TorrentTableModel extends AbstractTableModel {
                 e.printStackTrace();
             }
         });
+    }
+
+    public TorrentFile getTorrentAt(int rowIndex) {
+        torrents.clear();
+        for (HashId id : this.tManager.getTorrentList().keySet()) {
+            torrents.add(this.tManager.getTorrentList().get(id));
+        }
+        return this.torrents.get(rowIndex);
     }
 
     @Override
@@ -106,25 +127,25 @@ public class TorrentTableModel extends AbstractTableModel {
             case 0: // Name
                 return current.getFileInfo().getName();
             case 1: // Taille
-                return prettySizePrint(current.getFileInfo().getLength());
+                return Utils.prettySizePrint(current.getFileInfo().getLength());
             case 2: // Progression
                 return 100 * ((float)current.getBitfield().getBitfield().cardinality()/current.getPieceCount());
             case 3: // Reçu
-                return prettySizePrint(current.getDownloaded());
+                return Utils.prettySizePrint(current.getDownloaded());
             case 4: // Vitesse Reception
                 speed = 0;
                 for (Peer p : peers)
                     speed += Utils.getSpeedFromLog(p.getUDowloadLog());
-                return prettySizePrint(speed) + "/s";
+                return Utils.prettySizePrint(speed) + "/s";
             case 5: // Uploadé
-                return prettySizePrint(current.getUploaded());
+                return Utils.prettySizePrint(current.getUploaded());
             case 6: // Vitesse Upload
                 speed = 0;
                 for (Peer p : peers)
                     speed += Utils.getSpeedFromLog(p.getUploadLog());
-                return prettySizePrint(speed) + "/s";
+                return Utils.prettySizePrint(speed) + "/s";
             case 7: // Ratio
-                return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
+                return current.getDownloaded() == 0 ? 0 : new DecimalFormat("#.###").format(((float) current.getUploaded() / current.getDownloaded()));
             case 8: // Temps restant
                 return "tmps restant " + rowIndex;
             default:
@@ -132,31 +153,4 @@ public class TorrentTableModel extends AbstractTableModel {
         }
     }
 
-    private static final long K = 1024;
-    private static final long M = K * K;
-    private static final long G = M * K;
-    private static final long T = G * K;
-
-    static String prettySizePrint(long value) {
-        final long[] dividers = new long[] { T, G, M, K, 1 };
-        final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
-        if (value == 0)
-            return "0 kb";
-        if (value < 0)
-            throw new IllegalArgumentException("Invalid file size: " + value);
-        String result = null;
-        for(int i = 0; i < dividers.length; i++){
-            final long divider = dividers[i];
-            if(value >= divider){
-                result = format(value, divider, units[i]);
-                break;
-            }
-        }
-        return result;
-    }
-
-    protected static String format(long value, long divider, String unit){
-        final double result = divider > 1 ? (double) value / (double) divider : (double) value;
-        return String.format("%.1f %s", Double.valueOf(result), unit);
-    }
 }
