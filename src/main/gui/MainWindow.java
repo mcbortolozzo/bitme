@@ -33,6 +33,8 @@ public class MainWindow {
     private JSplitPane splitPanel;
 	private final JFileChooser fc = new JFileChooser();
 
+	private final Client c;
+
 	/**
 	 * Launch the application.
 	 */
@@ -59,6 +61,7 @@ public class MainWindow {
 	 */
 	public MainWindow(Client c) {
 		initialize(c);
+		this.c = c;
 	}
 
 	/**
@@ -189,9 +192,19 @@ public class MainWindow {
         peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
         peersScrollPane.setViewportView(peersTable);
 
+        JPanel piecePanel = new JPanel();
+        tabbedPane.addTab("Pieces", null, piecePanel, null);
+        SpringLayout sl_piecePanel = new SpringLayout();
+        piecePanel.setLayout(sl_piecePanel);
+
         JScrollPane pieceScrollPane = new JScrollPane();
+        sl_piecePanel.putConstraint(SpringLayout.NORTH, pieceScrollPane, 0, SpringLayout.NORTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.WEST, pieceScrollPane, 0, SpringLayout.WEST, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.SOUTH, pieceScrollPane, 0, SpringLayout.SOUTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.EAST, pieceScrollPane, 0, SpringLayout.EAST, piecePanel);
+        piecePanel.add(pieceScrollPane);
+
         JPanel piecesPanel = new PiecesPanel();
-        tabbedPane.addTab("Pieces", null, pieceScrollPane, null);
         pieceScrollPane.setViewportView(piecesPanel);
 
         /**********************************************************************
@@ -361,7 +374,7 @@ public class MainWindow {
         int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File selected = fc.getSelectedFile();
-            AddTorrentDialog.display(selected, TorrentManager.getInstance());
+            AddTorrentDialog.display(c, selected, TorrentManager.getInstance());
         }
 	}
 

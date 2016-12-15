@@ -1,5 +1,7 @@
 package main.gui;
 
+import com.hypirion.bencode.BencodeReadException;
+import main.Client;
 import main.torrent.TorrentManager;
 import main.torrent.file.TorrentFileInfo;
 import main.util.Utils;
@@ -31,50 +33,42 @@ public class AddTorrentDialog extends JDialog {
     private JLabel filenameLabel;
     private JLabel sizeLabel;
     private JLabel localisationLabel;
-    private JTextField tailleDesPiècesTextField;
     private JFormattedTextField pieceSize;
+    private JTextField destinationName;
 
     private final JFileChooser fc = new JFileChooser();
     private File toSave;
     private File destination;
 
+    private Client c;
+
     private TorrentManager tManager;
 
-    public AddTorrentDialog(final File f, final TorrentManager t) {
+    public AddTorrentDialog(Client c, final File f, final TorrentManager t) {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        this.filenameLabel.setText(f.getName() + ".torrent");
         this.sizeLabel.setText(Utils.prettySizePrint(f.length()));
         this.localisationLabel.setText(f.getParent());
 
         this.toSave = f;
         this.destination = f.getParentFile();
         this.tManager = t;
-        //this.tailleDesPiècesTextField.setText(256 + "");
 
-        NumberFormat format = NumberFormat.getInstance();
+        this.destinationName.setText(this.toSave.getName());
+
+        /*NumberFormat format = NumberFormat.getInstance();
         NumberFormatter formatter = new NumberFormatter(format);
         formatter.setValueClass(Integer.class);
         formatter.setMinimum(0);
         formatter.setMaximum(Integer.MAX_VALUE);
         formatter.setAllowsInvalid(false);
-        // If you want the value to be committed on each keystroke instead of focus lost
         formatter.setCommitsOnValidEdit(true);
-        //this.pieceSize.setFormatterFactory(new);
+        this.pieceSize.
+        this.pieceSize.setFormatterFactory(new);*/
 
-        buttonOK.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                try {
-                    onOK();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                } catch (NoSuchAlgorithmException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        });
+        buttonOK.addActionListener(e -> onOK());
 
         buttonCancel.addActionListener(e -> onCancel());
 
@@ -99,10 +93,18 @@ public class AddTorrentDialog extends JDialog {
         });
     }
 
-    private void onOK() throws IOException, NoSuchAlgorithmException {
-        String trackers = this.trackers.getText();
+    private void onOK() {
+        String[] trackers = this.trackers.getText().split("\n");
         String comments = this.comments.getText();
-        TorrentManager.getInstance().createTorrent(destination,toSave.getName()+".torrent" ,toSave ,trackers,comments,Integer.parseInt(pieceSize.getText()));
+        int psize = Integer.parseInt(pieceSize.getText());
+        //TorrentManager.getInstance().createTorrent(destination, destinationName.getText() + ".torrent", toSave, trackers, comments, psize);
+        if (ouvrirAprèsLaCréationCheckBox.isSelected()) {
+            try {
+                TorrentManager.getInstance().addTorrent(toSave.getName() + ".torrent", toSave.getParent(), c.getSelector());
+            } catch (BencodeReadException | NoSuchAlgorithmException | IOException e) {
+                e.printStackTrace();
+            }
+        }
         dispose();
     }
 
@@ -111,8 +113,8 @@ public class AddTorrentDialog extends JDialog {
         dispose();
     }
 
-    public static void display(File f, TorrentManager manager) {
-        AddTorrentDialog dialog = new AddTorrentDialog(f, manager);
+    public static void display(Client c, File f, TorrentManager manager) {
+        AddTorrentDialog dialog = new AddTorrentDialog(c, f, manager);
         dialog.pack();
         dialog.setLocationRelativeTo(null);
         dialog.setVisible(true);
