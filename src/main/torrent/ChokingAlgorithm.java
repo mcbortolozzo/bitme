@@ -4,10 +4,7 @@ import main.peer.Peer;
 import main.torrent.protocol.RequestTypes;
 import main.util.Utils;
 
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +23,7 @@ public class ChokingAlgorithm implements Runnable{
 
     private List<Peer> peers;
     private List<Peer> unchoked = new LinkedList<>();
+    private int counter = 0;
 
     public ChokingAlgorithm(List<Peer> peers) {
         this.peers = peers;
@@ -53,31 +51,49 @@ public class ChokingAlgorithm implements Runnable{
 
     @Override
     public void run() {
-        List<Peer> localUnchoked = this.getUnchoked();
-        List <Peer> toUnchoke = getToUnchoke();
-        List <Peer> toChoke = new LinkedList<>(localUnchoked);
-        toChoke.removeAll(toUnchoke);
-        for(Peer p : toChoke){
-            p.sendStateChange(RequestTypes.CHOKE);
-        }
+        try {
+            List<Peer> localUnchoked = this.getUnchoked();
+            List<Peer> toUnchoke = getToUnchoke();
+            List<Peer> toChoke = new LinkedList<>(localUnchoked);
+            toChoke.removeAll(toUnchoke);
+            for (Peer p : toChoke) {
+                p.sendStateChange(RequestTypes.CHOKE);
+            }
 
-        List<Peer> nextUnchoked = new LinkedList(toUnchoke);
-        nextUnchoked.removeAll(localUnchoked);
-        for(Peer p : nextUnchoked){
-            p.sendStateChange(RequestTypes.UNCHOKE);
-        }
+            List<Peer> nextUnchoked = new LinkedList(toUnchoke);
+            nextUnchoked.removeAll(localUnchoked);
+            for (Peer p : nextUnchoked) {
+                p.sendStateChange(RequestTypes.UNCHOKE);
+            }
 
-        this.setUnchoked(toUnchoke);
+            this.setUnchoked(toUnchoke);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     //TODO add optimistic unchoking here
-    private List<Peer> getToUnchoke(){
-        List<Peer> allPeers = this.getPeers();
+    private synchronized List<Peer> getToUnchoke(){
+        List<Peer> allPeers = new LinkedList<>();
+        allPeers.addAll(peers);
         allPeers.sort(PeerSpeedComparator);
 
         List<Peer> toUnchoke = new LinkedList<>();
-        Iterator<Peer> peerIterator = allPeers.iterator();
         int interestedPeers = 0;
+        counter++;
+
+        if(counter * RUN_PERIOD == OPTIMISTIC_UNCHOKE_PERIOD) {
+            if (allPeers.size() != 0) {
+                Peer optimistic = allPeers.remove(new Random().nextInt(allPeers.size()));
+                toUnchoke.add(optimistic);
+                if (optimistic.isPeerInterested()) {
+                    interestedPeers++;
+                }
+            }
+            counter = 0;
+        }
+
+        Iterator<Peer> peerIterator = allPeers.iterator();
         while(peerIterator.hasNext() && interestedPeers < MAX_DOWNLOADERS){
             Peer nextPeer = peerIterator.next();
             if(nextPeer.isPeerInterested()) interestedPeers++;
@@ -91,7 +107,6 @@ public class ChokingAlgorithm implements Runnable{
     }
 
     private static Comparator<Peer> PeerSpeedComparator = new Comparator<Peer>() {
-        //TODO implement download speed calculation and then compare here
         @Override
         public int compare(Peer p1, Peer p2) {
             Integer p1DownSpeed = Utils.getSpeedFromLog(p1.getUDowloadLog());

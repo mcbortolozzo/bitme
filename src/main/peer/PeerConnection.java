@@ -158,7 +158,7 @@ public class PeerConnection implements Runnable {
         return peer;
     }
 
-    public void shutdown(){
+    public synchronized void shutdown(){
         try {
             this.socket.close();
         } catch (IOException e) {
