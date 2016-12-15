@@ -57,6 +57,7 @@ public class PiecesPanel extends JPanel {
         }
 
         this.computedHeight = y + 15;
+        this.setPreferredSize(new Dimension(size.width, computedHeight));
     }
 
     /*protected Dimension getPreferedSize() {

@@ -127,8 +127,26 @@ public class MainWindow {
 		JMenu mnTransferts = new JMenu("Transferts");
 		menuBar.add(mnTransferts);
 
-		JMenu mnFentre = new JMenu("Fenêtre");
-		menuBar.add(mnFentre);
+        JMenuItem mntmStartAll = new JMenuItem("Démarrer tous les transfers");
+        mntmStartAll.addActionListener(e -> {
+            TorrentTableModel tModel = (TorrentTableModel) torrents.getModel();
+            int[] indexes = new int[tModel.getRowCount()];
+            for (int i = 0 ; i < indexes.length ; ++i)
+                indexes[i] = i;
+            tModel.startTorrent(indexes);
+        });
+        mnTransferts.add(mntmStartAll);
+
+        JMenuItem mntmStopAll = new JMenuItem("Pauser tous les transfers");
+        mntmStopAll.addActionListener(e -> {
+            TorrentTableModel tModel = (TorrentTableModel) torrents.getModel();
+            int[] indexes = new int[tModel.getRowCount()];
+            for (int i = 0 ; i < indexes.length ; ++i)
+                indexes[i] = i;
+            tModel.pauseTorrent(indexes);
+        });
+        mnTransferts.add(mntmStopAll);
+
 		SpringLayout springLayout = new SpringLayout();
 		frmBitme.getContentPane().setLayout(springLayout);
 
@@ -388,7 +406,7 @@ public class MainWindow {
     /*
      * Action for the KeyListener
      */
-    enum ACTION { OPEN, CREATE, NONE}
+    enum ACTION { OPEN, CREATE, SELECT_ALL, NONE}
 
     /*
      * KeyListener, can open and create a torrent (for now)
@@ -407,8 +425,10 @@ public class MainWindow {
                     cmdPressed = true;
                 if (event == KeyEvent.VK_O)
                     action = ACTION.OPEN;
-                if (event == KeyEvent.VK_C)
+                if (event == KeyEvent.VK_N)
                     action = ACTION.CREATE;
+                if (event == KeyEvent.VK_A)
+                    action = ACTION.SELECT_ALL;
             }
             if (!cmdPressed)
                 return;
@@ -420,6 +440,9 @@ public class MainWindow {
                 case CREATE:
                     MainWindow.this.createTorrentFile();
                     this.events.clear();
+                    break;
+                case SELECT_ALL:
+                    MainWindow.this.torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount());
                     break;
                 case NONE:
                     break;
