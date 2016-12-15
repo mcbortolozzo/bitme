@@ -20,10 +20,7 @@ import java.nio.channels.SocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.BitSet;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -85,9 +82,9 @@ public class Peer{
         logger.log(Level.INFO, Messages.PEER_CONNECTION_AUTO_CREATE.getText() + " - " + destAddr);
         this.peerIp = destAddr.getHostName();
         this.peerPort = destAddr.getPort();
-        this.setTorrentFile(torrentFile);
         this.localPeerId = torrentFile.getPeerId();
         this.peerConnection = new PeerConnection(selector, destAddr, this);
+        this.setTorrentFile(torrentFile);
         this.lastContact = Date.from(Instant.now());
         this.sendHandshake(null);
     }
@@ -217,6 +214,12 @@ public class Peer{
     public void setOtherPeerId(HashId peerId) {
         this.stateManager.setHandshakeDone(true);   //setting the other peer id can only be done through the handshake in this implementation
         this.otherPeerId = peerId;
+    }
+
+    public String getPeerClient(){
+        if (this.getOtherPeerId() != null)
+            return this.getOtherPeerId().getClient();
+        return null;
     }
 
     public void setState(RequestTypes type) {
@@ -354,6 +357,10 @@ public class Peer{
             this.sendHave(pieceIndex);
             this.updateInterested();
         }
+    }
+
+    public Boolean isPeerConnectionNull(){
+        return this.peerConnection == null;
     }
 
     public void cancelRequest(int pieceIndex, int begin) {

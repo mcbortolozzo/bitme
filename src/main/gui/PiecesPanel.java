@@ -21,6 +21,8 @@ public class PiecesPanel extends JPanel {
     private Bitfield bfield;
     private BitSet set;
 
+    private int computedHeight = 0;
+
     public PiecesPanel() {
         Timer timer = new Timer(1000, new ActionListener() {
             @Override
@@ -53,5 +55,12 @@ public class PiecesPanel extends JPanel {
             g.fillRect(x, y,10, 10);
             x += 15;
         }
+
+        this.computedHeight = y + 15;
+        this.setPreferredSize(new Dimension(size.width, computedHeight));
     }
+
+    /*protected Dimension getPreferedSize() {
+        return new Dimension(this.getSize().width, this.computedHeight);
+    }*/
 }

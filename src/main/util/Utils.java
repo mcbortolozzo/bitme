@@ -127,23 +127,34 @@ public class Utils {
         for(int i = 0; i < dividers.length; i++){
             final long divider = dividers[i];
             if(value >= divider){
-                result = format(value, divider, units[i]);
+                result = sizeFormat(value, divider, units[i]);
                 break;
             }
         }
         return result;
     }
 
-    protected static String format(long value, long divider, String unit){
+    protected static String sizeFormat(long value, long divider, String unit){
         final double result = divider > 1 ? (double) value / (double) divider : (double) value;
         return String.format("%.1f %s", Double.valueOf(result), unit);
     }
 
-    public static String buildPath(List<String> pathList){
+    public static String buildPath(List<String> pathList) {
         StringBuilder sb = new StringBuilder();
-        for(String path : pathList)
+        for (String path : pathList)
             sb.append(path).append("/");
         return sb.toString();
+    }
+
+    public static String prettyTimePrint(long value) {
+        long hours = value / 3600;
+        long minutes = (value % 3600) / 60;
+        long seconds = value % 60;
+
+        String time = hours != 0 ? hours + "h " + minutes + "m" + seconds + "s" :
+                        minutes != 0 ? minutes + "m " + seconds + "s" :
+                                seconds + "s";
+        return time;
     }
 
     public static Comparator<Peer> PeerSpeedComparator = new Comparator<Peer>() {

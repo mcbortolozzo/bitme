@@ -33,6 +33,8 @@ public class MainWindow {
     private JSplitPane splitPanel;
 	private final JFileChooser fc = new JFileChooser();
 
+	private final Client c;
+
 	/**
 	 * Launch the application.
 	 */
@@ -59,6 +61,7 @@ public class MainWindow {
 	 */
 	public MainWindow(Client c) {
 		initialize(c);
+		this.c = c;
 	}
 
 	/**
@@ -124,8 +127,26 @@ public class MainWindow {
 		JMenu mnTransferts = new JMenu("Transferts");
 		menuBar.add(mnTransferts);
 
-		JMenu mnFentre = new JMenu("Fenêtre");
-		menuBar.add(mnFentre);
+        JMenuItem mntmStartAll = new JMenuItem("Démarrer tous les transfers");
+        mntmStartAll.addActionListener(e -> {
+            TorrentTableModel tModel = (TorrentTableModel) torrents.getModel();
+            int[] indexes = new int[tModel.getRowCount()];
+            for (int i = 0 ; i < indexes.length ; ++i)
+                indexes[i] = i;
+            tModel.startTorrent(indexes);
+        });
+        mnTransferts.add(mntmStartAll);
+
+        JMenuItem mntmStopAll = new JMenuItem("Pauser tous les transfers");
+        mntmStopAll.addActionListener(e -> {
+            TorrentTableModel tModel = (TorrentTableModel) torrents.getModel();
+            int[] indexes = new int[tModel.getRowCount()];
+            for (int i = 0 ; i < indexes.length ; ++i)
+                indexes[i] = i;
+            tModel.pauseTorrent(indexes);
+        });
+        mnTransferts.add(mntmStopAll);
+
 		SpringLayout springLayout = new SpringLayout();
 		frmBitme.getContentPane().setLayout(springLayout);
 
@@ -189,9 +210,19 @@ public class MainWindow {
         peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
         peersScrollPane.setViewportView(peersTable);
 
+        JPanel piecePanel = new JPanel();
+        tabbedPane.addTab("Pieces", null, piecePanel, null);
+        SpringLayout sl_piecePanel = new SpringLayout();
+        piecePanel.setLayout(sl_piecePanel);
+
         JScrollPane pieceScrollPane = new JScrollPane();
+        sl_piecePanel.putConstraint(SpringLayout.NORTH, pieceScrollPane, 0, SpringLayout.NORTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.WEST, pieceScrollPane, 0, SpringLayout.WEST, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.SOUTH, pieceScrollPane, 0, SpringLayout.SOUTH, piecePanel);
+        sl_piecePanel.putConstraint(SpringLayout.EAST, pieceScrollPane, 0, SpringLayout.EAST, piecePanel);
+        piecePanel.add(pieceScrollPane);
+
         JPanel piecesPanel = new PiecesPanel();
-        tabbedPane.addTab("Pieces", null, pieceScrollPane, null);
         pieceScrollPane.setViewportView(piecesPanel);
 
         /**********************************************************************
@@ -299,6 +330,8 @@ public class MainWindow {
                 peersModel.fireTableDataChanged();
 
                 ((PiecesPanel)piecesPanel).setTorrentFile(t);
+
+                pieceScrollPane.repaint();
             }
         });
 
@@ -307,6 +340,7 @@ public class MainWindow {
         applyKeyListner(this.frmBitme);
 	}
 
+	// Can only do that in a method after the main window has been displayed
 	private void finish() {
         splitPanel.setDividerLocation(splitPanel.getSize().height /2);
     }
@@ -361,7 +395,7 @@ public class MainWindow {
         int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File selected = fc.getSelectedFile();
-            AddTorrentDialog.display(selected, TorrentManager.getInstance());
+            AddTorrentDialog.display(c, selected, TorrentManager.getInstance());
         }
 	}
 
@@ -375,7 +409,7 @@ public class MainWindow {
     /*
      * Action for the KeyListener
      */
-    enum ACTION { OPEN, CREATE, NONE}
+    enum ACTION { OPEN, CREATE, SELECT_ALL, NONE}
 
     /*
      * KeyListener, can open and create a torrent (for now)
@@ -394,8 +428,10 @@ public class MainWindow {
                     cmdPressed = true;
                 if (event == KeyEvent.VK_O)
                     action = ACTION.OPEN;
-                if (event == KeyEvent.VK_C)
+                if (event == KeyEvent.VK_N)
                     action = ACTION.CREATE;
+                if (event == KeyEvent.VK_A)
+                    action = ACTION.SELECT_ALL;
             }
             if (!cmdPressed)
                 return;
@@ -407,6 +443,9 @@ public class MainWindow {
                 case CREATE:
                     MainWindow.this.createTorrentFile();
                     this.events.clear();
+                    break;
+                case SELECT_ALL:
+                    MainWindow.this.torrents.setRowSelectionInterval(0, torrents.getModel().getRowCount());
                     break;
                 case NONE:
                     break;

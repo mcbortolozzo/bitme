@@ -85,14 +85,6 @@ public class TorrentFile {
     public synchronized void removePeer(Peer p) {
         this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
-        /*for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
-            if(p.hasPiece(i)) {
-                pieceDistribution.get(i).remove(p);
-                pieceQuantity.set(i, pieceQuantity.get(i) - 1);
-            }
-        }
-        this.pieceSelectionAlgorithm.updatePieceDistribution(pieceDistribution);
-        this.pieceSelectionAlgorithm.updatePieceQuantity(pieceQuantity);*/
         this.pieceSelectionAlgorithm.updatePeers(peers);
     }
 
@@ -162,7 +154,7 @@ public class TorrentFile {
     }
 
     public Long getLeft(){
-        return this.getPieceCount() - this.getBitfield().getBitfield().cardinality()*this.getFileInfo().getPieceSize();
+        return (this.getPieceCount() - this.getBitfield().getBitfield().cardinality())*this.getFileInfo().getPieceSize();
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }

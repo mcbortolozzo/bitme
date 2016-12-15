@@ -19,22 +19,30 @@ import java.util.List;
  */
 public class PeersTableModel extends AbstractTableModel {
 
+    TorrentFile torrent;
+
     List<Peer> peers = new ArrayList<>();
 
-    private String[] title = {"IP", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up"};
+    private String[] title = {"IP", "Port", "Client", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up"};
 
     public PeersTableModel(TorrentManager manager) {
         Timer timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                peers.sort(Utils.PeerSpeedComparator);
-                PeersTableModel.this.fireTableRowsUpdated(0, peers.size() - 1);
+                if (torrent != null) {
+                    peers = torrent.getPeers();
+                    peers.sort(Utils.PeerSpeedComparator);
+                    PeersTableModel.this.fireTableDataChanged();
+                }
             }
         });
         timer.start();
     }
 
-    public void setTorrent(TorrentFile t) { this.peers = t.getPeers(); }
+    public void setTorrent(TorrentFile t) {
+        this.torrent = t;
+        this.peers = t.getPeers();
+    }
 
     @Override
     public int getRowCount() { return peers.size(); }
@@ -52,12 +60,16 @@ public class PeersTableModel extends AbstractTableModel {
             case 0:
                 return p.getPeerIp();
             case 1:
-                return Utils.prettySizePrint(p.getDownloaded());
+                return p.getPeerPort();
             case 2:
-                return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUDowloadLog()));
+                return p.getPeerClient() != null ? p.getPeerClient() : "-";
             case 3:
-                return Utils.prettySizePrint(p.getUploaded());
+                return Utils.prettySizePrint(p.getDownloaded());
             case 4:
+                return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUDowloadLog()));
+            case 5:
+                return Utils.prettySizePrint(p.getUploaded());
+            case 6:
                 return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUploadLog()));
             default:
                 return null;
