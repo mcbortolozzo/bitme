@@ -33,6 +33,8 @@ public class MainWindow {
     private JSplitPane splitPanel;
 	private final JFileChooser fc = new JFileChooser();
 
+	private final Client c;
+
 	/**
 	 * Launch the application.
 	 */
@@ -59,6 +61,7 @@ public class MainWindow {
 	 */
 	public MainWindow(Client c) {
 		initialize(c);
+		this.c = c;
 	}
 
 	/**
@@ -371,7 +374,7 @@ public class MainWindow {
         int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File selected = fc.getSelectedFile();
-            AddTorrentDialog.display(selected, TorrentManager.getInstance());
+            AddTorrentDialog.display(c, selected, TorrentManager.getInstance());
         }
 	}
 
