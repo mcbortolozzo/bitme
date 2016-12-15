@@ -5,6 +5,7 @@ import main.util.Utils;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -64,5 +65,15 @@ public class HashId {
 
     public int length() {
         return this.hashIdBytes.length;
+    }
+
+    public String getClient(){
+        String id = new String(hashIdBytes, 1, 2, StandardCharsets.ISO_8859_1);
+        String version = new String(hashIdBytes, 3, 4, StandardCharsets.ISO_8859_1);
+        return id.concat(" " + getVersion(version));
+    }
+
+    public String getVersion(String version) {
+        return version.charAt(0) + "." + version.charAt(1) + "." + version.charAt(2) + "." + version.charAt(3);
     }
 }

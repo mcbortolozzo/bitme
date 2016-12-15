@@ -20,10 +20,7 @@ import java.nio.channels.SocketChannel;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
-import java.util.BitSet;
-import java.util.Date;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -217,6 +214,10 @@ public class Peer{
     public void setOtherPeerId(HashId peerId) {
         this.stateManager.setHandshakeDone(true);   //setting the other peer id can only be done through the handshake in this implementation
         this.otherPeerId = peerId;
+    }
+
+    public String getPeerClient(){
+        return this.getOtherPeerId().getClient();
     }
 
     public void setState(RequestTypes type) {
