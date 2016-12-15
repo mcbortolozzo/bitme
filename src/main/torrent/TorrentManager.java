@@ -11,16 +11,11 @@ import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.tracker.TrackerHelper;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.channels.Selector;
 import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -77,6 +72,34 @@ public class TorrentManager {
         } else {
             return new SingleFileInfo(dict, saveFileFolder);
         }
+    }
+
+    /**
+     * Creates the .torrent file 
+     * @param destination
+     * @param source
+     * @param announce
+     * @param comment
+     * @param piece_length
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
+    public FileOutputStream createTorrent(File destination, File source, String announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
+
+        List<File> file = new ArrayList<File>();
+        if( source.isFile()){
+            file.add(source);
+            new SingleFileInfo().generateTorrent(file,source.getName(), announce, comment, piece_length);
+        }
+        else {
+            if (source.isDirectory()) {
+                file.addAll(Arrays.asList(source.listFiles())) ;
+                new MultipleFileInfo().generateTorrent(file,source.getName(), announce, comment, piece_length);
+            }
+        }
+
+        return new SingleFileInfo().bencodedFile(destination.getAbsolutePath());
     }
 
 
