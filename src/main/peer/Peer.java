@@ -309,12 +309,14 @@ public class Peer{
 
     public synchronized void addUploaded(int amount) {
         this.uploaded += amount;
+        this.torrentFile.updateUploaded(amount);
     }
 
     public synchronized int getUploaded(){ return this.uploaded; }
 
     public synchronized void addDownloaded(int amount){
         this.downloaded += amount;
+        this.torrentFile.updateDownloaded(amount);
     }
 
     public synchronized int getDownloaded(){ return this.downloaded; }
