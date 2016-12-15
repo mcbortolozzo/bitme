@@ -80,6 +80,7 @@ public class TorrentTableModel extends AbstractTableModel {
         for(int i = is.length - 1; i >= 0; i--) {
             torrents.get(is[i]).shutdown();
         }
+        this.fireTableDataChanged();
     }
 
     public void pauseTorrent(int[] is) {
