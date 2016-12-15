@@ -62,7 +62,7 @@ public class PeersTableModel extends AbstractTableModel {
             case 1:
                 return p.getPeerPort();
             case 2:
-                return "logiciel";
+                return p.getPeerClient() != null ? p.getPeerClient() : "-";
             case 3:
                 return Utils.prettySizePrint(p.getDownloaded());
             case 4:

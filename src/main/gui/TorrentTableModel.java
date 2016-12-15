@@ -146,13 +146,17 @@ public class TorrentTableModel extends AbstractTableModel {
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : new DecimalFormat("#.###").format(((float) current.getUploaded() / current.getDownloaded()));
             case 8: // Temps restant
-                long left = current.getLeft();
-                speed = 0;
-                for (Peer p : peers)
-                    speed += Utils.getSpeedFromLog(p.getUDowloadLog());
                 String restant = Character.toString('\u221E');
-                if (speed > 0)
-                    restant = Utils.prettyTimePrint(left / speed);
+                if (100 * ((float)current.getBitfield().getBitfield().cardinality()/current.getPieceCount()) == 100)
+                    restant = "Terminé";
+                else {
+                    long left = current.getLeft();
+                    speed = 0;
+                    for (Peer p : peers)
+                        speed += Utils.getSpeedFromLog(p.getUDowloadLog());
+                    if (speed > 0)
+                        restant = Utils.prettyTimePrint(left / speed);
+                }
                 return restant;
             default:
                 return null;
