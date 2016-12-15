@@ -8,6 +8,7 @@ import main.torrent.file.TorrentBlock;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
+import main.torrent.protocol.requests.HandshakeRequest;
 import main.util.Messages;
 
 import java.io.ByteArrayOutputStream;
@@ -88,7 +89,7 @@ public class Peer{
         this.localPeerId = torrentFile.getPeerId();
         this.peerConnection = new PeerConnection(selector, destAddr, this);
         this.lastContact = Date.from(Instant.now());
-        this.sendHandshake();
+        this.sendHandshake(null);
     }
 
     private void launchSpeedMeasurement() {
@@ -125,26 +126,32 @@ public class Peer{
      * @param message the buffer to be written
      */
     public void sendMessage(ByteBuffer message){
-        peerConnection.addToBuffer(message);
+        peerConnection.addToBuffer(new TorrentRequest.OutboundMessage(message, null));
+    }
+
+    public void sendReactiveMessage(ByteBuffer message, TorrentRequest request){
+        peerConnection.addToBuffer(new TorrentRequest.OutboundMessage(message, request));
     }
 
     /**
      * Creates and sends a handshake message based on the information this peer has
+     * @param request
      */
-    public void sendHandshake(){
+    public void sendHandshake(TorrentRequest request){
         logger.log(Level.FINE, Messages.SEND_HANDSHAKE.getText());
         this.handshakeSent = true;
         ByteBuffer message = TorrentProtocolHelper.createHandshake(this.torrentFile.getTorrentId(), this.getLocalPeerId());
-        this.sendMessage(message);
+        this.sendReactiveMessage(message, request);
     }
 
     /**
      * Sends the local bitfield to the remote peer
+     * @param request
      */
-    public void sendBitfield() {
+    public void sendBitfield(TorrentRequest request) {
         logger.log(Level.FINE, Messages.SEND_BITFIELD.getText());
         ByteBuffer message = TorrentProtocolHelper.createBitfield(this.torrentFile.getBitfield());
-        this.sendMessage(message);
+        this.sendReactiveMessage(message, request);
     }
 
     /**
@@ -160,6 +167,12 @@ public class Peer{
     public void sendHave(int pieceIndex) {
         logger.log(Level.FINE, Messages.SEND_HAVE.getText() + " - " + pieceIndex);
         ByteBuffer message = TorrentProtocolHelper.createHave(pieceIndex);
+        this.sendMessage(message);
+    }
+
+    public void sendCancelMessage(int pieceIndex, int begin, int length) {
+        logger.log(Level.FINE, Messages.SEND_CANCEL.getText() + " - index " + pieceIndex + " - begin " + begin + " peer - " + this.getPeerIp());
+        ByteBuffer message = TorrentProtocolHelper.createCancel(pieceIndex, begin, length);
         this.sendMessage(message);
     }
 
@@ -335,12 +348,16 @@ public class Peer{
 
     public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
         this.addDownloaded(block.length);
-        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
+        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block, this);
         if(pieceDone){
             this.torrentFile.setHavePiece(pieceIndex);
             this.sendHave(pieceIndex);
             this.updateInterested();
         }
+    }
+
+    public void cancelRequest(int pieceIndex, int begin) {
+        this.peerConnection.cancelRequest(pieceIndex, begin);
     }
 
     private class SpeedRateCalculations implements Runnable {

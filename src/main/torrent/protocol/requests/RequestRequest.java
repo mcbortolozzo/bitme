@@ -30,12 +30,20 @@ public class RequestRequest extends NonHandshakeRequest {
         this.length = requestBuffer.getInt();
     }
 
+    public int getPieceIndex() {
+        return pieceIndex;
+    }
+
+    public int getBegin() {
+        return begin;
+    }
+
     @Override
     public void processRequest() {
         try {
             ByteBuffer pieceBuffer = this.peer.retrieveDataBlock(pieceIndex, begin, length);
             this.peer.addUploaded(this.length);
-            peer.sendMessage(TorrentProtocolHelper.createPiece(this.pieceIndex, this.begin, pieceBuffer));
+            peer.sendReactiveMessage(TorrentProtocolHelper.createPiece(this.pieceIndex, this.begin, pieceBuffer), this);
         } catch (IOException e) {
             logger.log(Level.INFO, Messages.REQUEST_PROCESS_FAIL.getText());
         }

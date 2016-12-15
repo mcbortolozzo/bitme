@@ -3,7 +3,6 @@ package test.reactor;
 import com.hypirion.bencode.BencodeReadException;
 import main.Client;
 import main.peer.Peer;
-import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 import main.torrent.protocol.TorrentProtocolHelper;
@@ -84,7 +83,7 @@ public class PeerTest {
         Peer p = null;
         try {
             p = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
-            p.sendHandshake();
+            p.sendHandshake(null);
             int timeout = 0;
             while(p.getOtherPeerId() == null && timeout < 10){
                 timeout++;
@@ -103,8 +102,8 @@ public class PeerTest {
         try {
             p1 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
             p2 = TestUtil.generatePeer(this.client, this.torrentFile, new InetSocketAddress("localhost", 9999));
-            p1.sendHandshake();
-            p2.sendHandshake();
+            p1.sendHandshake(null);
+            p2.sendHandshake(null);
             int timeout = 0;
             while((p1.getOtherPeerId() == null || p2.getOtherPeerId() == null) && timeout < 10){
                 timeout++;

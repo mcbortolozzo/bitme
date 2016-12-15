@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by marcelo on 07/11/16.
@@ -55,7 +56,7 @@ public class TorrentManager {
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }
-        torrentFile.retrieveTrackerData(TrackerHelper.Event.STARTED);
+        torrentFile.scheduleTrackerUpdate(0l, TimeUnit.SECONDS, TrackerHelper.Event.STARTED);
         return torrentFile;
     }
 

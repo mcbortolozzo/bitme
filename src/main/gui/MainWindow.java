@@ -2,6 +2,7 @@ package main.gui;
 
 
 import main.Client;
+import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
 import main.torrent.file.TorrentFileInfo;
 
@@ -188,8 +189,10 @@ public class MainWindow {
         peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
         peersScrollPane.setViewportView(peersTable);
 
-        JPanel piecesPanel = new JPanel();
-        tabbedPane.addTab("Pieces", null, piecesPanel, null);
+        JScrollPane pieceScrollPane = new JScrollPane();
+        JPanel piecesPanel = new PiecesPanel();
+        tabbedPane.addTab("Pieces", null, pieceScrollPane, null);
+        pieceScrollPane.setViewportView(piecesPanel);
 
         /**********************************************************************
          *                       TORRENT TABLE SETUP                          *
@@ -246,6 +249,8 @@ public class MainWindow {
         btnRemovetorrent.setToolTipText("Supprimer un fichier Torrent");
         btnRemovetorrent.addActionListener(e -> {
             ((TorrentTableModel)torrents.getModel()).removeTorrent(torrents.getSelectedRows());
+            PeersTableModel peersModel = (PeersTableModel)MainWindow.this.peersTable.getModel();
+            peersModel.fireTableDataChanged();
             updateActiveTorrents();
         });
         sl_buttonPanel.putConstraint(SpringLayout.SOUTH, btnRemovetorrent, 0, SpringLayout.SOUTH, btnCreatetorrent);
@@ -288,9 +293,12 @@ public class MainWindow {
                 btnRemovetorrent.setEnabled(true);
                 mntmEffacer.setEnabled(true);
 
+                TorrentFile t = ((TorrentTableModel)torrents.getModel()).getTorrentAt(torrents.getSelectedRow());
                 PeersTableModel peersModel = (PeersTableModel)peersTable.getModel();
-                peersModel.setTorrent(((TorrentTableModel)torrents.getModel()).getTorrentAt(torrents.getSelectedRow()));
+                peersModel.setTorrent(t);
                 peersModel.fireTableDataChanged();
+
+                ((PiecesPanel)piecesPanel).setTorrentFile(t);
             }
         });
 
