@@ -298,7 +298,9 @@ public class Peer{
         logger.log(Level.INFO, Messages.PEER_SHUTDOWN.getText() + " - other peer: " + this.getOtherPeerId());
         if(rateCalculationFuture != null)
             rateCalculationFuture.cancel(true);
-        this.peerConnection.shutdown();
+        if(this.peerConnection != null) {
+            this.peerConnection.shutdown();
+        }
         if(this.torrentFile != null)
             this.torrentFile.removePeer(this);
     }

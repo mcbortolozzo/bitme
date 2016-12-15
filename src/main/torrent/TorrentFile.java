@@ -80,7 +80,7 @@ public class TorrentFile {
         this.pieceSelectionAlgorithm.updatePeers(this.peers);
     }
 
-    public void removePeer(Peer p) {
+    public synchronized void removePeer(Peer p) {
         this.peers.remove(p);
         this.chokingAlgorithm.updatePeers(this.peers);
         /*for (int i = 0; i < getBitfield().getBitfieldLength(); i++) {
@@ -143,7 +143,7 @@ public class TorrentFile {
         return bitfield;
     }
 
-    public int getDownloaded(){
+    public synchronized int getDownloaded(){
         int downloaded = 0;
         for(Peer p: this.getPeers()){
             downloaded += p.getDownloaded();
@@ -151,7 +151,7 @@ public class TorrentFile {
         return downloaded;
     }
 
-    public int getUploaded(){
+    public synchronized int getUploaded(){
         int uploaded = 0;
         for(Peer p: this.getPeers()){
             uploaded += p.getUploaded();
@@ -258,11 +258,12 @@ public class TorrentFile {
         return this.blockPieceManager.receiveBlock(pieceIndex, begin, block);
     }
 
-    public void shutdown() {
-        for(Peer p : peers) {
-            p.shutdown();
+    public synchronized void shutdown() {
+        while(!peers.isEmpty()) {
+            peers.get(0).shutdown();
         }
         scheduledExecutor.shutdown();
+        TorrentManager.getInstance().removeTorrent(this.getTorrentId());
     }
 
     private class TrackerUpdater implements Runnable {

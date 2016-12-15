@@ -78,8 +78,6 @@ public class TorrentTableModel extends AbstractTableModel {
         for(int i = is.length - 1; i >= 0; i--) {
             torrents.get(is[i]).shutdown();
         }
-        System.out.println("Not Implmented Yet, thanks to the Network team #Brazil");
-
     }
 
     public void addTorrent(final String path, final String saveFolder) {

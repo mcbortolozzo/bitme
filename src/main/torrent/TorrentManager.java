@@ -44,6 +44,10 @@ public class TorrentManager {
         return instance;
     }
 
+    public synchronized void removeTorrent(HashId id) {
+        torrentList.remove(id);
+    }
+
     public synchronized  HashMap<HashId, TorrentFile> getTorrentList() { return this.torrentList; }
 
     public synchronized TorrentFile retrieveTorrent(HashId torrentId) {
