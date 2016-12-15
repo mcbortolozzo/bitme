@@ -118,6 +118,7 @@ public class PieceSelectionAlgorithm implements Runnable {
                         }
                     }
                 }
+                blockPieceManager.checkTorrentEnd();
             }
         } catch (Exception e){
             e.printStackTrace();
