@@ -3,6 +3,9 @@ package main.util;
 import main.torrent.HashId;
 import main.torrent.protocol.TorrentProtocolHelper;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -50,7 +53,7 @@ public class Utils {
     }
 
     private static List<Byte> generateValidURLByteList() {
-        byte[] validBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ.-_~".getBytes();
+        byte[] validBytes = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGIJKLMNOPQRSTUVWXYZ-_.+!*'(),~".getBytes();
         List<Byte> validList = new LinkedList<>();
         for(byte b: validBytes){
             validList.add(b);
@@ -64,5 +67,45 @@ public class Utils {
         crypt.reset();
         crypt.update(toHash);
         return crypt.digest();
+    }
+
+    public static void generateFile(String path, Long length){
+        File file = new File(path);
+        if(!file.isFile()) {
+            file.getParentFile().mkdirs();
+            try {
+                RandomAccessFile rFile = new RandomAccessFile(file.getAbsolutePath(), "rws");
+                rFile.setLength(length);
+                rFile.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public static byte getBit(byte byteValue, int bitPosition){
+        return (byte) (((byteValue & 0xff) >>> (7 - bitPosition)) & 1);
+    }
+
+    public static int getSpeedFromLog(List<Integer> log) {
+        if (log.size() == 0)
+            return 0;
+        int speed = 0;
+        if (log.size() < 60) {
+            for (int i : log)
+                speed += i;
+            speed /= log.size();
+        } else {
+            int last = log.get(0), last30sec = 0, last1min = 0;
+            for(int i = 0 ; i < 60 ; ++i) {
+                if (i < 30) {
+                    last30sec += log.get(i);
+                    last1min += log.get(i);
+                } else
+                    last1min += log.get(i);
+            }
+            speed = (int)(last * 0.5 + last30sec/30 * 0.3 + last1min/60 * 0.2);
+        }
+        return speed;
     }
 }

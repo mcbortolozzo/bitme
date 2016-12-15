@@ -1,10 +1,10 @@
 package main.torrent.file;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Written by
@@ -14,6 +14,9 @@ import java.nio.channels.FileChannel;
  * Thibault Tourailles
  */
 public class FileBlockInfo {
+
+    Logger logger = Logger.getLogger(this.getClass().getName());
+
     private String filePath;
     private Long localFileBegin;
     private int localBlockLength; //read or write length
@@ -35,9 +38,10 @@ public class FileBlockInfo {
     /**
      * Access the disk according to the information specified above and reads the data to a buffer
      * @return the buffer containing the data
-     * @throws IOException throws exception in case of failure to read the file
+     * @throws IOException throws exception in case of failure to read the file or buffer
      */
     public ByteBuffer readFileData() throws IOException {
+        logger.log(Level.FINE, "Reading " + this.localBlockLength + " bytes to " + this.filePath + " at " + this.localFileBegin);
         ByteBuffer localBuffer = ByteBuffer.allocate(localBlockLength);
         FileInputStream fIn = new FileInputStream(filePath);
         FileChannel channel = fIn.getChannel();
@@ -47,6 +51,25 @@ public class FileBlockInfo {
         fIn.close();
         localBuffer.flip();
         return localBuffer;
+    }
+
+    /**
+     * Write data from provided buffer to the corresponding file
+     * @param outputBuffer the buffer containing the data
+     * @throws IOException throws exception in case of failure to read the file or buffer
+     */
+    public void writeFileData(ByteBuffer outputBuffer) throws IOException {
+        logger.log(Level.FINE, "Writing " + this.localBlockLength + " bytes to " + this.filePath + " at " + this.localFileBegin);
+        ByteBuffer localBuffer = ByteBuffer.allocate(this.localBlockLength);
+        byte[] bufferData = new byte[this.localBlockLength];    //gj java
+        outputBuffer.get(bufferData);
+        localBuffer.put(bufferData);
+        localBuffer.flip();
+        RandomAccessFile fOut = new RandomAccessFile(filePath, "rw");
+        FileChannel channel = fOut.getChannel();
+        channel.write(localBuffer, localFileBegin);
+        channel.close();
+        fOut.close();
     }
 
     /**

@@ -5,31 +5,36 @@ import javax.swing.table.TableCellRenderer;
 import java.awt.*;
 
 /**
- * Created by aval0n on 28/11/2016.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class ProgressCellRenderer extends JProgressBar implements TableCellRenderer {
 
     public ProgressCellRenderer() {
         super(0, 100);
         this.setValue(0);
-        this.setString("0%");
+        this.setString("0 %");
         this.setStringPainted(true);
-        this.setBackground(Color.RED);
+        //this.setBackground(Color.RED);
     }
 
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {
-        final String sValue = value.toString();
+        int length = value.toString().length() >= 4 ? 4 : value.toString().length();
+        final String sValue = value.toString().substring(0,length) + "%";
         int index = sValue.indexOf('%');
         if (index != -1) {
-            int p = 0;
+            float p = 0;
             try {
-                p = Integer.parseInt(sValue.substring(0, index));
+                p = Float.parseFloat(sValue.substring(0, index));
             } catch(NumberFormatException e) {
-                System.err.println("Inpossible to parse");
+                System.err.println("Impossible to parse");
             }
-            this.setValue(p);
+            this.setValue((int) p);
             this.setString(sValue);
         }
         return this;

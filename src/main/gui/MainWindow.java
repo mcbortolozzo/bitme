@@ -3,6 +3,7 @@ package main.gui;
 
 import main.Client;
 import main.torrent.TorrentManager;
+import main.torrent.file.TorrentFileInfo;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -14,6 +15,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+
+/**
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
+ */
 public class MainWindow {
 
 	private JFrame frmBitme;
@@ -25,12 +34,15 @@ public class MainWindow {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
+        System.out.println("Parent : " + Thread.currentThread().getName());
         try {
             final Client c = new Client(Client.PORT);
-            EventQueue.invokeLater(() -> {
+			c.run();
+            SwingUtilities.invokeLater(() -> {
                 try {
                     MainWindow window = new MainWindow(c);
                     window.frmBitme.setVisible(true);
+                    System.out.println("Enfant : " + Thread.currentThread().getName());
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
@@ -257,8 +269,6 @@ public class MainWindow {
 			fc.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 			if (returnVal == JFileChooser.APPROVE_OPTION) {
-                System.out.println("Opening: " + file.getAbsolutePath());
-                System.out.println("Saving into: " + fc.getSelectedFile().getAbsolutePath());
                 ((TorrentTableModel) torrents.getModel()).addTorrent(file.getAbsolutePath(), fc.getSelectedFile().getAbsolutePath());
                 updateActiveTorrents();
             }
@@ -273,7 +283,14 @@ public class MainWindow {
      * the second for the saving location.
      */
 	private void createTorrentFile() {
-		fc.setDialogTitle("Créer un fichier Torrent");
+        fc.setDialogTitle("Créer un fichier Torrent");
+        fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+        int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            File selected = fc.getSelectedFile();
+            AddTorrentDialog.display(selected, TorrentManager.getInstance());
+        }
+		/*fc.setDialogTitle("Créer un fichier Torrent");
 		fc.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		int returnVal = fc.showOpenDialog(MainWindow.this.frmBitme);
 		if (returnVal == JFileChooser.APPROVE_OPTION) {
@@ -291,11 +308,10 @@ public class MainWindow {
             returnVal = fc.showSaveDialog(MainWindow.this.frmBitme);
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 System.out.println("Save file to " + fc.getSelectedFile().getAbsolutePath() + ".torrent");
-                // TODO Do the actual saving
             }
 		} else {
 			System.out.println("Open command cancelled by user.");
-		}
+		}*/
 	}
 
 	/*
@@ -349,7 +365,8 @@ public class MainWindow {
 
 		@Override
 		public void keyReleased(KeyEvent e) {
-            this.events.remove(this.events.indexOf(e.getKeyCode()));
+		    if (this.events.indexOf(e.getKeyCode()) != -1)
+                this.events.remove(this.events.indexOf(e.getKeyCode()));
 		}
 	}
 }

@@ -51,7 +51,7 @@ public class TorrentProtocolHelper {
         return requests;
     }
 
-    private static TorrentRequest decodeMessage(ByteBuffer messageBuffer) throws UnsupportedEncodingException {
+    public static TorrentRequest decodeMessage(ByteBuffer messageBuffer) throws UnsupportedEncodingException {
         RequestTypes nextType = RequestTypes.getMessageType(messageBuffer);
         return nextType.generateRequest(messageBuffer);
     }

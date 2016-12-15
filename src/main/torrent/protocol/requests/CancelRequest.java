@@ -24,6 +24,6 @@ public class CancelRequest extends NonHandshakeRequest {
 
     @Override
     public void processRequest() {
-        throw new UnsupportedOperationException();
+        //throw new UnsupportedOperationException();
     }
 }

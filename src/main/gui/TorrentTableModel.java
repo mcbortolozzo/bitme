@@ -2,21 +2,35 @@ package main.gui;
 
 import com.hypirion.bencode.BencodeReadException;
 import main.Client;
+import main.peer.Peer;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.util.Utils;
 
+import javax.swing.*;
 import javax.swing.table.AbstractTableModel;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
- * Created by aval0n on 28/11/2016.
+ * Written by
+ * Ricardo Atanazio S Carvalho
+ * Marcelo Cardoso Bortolozzo
+ * Hajar Aahdi
+ * Thibault Tourailles
  */
 public class TorrentTableModel extends AbstractTableModel {
+
+    Logger logger = Logger.getLogger(this.getClass().getName());
 
     private Client c;
 
@@ -30,6 +44,15 @@ public class TorrentTableModel extends AbstractTableModel {
         this.torrents = new ArrayList<>();
         for (HashId id : this.tManager.getTorrentList().keySet())
             torrents.add(this.tManager.getTorrentList().get(id));
+        this. c = c;
+
+        Timer timer = new Timer(0, e -> {
+            if (tManager.getTorrentList().size() > 0)
+                TorrentTableModel.this.fireTableRowsUpdated(0, tManager.getTorrentList().size() - 1);
+        });
+
+        timer.setDelay(1000); // delay for 30 seconds
+        timer.start();
     }
 
     private void updateList() {
@@ -60,42 +83,48 @@ public class TorrentTableModel extends AbstractTableModel {
 
     }
 
-    public void addTorrent(String path, String saveFolder) {
-        try {
-            System.out.println(new File(path).getParent());
-            this.tManager.addTorrent(path, new File(path).getParent(), c.getSelector());
-            this.fireTableDataChanged();
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (BencodeReadException e) {
-            e.printStackTrace();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
+    public void addTorrent(final String path, final String saveFolder) {
+        System.out.println("Parent : " + Thread.currentThread().getName());
+        EventQueue.invokeLater(() -> {
+            System.out.println("Enfant : " + Thread.currentThread().getName());
+            try {
+                TorrentTableModel.this.tManager.addTorrent(path, saveFolder, c.getSelector());
+            } catch (IOException | BencodeReadException | NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
+        torrents.clear();
         for (HashId id : this.tManager.getTorrentList().keySet()) {
-            System.out.println("BOUMMMMMMMM");
             torrents.add(this.tManager.getTorrentList().get(id));
         }
-        TorrentFile current = this.torrents.get(rowIndex);
+        TorrentFile current  = this.torrents.get(rowIndex);
+        List<Peer> peers = current.getPeers();
+        int speed;
         switch (columnIndex) {
             case 0: // Name
                 return current.getFileInfo().getName();
             case 1: // Taille
                 return prettySizePrint(current.getFileInfo().getLength());
             case 2: // Progression
-                return prettySizePrint(current.getDownloaded());
+                return 100 * ((float)current.getBitfield().getBitfield().cardinality()/current.getPieceCount());
             case 3: // Reçu
-                return current.getDownloaded();
+                return prettySizePrint(current.getDownloaded());
             case 4: // Vitesse Reception
-                return "dl speed " + rowIndex;
+                speed = 0;
+                for (Peer p : peers)
+                    speed += Utils.getSpeedFromLog(p.getUDowloadLog());
+                return prettySizePrint(speed) + "/s";
             case 5: // Uploadé
                 return prettySizePrint(current.getUploaded());
             case 6: // Vitesse Upload
-                return "up speed " + rowIndex;
+                speed = 0;
+                for (Peer p : peers)
+                    speed += Utils.getSpeedFromLog(p.getUploadLog());
+                return prettySizePrint(speed) + "/s";
             case 7: // Ratio
                 return current.getDownloaded() == 0 ? 0 : current.getUploaded() / current.getDownloaded();
             case 8: // Temps restant
@@ -110,7 +139,7 @@ public class TorrentTableModel extends AbstractTableModel {
     private static final long G = M * K;
     private static final long T = G * K;
 
-    protected String prettySizePrint(long value) {
+    static String prettySizePrint(long value) {
         final long[] dividers = new long[] { T, G, M, K, 1 };
         final String[] units = new String[] { "TB", "GB", "MB", "KB", "B" };
         if (value == 0)

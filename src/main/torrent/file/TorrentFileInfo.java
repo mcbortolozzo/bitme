@@ -33,7 +33,7 @@ public abstract class TorrentFileInfo {
     protected TreeMap<String,Object> info;
     protected List<Map<String,Object>> files;
     private String announce;
-    private List<String> l_announce ;
+    private List<List<String>> l_announce ;
     private Long date;
     private String comment;
     private String created_by;
@@ -41,7 +41,6 @@ public abstract class TorrentFileInfo {
     private String hash_pieces;
     private String pieces;
     protected String name;
-    protected List<Long> len_file;
 
     public TorrentFileInfo(){
 
@@ -57,7 +56,6 @@ public abstract class TorrentFileInfo {
         this.name =(String) this.info.get("name");
         this.pieceSize = (Long) this.info.get("piece length");
         this.hash_pieces = (String) this.info.get("pieces");
-        this.len_file = new ArrayList<Long>();
 
         this.announce = (String) this.dict.get("announce");
         if ( this.dict.containsKey("creation date")) {
@@ -71,7 +69,7 @@ public abstract class TorrentFileInfo {
             this.created_by = (String) this.dict.get("created by");
         }
         if (this.dict.containsKey(("announce-list"))){
-            this.l_announce = (List<String>) this.dict.get("announce-list");
+            this.l_announce = (List<List<String>>) this.dict.get("announce-list");
         }
 
         generateInfoHash();
@@ -150,8 +148,17 @@ public abstract class TorrentFileInfo {
 
     public String getName() { return this.name; }
 
-    public String getTrackerAnnounce() {
-        return this.announce;
+    public String getTrackerAnnounce() throws InvalidObjectException {
+        if(this.announce.substring(0,4).equals("http")){
+            return this.announce;
+        } else {
+            for(List<String> tracker : this.l_announce){
+                if(tracker.get(0).substring(0,4).equals("http")){
+                    return tracker.get(0);
+                }
+            }
+        }
+        throw new InvalidObjectException("No http trackers in torrent");
     }
 
 
@@ -177,16 +184,18 @@ public abstract class TorrentFileInfo {
         return pieceSize;
     }
 
-    protected int calculateStartingPosition(int index, int begin){
-        return (int) (index * this.pieceSize + begin);
+    protected Long calculateStartingPosition(int index, int begin){
+        return (index * this.pieceSize + begin);
     }
 
     public int getValidReadLength(int index, int begin, int length) {
-        int expectedReadEnd = this.calculateStartingPosition(index, begin) + length;
+        Long expectedReadEnd = this.calculateStartingPosition(index, begin) + length;
         if(expectedReadEnd > this.getLength()){
             return (int) (this.getLength() - this.calculateStartingPosition(index, begin)); //limit the read to length of file
         } else {
             return length;
         }
     }
+
+    public abstract void verifyAndAllocateFiles();
 }

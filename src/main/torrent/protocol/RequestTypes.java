@@ -10,21 +10,32 @@ import java.util.Arrays;
  * Created by marcelo on 07/11/16.
  */
 public enum RequestTypes {
-    NONE(-3),KEEP_ALIVE(-2), HANDSHAKE(-1), CHOKE(0), UNCHOKE(1), INTERESTED(2), NOT_INTERESTED(3), HAVE(4), BITFIELD(5), REQUEST(6), PIECE(7), CANCEL(8);
+    NONE(-3, 0, true),KEEP_ALIVE(-2, 0, true), HANDSHAKE(-1, 0, true), CHOKE(0, 1, true), UNCHOKE(1, 1, true),
+    INTERESTED(2, 1, true), NOT_INTERESTED(3, 1, true), HAVE(4, 5, true), BITFIELD(5, 1, false), REQUEST(6, 13, true),
+    PIECE(7, 9, false), CANCEL(8, 13, true);
 
     private final int id;
+    private final int minLength;
+    private final boolean fixedLength;
 
-    RequestTypes(int id) {
+    RequestTypes(int id, int minLength, boolean fixedLength) {
         this.id = id;
+        this.minLength = minLength;
+        this.fixedLength = fixedLength;
     }
 
     public int getId() {
         return id;
     }
 
-    private static RequestTypes getById(int id){
+    private static RequestTypes getById(int id, int messageLength){
         for(RequestTypes r : values()){
-            if(r.id == id) return r;
+            if(r.id == id){
+                if((r.fixedLength && messageLength == r.minLength)
+                        || (!r.fixedLength && messageLength >= r.minLength)){
+                    return r;
+                }
+            }
         }
         return NONE;
     }
@@ -53,10 +64,13 @@ public enum RequestTypes {
     }
 
     private static RequestTypes getOtherRequestType(ByteBuffer messageBuffer){
-        messageBuffer.getInt(); //ignore message length for this step
+        int messageLength = messageBuffer.getInt();
         byte id = messageBuffer.get();
         messageBuffer.rewind();
-        return getById(id);
+        if(messageBuffer.remaining() - 4 >= messageLength && messageLength > 0)
+            return getById(id, messageLength);
+        else
+            return NONE;
     }
 
     public TorrentRequest generateRequest(ByteBuffer messageBuffer) throws UnsupportedEncodingException {

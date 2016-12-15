@@ -1,6 +1,5 @@
 package main.peer;
 
-import com.sun.corba.se.impl.protocol.giopmsgheaders.Message;
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
@@ -14,10 +13,10 @@ import main.util.Messages;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Instant;
 import java.util.BitSet;
@@ -56,7 +55,7 @@ public class Peer{
     private int downloaded = 0;
     private LinkedList<Integer> downloadBytesLog = new LinkedList<>();
 
-    private PeerProtocolStateManager stateManager = new PeerProtocolStateManager();
+    private PeerProtocolStateManager stateManager;
     private Bitfield bitfield;
 
     private Date lastContact;
@@ -82,16 +81,13 @@ public class Peer{
      * @throws IOException thrown from peerConnection
      */
     public Peer(Selector selector, TorrentFile torrentFile, InetSocketAddress destAddr) throws IOException {
-        logger.log(Level.FINE, Messages.PEER_CONNECTION_AUTO_CREATE.getText());
+        logger.log(Level.INFO, Messages.PEER_CONNECTION_AUTO_CREATE.getText() + " - " + destAddr);
         this.peerIp = destAddr.getHostName();
         this.peerPort = destAddr.getPort();
-        this.torrentFile = torrentFile;
-        this.torrentFile.addPeer(this);
+        this.setTorrentFile(torrentFile);
         this.localPeerId = torrentFile.getPeerId();
-        this.bitfield = new Bitfield(torrentFile);
         this.peerConnection = new PeerConnection(selector, destAddr, this);
         this.lastContact = Date.from(Instant.now());
-        this.launchSpeedMeasurement();
         this.sendHandshake();
     }
 
@@ -116,13 +112,11 @@ public class Peer{
 
     /**
      * Executes the requests generated when receiving a message, launches it as a new thread in a pool
-     * @param requests list of requests received
+     * @param req list of requests received
      */
-    public void process(List<TorrentRequest> requests){
-        for(TorrentRequest req : requests){
-            req.setPeer(this);
-            TorrentManager.executorService.execute(req);
-        }
+    public void process(TorrentRequest req){
+        req.setPeer(this);
+        TorrentManager.executorService.execute(req);
         this.lastContact = Date.from(Instant.now());
     }
 
@@ -163,15 +157,24 @@ public class Peer{
         this.sendMessage(message);
     }
 
+    public void sendHave(int pieceIndex) {
+        logger.log(Level.FINE, Messages.SEND_HAVE.getText() + " - " + pieceIndex);
+        ByteBuffer message = TorrentProtocolHelper.createHave(pieceIndex);
+        this.sendMessage(message);
+    }
+
     /**
      * When this torrent is the target of the connection, it only knows which torrent to use when it receives the handshake
      * @param torrentFile the torrent used on the handshake, only valid torrent files will be used (validation in handshake)
      */
-    public void setTorrentFile(TorrentFile torrentFile) {
-        this.bitfield = new Bitfield(torrentFile);
-        this.torrentFile = torrentFile;
-        this.torrentFile.addPeer(this);
-        this.launchSpeedMeasurement();
+    public synchronized void setTorrentFile(TorrentFile torrentFile) {
+        if(this.torrentFile == null) {
+            this.bitfield = new Bitfield(torrentFile);
+            this.torrentFile = torrentFile;
+            this.torrentFile.addPeer(this);
+            this.stateManager = new PeerProtocolStateManager(this.torrentFile.getBitfield(), this.bitfield);
+            this.launchSpeedMeasurement();
+        }
     }
 
     /**
@@ -213,6 +216,21 @@ public class Peer{
 
     public void updateBitfield(BitSet bitfield) {
         this.bitfield.updateBitfield(bitfield);
+        this.updateInterested();
+        torrentFile.updateAvailablePieces(this.bitfield, this);
+    }
+
+    public boolean updateInterested() {
+        boolean prevInterested = this.stateManager.getAmInterested();
+        boolean currentInterested = this.stateManager.updateInterested();
+        if(currentInterested != prevInterested){
+            if(currentInterested){
+                this.sendStateChange(RequestTypes.INTERESTED);
+            } else {
+                this.sendStateChange(RequestTypes.NOT_INTERESTED);
+            }
+        }
+        return currentInterested;
     }
 
     public boolean isPeerChoking() {
@@ -225,6 +243,8 @@ public class Peer{
 
     public void setHavePiece(int pieceIndex) {
         this.bitfield.setHavePiece(pieceIndex);
+        this.updateInterested();
+        torrentFile.updatePiecesFromHave(pieceIndex, this);
     }
 
     public boolean hasPiece(int pieceIndex) {
@@ -249,6 +269,31 @@ public class Peer{
     }
 
     /**
+     * Writes a buffer to a file from the data received from other peer
+     * @param pieceIndex the index of the piece
+     * @param begin the offset inside the piece block, in bytes
+     * @param block the block with the bytes to be written
+     * @throws IOException file or buffer read error
+     */
+    public void writeDataBlock(int pieceIndex, int begin, byte[] block) throws IOException {
+        ByteBuffer outBuffer = ByteBuffer.allocate(block.length);
+        outBuffer.put(block);
+        outBuffer.flip();
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, begin, block.length);
+        tb.writeFileBlock(outBuffer);
+    }
+
+    public boolean verifyPieceHash(int pieceIndex) throws IOException, NoSuchAlgorithmException {
+        TorrentBlock tb = this.torrentFile.getBlockInfo(pieceIndex, 0, Math.toIntExact(this.torrentFile.getPieceSize()));
+        ByteBuffer pieceBuffer = tb.readFileBlock();
+        if(torrentFile.getFileInfo().isPieceValid(pieceBuffer.array(), pieceIndex)){
+            this.torrentFile.setHavePiece(pieceIndex);
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Closes this connection and updates the torrent file by removing the peer from it
      */
     public void shutdown() {
@@ -260,13 +305,17 @@ public class Peer{
             this.torrentFile.removePeer(this);
     }
 
-    public void addUploaded(int amount) {
+    public synchronized void addUploaded(int amount) {
         this.uploaded += amount;
     }
 
-    public void addDownloaded(int amount){
+    public synchronized int getUploaded(){ return this.uploaded; }
+
+    public synchronized void addDownloaded(int amount){
         this.downloaded += amount;
     }
+
+    public synchronized int getDownloaded(){ return this.downloaded; }
 
     public String getPeerIp() {
         return peerIp;
@@ -276,16 +325,33 @@ public class Peer{
         return peerPort;
     }
 
+    public List<Integer> getUDowloadLog() { return this.downloadBytesLog;}
+
+    public List<Integer> getUploadLog() { return this.uploadBytesLog;}
+
+    public void receivePieceBlock(int pieceIndex, int begin, byte[] block) throws IOException, NoSuchAlgorithmException {
+        this.addDownloaded(block.length);
+        boolean pieceDone = this.torrentFile.receivePieceBlock(pieceIndex, begin, block);
+        if(pieceDone){
+            this.torrentFile.setHavePiece(pieceIndex);
+            this.sendHave(pieceIndex);
+            this.updateInterested();
+        }
+    }
+
     private class SpeedRateCalculations implements Runnable {
         private int lastUpload = 0;
         private int lastDownload = 0;
 
         @Override
         public void run() {
-            downloadBytesLog.push(downloaded - this.lastDownload);
-            this.lastDownload = downloaded;
-            uploadBytesLog.push(uploaded - this.lastUpload);
-            this.lastUpload = uploaded;
+            int localDownloaded = getDownloaded();
+            int localUploaded = getUploaded();
+            logger.log(Level.FINE, "Peer - " + getOtherPeerId() + " - download speed - " + this.lastDownload);
+            downloadBytesLog.push(localDownloaded - this.lastDownload);
+            this.lastDownload = localDownloaded;
+            uploadBytesLog.push(localUploaded - this.lastUpload);
+            this.lastUpload = localUploaded;
         }
     }
 

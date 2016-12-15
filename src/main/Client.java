@@ -49,11 +49,9 @@ public class Client implements Runnable {
         this.server.close();
     }
 
-    public static void main(String args[]) throws IOException, BencodeReadException, NoSuchAlgorithmException {
+    public static void main(String args[]) throws IOException, BencodeReadException, NoSuchAlgorithmException, InterruptedException {
         Client client = new Client(PORT);
         client.run();
-
-        TorrentManager.getInstance().addTorrent("/home/marcelo/Documents/multipiece.torrent", "/home/marcelo/Downloads", client.getSelector());
-
+        TorrentManager.getInstance().addTorrent("/home/marcelo/Downloads/HorribleSubs-Cheating-Craft-11-480p.mkv.torrent", "/home/marcelo/Downloads/torrent", client.getSelector());
     }
 }

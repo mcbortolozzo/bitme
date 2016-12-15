@@ -36,7 +36,7 @@ public abstract class TrackerPeerInfo {
         if(peers instanceof ArrayList)
             return new TrackerPeerDictionary((ArrayList) peers);
         else
-            return null;// TODO implement binary model (find an example of it first)
+            return new TrackerPeerByteDictionary((String) peers);// TODO implement binary model (find an example of it first)
     }
 
     public ArrayList<PeerTrackerData> getPeers(){

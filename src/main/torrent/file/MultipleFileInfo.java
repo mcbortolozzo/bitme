@@ -39,6 +39,12 @@ public class MultipleFileInfo extends TorrentFileInfo {
             return pathString;
         }
 
+        public String getFullPath() {
+            StringBuilder sb = new StringBuilder();
+            sb.append(filesSaveFolder).append('/').append(name).append('/').append(this.getPath());
+            return sb.toString();
+        }
+
     }
 
     public MultipleFileInfo(){
@@ -78,10 +84,10 @@ public class MultipleFileInfo extends TorrentFileInfo {
     public TorrentBlock getFileBlock(int index, int begin, int length) {
         int blockSize = this.getValidReadLength(index, begin, length);
         TorrentBlock torrentBlock = new TorrentBlock(index, begin, blockSize);
-        int startingPosition = (int) (index * this.pieceSize + begin);
-        int position = startingPosition;
+        Long startingPosition = (index * this.pieceSize + begin);
+        Long position = startingPosition;
         while(position - startingPosition < blockSize){ //read < length
-            int lengthLeft = blockSize - position - startingPosition;
+            int lengthLeft = (int) (blockSize - (position - startingPosition));
             FileBlockInfo nextBlock = getNextBlock(position, lengthLeft);
             if(nextBlock != null){
                 position += nextBlock.getLength();
@@ -99,17 +105,17 @@ public class MultipleFileInfo extends TorrentFileInfo {
      * @param lengthLeft the amount of bytes left to be read
      * @return an object containing the info required to read/write to a file, which is may be one of many files included in this read/write
      */
-    private FileBlockInfo getNextBlock(int blockPositionBegin, int lengthLeft){
-        int fileBegin = 0;
-        int currentPosition = 0;
+    private FileBlockInfo getNextBlock(Long blockPositionBegin, int lengthLeft){
+        Long fileBegin = 0l;
+        Long currentPosition = 0l;
         for(SubFileStructure f : this.files){
             currentPosition += f.length;
             if(blockPositionBegin < currentPosition){
-                int positionInBlock = blockPositionBegin - fileBegin;
+                Long positionInBlock = blockPositionBegin - fileBegin;
                 int blockReadLength;
                 if (lengthLeft <= (f.length - positionInBlock)) blockReadLength = lengthLeft;
-                else blockReadLength = Math.toIntExact(f.length);
-                return new FileBlockInfo(this.filesSaveFolder + '/' + f.getPath(), (long) positionInBlock, blockReadLength);
+                else blockReadLength = (int) (f.length - positionInBlock);
+                return new FileBlockInfo(f.getFullPath(), positionInBlock, blockReadLength);
             }
             fileBegin = currentPosition;
         }
@@ -130,5 +136,12 @@ public class MultipleFileInfo extends TorrentFileInfo {
         ArrayList<Map<String, Object>> oldFiles = (ArrayList<Map<String, Object>>) this.info.get("files");
         ArrayList<Map<String, Object>> filesList = oldFiles.stream().map(TreeMap::new).collect(Collectors.toCollection(ArrayList::new));
         this.info.put("files", filesList);
+    }
+
+    @Override
+    public void verifyAndAllocateFiles() {
+        for(SubFileStructure file : this.files){
+            Utils.generateFile(file.getFullPath(), file.length);
+        }
     }
 }

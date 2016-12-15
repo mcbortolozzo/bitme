@@ -2,8 +2,10 @@ package main.torrent;
 
 import main.peer.Peer;
 import main.torrent.protocol.RequestTypes;
+import main.util.Utils;
 
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -49,32 +51,39 @@ public class ChokingAlgorithm implements Runnable{
         this.unchoked = unchoked;
     }
 
-    //TODO implement optimistic unchoking
     @Override
     public void run() {
         List<Peer> localUnchoked = this.getUnchoked();
-        List <Peer> newDownloaders = getDownloaders();
+        List <Peer> toUnchoke = getToUnchoke();
         List <Peer> toChoke = new LinkedList<>(localUnchoked);
-        toChoke.removeAll(newDownloaders);
+        toChoke.removeAll(toUnchoke);
         for(Peer p : toChoke){
             p.sendStateChange(RequestTypes.CHOKE);
         }
 
-        List<Peer> toUnchoke = new LinkedList<>(newDownloaders);
-        toUnchoke.removeAll(localUnchoked);
-        for(Peer p : toUnchoke){
+        List<Peer> nextUnchoked = new LinkedList(toUnchoke);
+        nextUnchoked.removeAll(localUnchoked);
+        for(Peer p : nextUnchoked){
             p.sendStateChange(RequestTypes.UNCHOKE);
         }
 
-        this.setUnchoked(newDownloaders);
+        this.setUnchoked(toUnchoke);
     }
 
-    private List<Peer> getDownloaders(){
-        List<Peer> interested = getInterestedPeers();
+    //TODO add optimistic unchoking here
+    private List<Peer> getToUnchoke(){
+        List<Peer> allPeers = this.getPeers();
+        allPeers.sort(PeerSpeedComparator);
 
-        interested.sort(PeerSpeedComparator);
-        int resultSize = interested.size() > MAX_DOWNLOADERS ? MAX_DOWNLOADERS : interested.size();
-        return interested.subList(0, resultSize);
+        List<Peer> toUnchoke = new LinkedList<>();
+        Iterator<Peer> peerIterator = allPeers.iterator();
+        int interestedPeers = 0;
+        while(peerIterator.hasNext() && interestedPeers < MAX_DOWNLOADERS){
+            Peer nextPeer = peerIterator.next();
+            if(nextPeer.isPeerInterested()) interestedPeers++;
+            toUnchoke.add(nextPeer);
+        }
+        return toUnchoke;
     }
 
     private List<Peer> getInterestedPeers() {
@@ -85,7 +94,9 @@ public class ChokingAlgorithm implements Runnable{
         //TODO implement download speed calculation and then compare here
         @Override
         public int compare(Peer p1, Peer p2) {
-            return 0;
+            Integer p1DownSpeed = Utils.getSpeedFromLog(p1.getUDowloadLog());
+            Integer p2DownSpeed = Utils.getSpeedFromLog(p2.getUDowloadLog());
+            return p1DownSpeed.compareTo(p2DownSpeed);
         }
     };
 }

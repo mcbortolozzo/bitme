@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class NonHandshakeRequest extends TorrentRequest {
 
-    protected int messageLength;
+    protected long messageLength;
     protected int messageType;
 
     protected NonHandshakeRequest(ByteBuffer requestBuffer){
@@ -19,7 +19,7 @@ public abstract class NonHandshakeRequest extends TorrentRequest {
         }
     }
 
-    public int getMessageLength() {
+    public long getMessageLength() {
         return messageLength;
     }
 
