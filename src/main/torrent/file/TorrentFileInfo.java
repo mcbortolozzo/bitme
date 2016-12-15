@@ -28,6 +28,7 @@ public abstract class TorrentFileInfo {
     //The .torrent to create
     protected Map<String,Object> torrent;
     protected Map<String,Object> information;
+    private String hash_pieces;
 
     private Map<String,Object> dict;
     protected TreeMap<String,Object> info;
@@ -38,7 +39,6 @@ public abstract class TorrentFileInfo {
     private String comment;
     private String created_by;
     private Long len_piece;
-    private String hash_pieces;
     private String pieces;
     protected String name;
 
@@ -86,6 +86,17 @@ public abstract class TorrentFileInfo {
 
     protected abstract void prepareInfoField();
 
+    /**
+     * generates the dictionnary that contains the torrent to be informations
+     * @param file : list of sources files
+     * @param DirectoryName : source
+     * @param announce
+     * @param comment
+     * @param piece_Length
+     * @return
+     * @throws NoSuchAlgorithmException
+     * @throws IOException
+     */
     public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
 
@@ -93,7 +104,7 @@ public abstract class TorrentFileInfo {
         this.information.put("piece length",piece_Length);
         this.hash_pieces(file,piece_Length);
         this.information.put("pieces",this.hash_pieces);
-        this.torrent.put("info",this.info);
+        this.torrent.put("info",this.information);
         this.torrent.put("announce",announce);
         this.torrent.put("announce-list",this.l_announce);
         this.torrent.put("comment",comment);
@@ -104,7 +115,13 @@ public abstract class TorrentFileInfo {
 
     }
 
-
+    /**
+     * hash piece per piece
+     * @param file list of source files
+     * @param piece_length
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
     public void hash_pieces ( List<File> file, int piece_length ) throws IOException, NoSuchAlgorithmException {
         this.hash_pieces = "";
         for ( File f : file ) {
@@ -127,8 +144,12 @@ public abstract class TorrentFileInfo {
     }
 
 
-
-
+    /**
+     * Creates a bencoded file based on a dictionnary
+     * @param nameFile : name of the torrent file to create
+     * @return
+     * @throws IOException
+     */
     public FileOutputStream bencodedFile(String nameFile) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         BencodeWriter benWriter = new BencodeWriter(out, StandardCharsets.ISO_8859_1);

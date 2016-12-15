@@ -70,6 +70,17 @@ public class TorrentManager {
         }
     }
 
+    /**
+     * Creates the .torrent file 
+     * @param destination
+     * @param source
+     * @param announce
+     * @param comment
+     * @param piece_length
+     * @return
+     * @throws IOException
+     * @throws NoSuchAlgorithmException
+     */
     public FileOutputStream createTorrent(File destination, File source, String announce , String comment , int piece_length) throws IOException, NoSuchAlgorithmException {
 
         List<File> file = new ArrayList<File>();
