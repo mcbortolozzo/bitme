@@ -15,13 +15,16 @@ import java.util.List;
 public class HashId {
 
     private byte[] hashIdBytes;
+    private String hashIdString;
 
     public HashId(byte[] hashIdBytes){
         this.hashIdBytes = hashIdBytes;
+        this.hashIdString = calculateHashIdString();
     }
 
     public HashId(String encodedString){
         this.hashIdBytes = Utils.decodeURLString(encodedString);
+        this.hashIdString = encodedString;
     }
 
     public byte[] getBytes(){
@@ -45,13 +48,16 @@ public class HashId {
     }
 
     public String toString(){
+        return this.hashIdString;
+    }
+
+    public String calculateHashIdString(){
         StringBuilder builder = new StringBuilder();
         for(byte b: this.hashIdBytes){
             builder.append(String.format("%02x", b));
         }
         return builder.toString();
     }
-
     public String asURLEncodedString() throws UnsupportedEncodingException {
         return Utils.encodeToURLString(this.hashIdBytes);
     }

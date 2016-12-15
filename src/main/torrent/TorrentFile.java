@@ -143,7 +143,7 @@ public class TorrentFile {
         return bitfield;
     }
 
-    public int getDownloaded(){
+    public synchronized int getDownloaded(){
         int downloaded = 0;
         for(Peer p: this.getPeers()){
             downloaded += p.getDownloaded();
@@ -151,7 +151,7 @@ public class TorrentFile {
         return downloaded;
     }
 
-    public int getUploaded(){
+    public synchronized int getUploaded(){
         int uploaded = 0;
         for(Peer p: this.getPeers()){
             uploaded += p.getUploaded();
@@ -159,8 +159,8 @@ public class TorrentFile {
         return uploaded;
     }
 
-    public int getLeft(){
-        return Math.toIntExact((this.getPieceCount() - this.getBitfield().getBitfield().cardinality()) * this.getFileInfo().getPieceSize());
+    public Long getLeft(){
+        return this.getPieceCount() - this.getBitfield().getBitfield().cardinality()*this.getFileInfo().getPieceSize();
     }
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
@@ -219,8 +219,7 @@ public class TorrentFile {
         List<TrackerPeerInfo.PeerTrackerData> newPeers = getNewPeers(peers);
         for(TrackerPeerInfo.PeerTrackerData peer : newPeers){
             try {
-                Peer p = new Peer(this.selector, this, new InetSocketAddress(peer.peerIp, Math.toIntExact(peer.peerPort)));
-                this.addPeer(p);
+                new Peer(this.selector, this, new InetSocketAddress(peer.peerIp, Math.toIntExact(peer.peerPort)));
             } catch (IOException e) {
                 logger.log(Level.FINE, Messages.FAILED_CONNECT_PEER.getText() + " - " + peer.peerIp + ":" + peer.peerPort);
             }

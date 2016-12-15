@@ -25,8 +25,8 @@ import java.util.logging.Logger;
 public class BlockPieceManager {
 
     private static final int BLOCK_SIZE = (int) Math.pow(2,14);
-    public static final int MAX_DOWNLOAD_CAP = (int) (0.75 * Math.pow(2, 16));
-    private static final long REQUEST_TIMEOUT = 10000;
+    public static final int MAX_DOWNLOAD_CAP = (int) (15 * Math.pow(2, 14));
+    private static final long REQUEST_TIMEOUT = 90000;
 
     public static final int CAP_REACHED = 1234;
 
@@ -46,6 +46,7 @@ public class BlockPieceManager {
     private int nbBlocksLastPiece;
 
     private BitSet requestsSent;
+    private BitSet blocksReceived;
 
     private Long bytesBeingDownloaded = 0l;
 
@@ -88,12 +89,25 @@ public class BlockPieceManager {
         this.bitfield = bitfield;
 
         this.requestsSent = new BitSet(getTotalNbBlocks());
+        this.blocksReceived = getBlocksReceived();
         for (int i = bitfield.getBitfield().nextClearBit(0); i < bitfield.getBitfieldLength(); i = bitfield.getBitfield().nextClearBit(i+1)) {
             notStartedPieces.add(i);
             if (i == Integer.MAX_VALUE) {
                 break;
             }
         }
+    }
+
+    private BitSet getBlocksReceived() {
+        BitSet blocksReceived = new BitSet(this.getTotalNbBlocks());
+        int pieceIndex = 0;
+        while((pieceIndex = this.bitfield.getBitfield().nextSetBit(pieceIndex)) != -1){
+            for(int i = 0; i < getNumberBlocksFromPiece(pieceIndex); i++){
+                blocksReceived.set(pieceIndex*nbBlocks + i);
+            }
+            pieceIndex++;
+        }
+        return blocksReceived;
     }
 
     private int getTotalNbBlocks() {
@@ -131,7 +145,7 @@ public class BlockPieceManager {
     }
 
     private synchronized void cancelBlockRequest(int pieceIndex, int blockNb){
-        //logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
+        logger.log(Level.INFO, "Block timed out - piece: " + pieceIndex + " block " + blockNb);
         requestsSent.clear(pieceIndex * nbBlocks + blockNb);
         removeBlockRequest(pieceIndex, blockNb);
         if(!notStartedPieces.contains(pieceIndex)){
@@ -177,9 +191,11 @@ public class BlockPieceManager {
         if(!downloadingPieces.containsKey(index)) {
             return false;
         }
-        removeBlockRequest(index, (int) Math.floor((float)begin/ BLOCK_SIZE));
-        downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
-        if(isPieceComplete(downloadingPieces.get(index))) {
+        blocksReceived.set(index * nbBlocks + (int) Math.floor((float)begin/ BLOCK_SIZE));
+        removeBlockRequest(index, (int) Math.floor((float) begin / BLOCK_SIZE));
+        writeToDisk(index, begin, block);
+        //downloadingPieces.get(index).set((int) Math.floor((float)begin/ BLOCK_SIZE), block);
+        if(isPieceComplete(index)) {
             try {
                 return validateAndSavePiece(index);
             } catch(NullPointerException | IOException e){
@@ -189,6 +205,14 @@ public class BlockPieceManager {
         return false;
     }
 
+    private void writeToDisk(int index, int begin, byte[] block) throws IOException {
+        ByteBuffer buffer = ByteBuffer.allocate(block.length);
+        buffer.put(block);
+        buffer.flip();
+        TorrentBlock tb = this.fileInfo.getFileBlock(index, begin, block.length);
+        tb.writeFileBlock(buffer);
+    }
+
     private synchronized void rollBackPiece(int index) {
         this.notStartedPieces.add(index);
         for(int i = 0; i < getNumberBlocksFromPiece(index); i++){
@@ -196,12 +220,10 @@ public class BlockPieceManager {
         }
     }
 
-    private boolean isPieceComplete(ArrayList pieceBlocks){
-        for(Object bytes: pieceBlocks){
-            if(bytes == null)
-                return false;
-        }
-        return true;
+    private boolean isPieceComplete(int pieceIndex){
+        int pieceBeginBlock = pieceIndex * nbBlocks;
+        return this.blocksReceived.nextClearBit(pieceBeginBlock)
+                >= pieceBeginBlock + getNumberBlocksFromPiece(pieceIndex);
     }
 
     private int getNumberBlocksFromPiece(int index) {
@@ -229,6 +251,17 @@ public class BlockPieceManager {
     }
 
     private Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
+        TorrentBlock tb = this.fileInfo.getFileBlock(index, 0, getPieceSizeFromIndex(index));
+        ByteBuffer pieceBuffer = tb.readFileBlock();
+        if(fileInfo.isPieceValid(pieceBuffer.array(), index)){
+            this.downloadingPieces.remove(index);
+            return true;
+        } else {
+            downloadingPieces.remove(index);
+            notStartedPieces.add(index);
+        }
+        return false;
+        /*
         if(downloadingPieces.get(index).size() == getNumberBlocksFromPiece(index)) {
             ByteBuffer pieceBuffer = ByteBuffer.allocate(getPieceSizeFromIndex(index));
             for(byte[] block : downloadingPieces.get(index)) {
@@ -246,6 +279,7 @@ public class BlockPieceManager {
             }
         }
         return false;
+        */
     }
 
     public HashMap<Integer, ArrayList<byte[]>> getDownloadingPieces() {

@@ -41,6 +41,11 @@ public class TrackerHelper {
             this.fieldValue = String.valueOf(fieldValue);
         }
 
+        public HttpField(Field field, Long fieldValue) {
+            this.fieldName = field.name().toLowerCase();
+            this.fieldValue = String.valueOf(fieldValue);
+        }
+
         @Override
         public String toString() {
             return this.fieldName + "=" + this.fieldValue;

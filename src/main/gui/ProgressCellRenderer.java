@@ -24,7 +24,8 @@ public class ProgressCellRenderer extends JProgressBar implements TableCellRende
     @Override
     public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
                                                    int row, int column) {
-        final String sValue = value.toString().substring(0,2) + "%";
+        int length = value.toString().length() >= 4 ? 4 : value.toString().length();
+        final String sValue = value.toString().substring(0,length) + "%";
         int index = sValue.indexOf('%');
         if (index != -1) {
             float p = 0;

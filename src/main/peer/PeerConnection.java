@@ -82,8 +82,8 @@ public class PeerConnection implements Runnable {
                 if(this.outputBuffer.size() > 0)
                     this.selectionKey.interestOps(SelectionKey.OP_WRITE | this.selectionKey.interestOps());
             } catch (IOException e) {
-                logger.log(Level.INFO, e.getMessage());
-                logger.log(Level.INFO, Messages.SOCKET_READ_FAIL.getText());
+                logger.log(Level.FINE, e.getMessage());
+                logger.log(Level.FINE, Messages.SOCKET_READ_FAIL.getText());
                 this.peer.shutdown();
             }
         }
@@ -95,8 +95,8 @@ public class PeerConnection implements Runnable {
                if(outputBuffer.size() > 0)
                     socket.write(outputBuffer.pop());
             } catch (IOException e) {
-                logger.log(Level.INFO, e.getMessage());
-                logger.log(Level.INFO, Messages.SOCKET_WRITE_FAIL.getText());
+                logger.log(Level.FINE, e.getMessage());
+                logger.log(Level.FINE, Messages.SOCKET_WRITE_FAIL.getText());
                 this.peer.shutdown();
             }
 
@@ -144,11 +144,13 @@ public class PeerConnection implements Runnable {
                 }
             }
         } catch(CancelledKeyException e){
-            logger.log(Level.INFO, "cancelled key exception");
+            logger.log(Level.FINE, "cancelled key exception");
             this.shutdown();
-        } catch (IOException | NoConnectionPendingException e) {
-            logger.log(Level.INFO, e.getMessage() + "\n " + this.peer.getPeerIp() + ":" + this.peer.getPeerPort());
+        } catch (IOException e) {
+            logger.log(Level.FINE, e + "\n" + this.peer.getPeerIp() + ":" + this.peer.getPeerPort());
             this.shutdown();
+        } catch (NoConnectionPendingException e) {
+            logger.log(Level.FINE, "Finish connect called before connect, waiting for next run");
         }
     }
 
