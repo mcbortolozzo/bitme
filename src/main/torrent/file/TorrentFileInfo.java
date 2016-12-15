@@ -43,6 +43,12 @@ public abstract class TorrentFileInfo {
     protected String name;
     protected List<Long> len_file;
 
+    public TorrentFileInfo(){
+
+        this.torrent = new HashMap<String,Object>();
+        this.information = new HashMap<String, Object>();
+    }
+
     public TorrentFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         this.dict = dict;
         this.filesSaveFolder = saveFolder;
@@ -85,9 +91,6 @@ public abstract class TorrentFileInfo {
     public Map<String, Object> generateTorrent(List<File> file,String DirectoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
 
 
-        this.torrent = new HashMap<String,Object>();
-        this.information = new HashMap<String, Object>();
-
         this.information.put ("name",DirectoryName);
         this.information.put("piece length",piece_Length);
         this.hash_pieces(file,piece_Length);
@@ -125,10 +128,8 @@ public abstract class TorrentFileInfo {
 
     }
 
-    public FileOutputStream generateFile(String torrentPath, List<File> file,String directoryName, String announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
-        this.generateTorrent(file,directoryName, announce, comment, piece_Length);
-        return this.bencodedFile(torrentPath);
-    }
+
+
 
     public FileOutputStream bencodedFile(String nameFile) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream();

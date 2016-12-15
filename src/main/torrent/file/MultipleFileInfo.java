@@ -41,6 +41,10 @@ public class MultipleFileInfo extends TorrentFileInfo {
 
     }
 
+    public MultipleFileInfo(){
+        super();
+    }
+
     public MultipleFileInfo(Map<String, Object> dict, String saveFolder) throws IOException, NoSuchAlgorithmException {
         super(dict, saveFolder);
         this.files = new LinkedList<>();
