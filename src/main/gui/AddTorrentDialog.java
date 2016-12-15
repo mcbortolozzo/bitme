@@ -8,6 +8,8 @@ import javax.swing.*;
 import javax.swing.text.NumberFormatter;
 import java.awt.event.*;
 import java.io.File;
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.text.NumberFormat;
 
 
@@ -62,7 +64,17 @@ public class AddTorrentDialog extends JDialog {
         formatter.setCommitsOnValidEdit(true);
         //this.pieceSize.setFormatterFactory(new);
 
-        buttonOK.addActionListener(e -> onOK());
+        buttonOK.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                try {
+                    onOK();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                } catch (NoSuchAlgorithmException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
 
         buttonCancel.addActionListener(e -> onCancel());
 
@@ -87,9 +99,10 @@ public class AddTorrentDialog extends JDialog {
         });
     }
 
-    private void onOK() {
+    private void onOK() throws IOException, NoSuchAlgorithmException {
         String trackers = this.trackers.getText();
         String comments = this.comments.getText();
+        TorrentManager.getInstance().createTorrent(destination,toSave.getName()+".torrent" ,toSave ,trackers,comments,Integer.parseInt(pieceSize.getText()));
         dispose();
     }
 
