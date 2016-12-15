@@ -41,6 +41,7 @@ public class SingleFileInfo extends TorrentFileInfo {
     @Override
     public TorrentFileInfo generateTorrent(File file, String directoryName, String[] announce, String comment, int piece_Length) throws NoSuchAlgorithmException, IOException {
         this.information.put("length", file.length());
+        this.len_file = file.length();
         super.generateTorrent(file,directoryName, announce, comment, piece_Length);
         return this;
     }

@@ -106,7 +106,7 @@ public abstract class TorrentFileInfo {
         this.pieceSize = (long) (piece_Length * 1024);
         logger.info("generate dictionnary");
         this.information.put ("name", directoryName);
-        this.information.put("piece length",piece_Length);
+        this.information.put("piece length",piece_Length*1024);
         this.hash_pieces();
         this.information.put("pieces",this.hash_pieces);
         this.torrent.put("info",this.information);

@@ -84,8 +84,9 @@ public class MultipleFileInfo extends TorrentFileInfo {
             if(f.isFile()){
                 Map<String, Object> fileMap = new TreeMap<>();
                 fileMap.put("length", f.length());
-                Pattern p = Pattern.compile("/");
-                String[] path = p.split(f.getPath().replace(parentPath + "/", ""));
+                String fileSeparator = System.getProperty("file.separator");
+                String pattern = Pattern.quote(fileSeparator);
+                String[] path = f.getPath().replace(parentPath + fileSeparator, "").split(pattern);
                 List<String> L_path = new ArrayList<>(Arrays.asList(path));
                 fileMap.put("path", L_path);
                 result.add(fileMap);
