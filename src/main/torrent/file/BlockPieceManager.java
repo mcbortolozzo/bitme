@@ -47,6 +47,7 @@ public class BlockPieceManager {
 
     private BitSet requestsSent;
     private BitSet blocksReceived;
+    private int totalBlocks;
 
     private LinkedList<BlockRequest> requestsList = new LinkedList<>();
     private boolean endGame;
@@ -95,6 +96,7 @@ public class BlockPieceManager {
                 break;
             }
         }
+        this.totalBlocks = (nbPieces - 1)*nbBlocks + nbBlocksLastPiece;
     }
 
     private BitSet getBlocksReceived() {
@@ -316,6 +318,25 @@ public class BlockPieceManager {
             notStartedPieces.add(index);
         }
         return false;
+    }
+
+    public synchronized void checkTorrentEnd(){
+        if(blocksReceived.nextClearBit(0) >= totalBlocks) {
+            Iterator<BlockRequest> iter = requestsList.iterator();
+            BlockRequest sentRequests;
+            int pieceIndex;
+            int begin;
+            int length;
+            while(iter.hasNext()) {
+                sentRequests = iter.next();
+                pieceIndex = sentRequests.pieceIndex;
+                begin = sentRequests.blockNb * BLOCK_SIZE;
+                length = (int) sentRequests.blockLength;
+
+                sentRequests.peer.sendCancelMessage(pieceIndex, begin, length);
+                iter.remove();
+            }
+        }
     }
 
     public HashMap<Integer, ArrayList<byte[]>> getDownloadingPieces() {

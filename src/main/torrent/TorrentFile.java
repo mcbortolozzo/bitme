@@ -49,6 +49,8 @@ public class TorrentFile {
 
     private Long pieceSize;
     private int pieceCount;
+    private int downloaded = 0;
+    private int uploaded = 0;
 
     private Bitfield bitfield;
 
@@ -143,19 +145,19 @@ public class TorrentFile {
         return bitfield;
     }
 
-    public synchronized int getDownloaded(){
-        int downloaded = 0;
-        for(Peer p: this.getPeers()){
-            downloaded += p.getDownloaded();
-        }
+    public synchronized void updateDownloaded(int amount){
+        downloaded += amount;
+    }
+
+    public int getDownloaded(){
         return downloaded;
     }
 
-    public synchronized int getUploaded(){
-        int uploaded = 0;
-        for(Peer p: this.getPeers()){
-            uploaded += p.getUploaded();
-        }
+    public synchronized void updateUploaded(int amount){
+        uploaded += amount;
+    }
+
+    public int getUploaded(){
         return uploaded;
     }
 
