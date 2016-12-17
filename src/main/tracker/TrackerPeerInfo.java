@@ -30,16 +30,26 @@ public abstract class TrackerPeerInfo {
             this.peerIp = peerIp;
             this.peerPort = peerPort;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if(obj instanceof PeerTrackerData){
+                PeerTrackerData other = (PeerTrackerData) obj;
+                return this.peerIp.equals(other.peerIp) && this.peerPort.equals(other.peerPort);
+            }
+            return false;
+        }
     }
 
     public static TrackerPeerInfo generatePeerInfo(Object peers) {
         if(peers instanceof ArrayList)
             return new TrackerPeerDictionary((ArrayList) peers);
         else
-            return new TrackerPeerByteDictionary((String) peers);// TODO implement binary model (find an example of it first)
+            return new TrackerPeerByteDictionary((String) peers);
     }
 
     public ArrayList<PeerTrackerData> getPeers(){
         return peerList;
     }
+
 }

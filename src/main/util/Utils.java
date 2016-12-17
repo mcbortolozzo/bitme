@@ -165,4 +165,9 @@ public class Utils {
             return p2DownSpeed.compareTo(p1DownSpeed);
         }
     };
+
+    public static int parse2ByteInt(byte[] bytes) {
+        return ((bytes[0] & 0xFF) << 8)
+                | (bytes[1] & 0xFF);
+    }
 }

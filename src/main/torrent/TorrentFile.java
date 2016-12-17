@@ -6,13 +6,14 @@ import main.peer.Peer;
 import main.torrent.file.BlockPieceManager;
 import main.torrent.file.TorrentBlock;
 import main.torrent.file.TorrentFileInfo;
-import main.tracker.TrackerHelper;
+import main.tracker.Tracker;
+import main.tracker.http.HttpTracker;
+import main.tracker.http.HttpTrackerHelper;
 import main.tracker.TrackerPeerInfo;
-import main.tracker.TrackerQueryResult;
+import main.tracker.udp.UdpTracker;
 import main.util.Messages;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.Selector;
@@ -33,10 +34,6 @@ import java.util.logging.Logger;
  */
 public class TorrentFile {
 
-    private static final Long TRACKER_ANNOUNCE_PERIOD = 1800l; // in seconds
-    private static final Long TRACKER_ERROR_START_PERIOD = 1l;
-    private Long nextTrackerErrorDelay = TRACKER_ERROR_START_PERIOD;
-
     private final Logger logger = Logger.getLogger(this.getClass().getName());
 
     private Selector selector;
@@ -54,7 +51,10 @@ public class TorrentFile {
 
     private Bitfield bitfield;
 
+    private List<Tracker> trackers = new LinkedList<>();
+
     private List<Peer> peers = new LinkedList<>();
+    private Set<TrackerPeerInfo.PeerTrackerData> trackedPeers = new HashSet<>();
     private ChokingAlgorithm chokingAlgorithm = new ChokingAlgorithm();
     private PieceSelectionAlgorithm pieceSelectionAlgorithm;
     private BlockPieceManager blockPieceManager;
@@ -74,6 +74,19 @@ public class TorrentFile {
         this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo, bitfield);
         this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
         this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+        this.initTrackers();
+    }
+
+    private void initTrackers() {
+        List<String> httpTrackers = this.fileInfo.getHttpTrackers();
+        List<String> udpTrackers = this.fileInfo.getUdpTrackers();
+        for(String trackerAnnounce : httpTrackers){
+            this.trackers.add(new HttpTracker(this, trackerAnnounce));
+        }
+        for(String trackerAnnounce : udpTrackers){
+            this.trackers.add(new UdpTracker(this, trackerAnnounce));
+        }
+        this.trackers.forEach(main.tracker.Tracker::start);
     }
 
     public synchronized void addPeer(Peer p) {
@@ -159,77 +172,37 @@ public class TorrentFile {
 
     public TorrentFileInfo getFileInfo() { return fileInfo; }
 
-    public void scheduleTrackerUpdate(Long delay, TimeUnit unit, TrackerHelper.Event event) {
-        this.scheduledExecutor.schedule(new TrackerUpdater(event), delay, unit);
-    }
-
     public List<Peer> getPeers() {return this.peers;}
 
-    /**
-     * Update tracker information, and retrieve torrent data
-     * @param event type of event announced to tracker: STARTED, STOPPED, UNSPECIFIED
-     * @throws IOException
-     * @throws BencodeReadException fail when decoding string received from tracker
-     */
-    public void retrieveTrackerData(TrackerHelper.Event event) throws IOException, BencodeReadException {
-        if(this.fileInfo.getTrackerAnnounce() != null) {
-            String trackerRequest = TrackerHelper.generateTrackerRequest(this.torrentId, event, this.fileInfo.getTrackerAnnounce());
-            try {
-                byte[] result = TrackerHelper.sendTrackerRequest(trackerRequest);
-                TrackerQueryResult trackerResult = new TrackerQueryResult(result);
-                logger.log(Level.FINE, Messages.TRACKER_CONNECT_SUCCCESS.getText());
-                //connect to peers
-                if(!trackerResult.isFailure() && trackerResult.getPeerInfo() != null){
-                    connectToPeers(trackerResult.getPeerInfo());
-                }
-                //reschedule tracker request
-                resetTrackerDelay();
-                if(trackerResult.getInterval() != null){
-                    scheduleTrackerUpdate(trackerResult.getInterval(), TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
-                } else {
-                    scheduleTrackerUpdate(TRACKER_ANNOUNCE_PERIOD, TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
-                }
-            } catch(ConnectException e){
-                logger.log(Level.INFO, Messages.TRACKER_UNREACHABLE.getText() + " - " + this.fileInfo.getTrackerAnnounce() + " repeating in: " + this.nextTrackerErrorDelay + " seconds");
-                increaseTrackerDelay();
-                scheduleTrackerUpdate(this.nextTrackerErrorDelay, TimeUnit.SECONDS, TrackerHelper.Event.UNSPECIFIED);
-            }
-        }
-    }
-
-    private void increaseTrackerDelay() {
-        this.nextTrackerErrorDelay = Math.min(this.nextTrackerErrorDelay * 2, TRACKER_ANNOUNCE_PERIOD);
-    }
-
-    private void resetTrackerDelay() {
-        this.nextTrackerErrorDelay = TRACKER_ERROR_START_PERIOD;
-    }
 
     /**
      * connect to new peers received from tracker
-     * @param peers list of all peers announced by tracker, to be filtered before use
      */
-    private void connectToPeers(TrackerPeerInfo peers){
-        List<TrackerPeerInfo.PeerTrackerData> newPeers = getNewPeers(peers);
-        for(TrackerPeerInfo.PeerTrackerData peer : newPeers){
+    private synchronized void connectToNewPeers(){
+        List<TrackerPeerInfo.PeerTrackerData> newPeers = this.getNewPeers();
+        for(TrackerPeerInfo.PeerTrackerData newPeer : newPeers){
             try {
-                new Peer(this.selector, this, new InetSocketAddress(peer.peerIp, Math.toIntExact(peer.peerPort)));
+                new Peer(this.selector, this, new InetSocketAddress(newPeer.peerIp, Math.toIntExact(newPeer.peerPort)));
             } catch (IOException e) {
-                logger.log(Level.FINE, Messages.FAILED_CONNECT_PEER.getText() + " - " + peer.peerIp + ":" + peer.peerPort);
+                logger.log(Level.FINE, Messages.FAILED_CONNECT_PEER.getText() + " - " + newPeer.peerIp + ":" + newPeer.peerPort);
             }
         }
+    }
+
+    public synchronized void updateTrackedPeers(TrackerPeerInfo peerInfo) {
+        this.trackedPeers.addAll(peerInfo.getPeers());
+        this.connectToNewPeers();
     }
 
     /**
      * filters the list of peers, according to the already existing ones
-     * @param peers list of all peers received from tracker
      * @return list of peers without an existing connection
      */
-    private List<TrackerPeerInfo.PeerTrackerData> getNewPeers(TrackerPeerInfo peers) {
+    private synchronized List<TrackerPeerInfo.PeerTrackerData> getNewPeers() {
         List<TrackerPeerInfo.PeerTrackerData> newPeers = new LinkedList<>();
-        for(TrackerPeerInfo.PeerTrackerData peer : peers.getPeers()){
-            if(this.getPeerByIpAndPort(peer.peerIp, peer.peerPort) == null){
-                newPeers.add(peer);
+        for (TrackerPeerInfo.PeerTrackerData nextTrackedPeer : trackedPeers) {
+            if (this.getPeerByIpAndPort(nextTrackedPeer.peerIp, nextTrackedPeer.peerPort) == null) {
+                newPeers.add(nextTrackedPeer);
             }
         }
         return newPeers;
@@ -265,29 +238,11 @@ public class TorrentFile {
         while(!peers.isEmpty()) {
             peers.get(0).shutdown();
         }
+        for(Tracker t: this.trackers){
+            t.stop();
+        }
         scheduledExecutor.shutdown();
         TorrentManager.getInstance().removeTorrent(this.getTorrentId());
     }
-
-    private class TrackerUpdater implements Runnable {
-
-        private TrackerHelper.Event event;
-
-        public TrackerUpdater(TrackerHelper.Event event) {
-            this.event = event;
-        }
-
-        @Override
-        public void run() {
-            try {
-                retrieveTrackerData(event);
-            } catch (IOException e) { //TODO treat these exceptions
-                e.printStackTrace();
-            } catch (BencodeReadException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-
 
 }

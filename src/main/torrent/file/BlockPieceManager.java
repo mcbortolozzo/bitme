@@ -309,7 +309,7 @@ public class BlockPieceManager {
         return BLOCK_SIZE;
     }
 
-    private Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
+    private synchronized Boolean validateAndSavePiece(int index) throws NoSuchAlgorithmException, IOException {
         TorrentBlock tb = this.fileInfo.getFileBlock(index, 0, getPieceSizeFromIndex(index));
         ByteBuffer pieceBuffer = tb.readFileBlock();
         if(fileInfo.isPieceValid(pieceBuffer.array(), index)){
@@ -322,8 +322,9 @@ public class BlockPieceManager {
         return false;
     }
 
-    public synchronized void checkTorrentEnd(){
+    public synchronized boolean checkTorrentEnd(){
         if(blocksReceived.nextClearBit(0) >= totalBlocks) {
+            logger.log(Level.INFO, "Torrent finished downloading");
             Iterator<BlockRequest> iter = requestsList.iterator();
             BlockRequest sentRequests;
             int pieceIndex;
@@ -338,14 +339,16 @@ public class BlockPieceManager {
                 sentRequests.peer.sendCancelMessage(pieceIndex, begin, length);
                 iter.remove();
             }
+            return true;
         }
+        return false;
     }
 
-    public HashMap<Integer, ArrayList<byte[]>> getDownloadingPieces() {
+    public synchronized HashMap<Integer, ArrayList<byte[]>> getDownloadingPieces() {
         return downloadingPieces;
     }
 
-    public LinkedList<Integer> getNotStartedPieces() {
+    public synchronized LinkedList<Integer> getNotStartedPieces() {
         return notStartedPieces;
     }
 }

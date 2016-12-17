@@ -5,7 +5,6 @@ import com.hypirion.bencode.BencodeReader;
 import main.torrent.file.MultipleFileInfo;
 import main.torrent.file.SingleFileInfo;
 import main.torrent.file.TorrentFileInfo;
-import main.tracker.TrackerHelper;
 
 import java.io.*;
 import java.nio.channels.Selector;
@@ -14,7 +13,6 @@ import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by marcelo on 07/11/16.
@@ -52,7 +50,6 @@ public class TorrentManager {
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }
-        torrentFile.scheduleTrackerUpdate(0l, TimeUnit.SECONDS, TrackerHelper.Event.STARTED);
         return torrentFile;
     }
 

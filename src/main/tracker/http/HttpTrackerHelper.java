@@ -1,9 +1,10 @@
-package main.tracker;
+package main.tracker.http;
 
 import main.Client;
 import main.torrent.HashId;
 import main.torrent.TorrentFile;
 import main.torrent.TorrentManager;
+import main.tracker.Tracker;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -14,34 +15,23 @@ import java.util.List;
 /**
  * Created by marcelo on 19/11/16.
  */
-public class TrackerHelper {
-
-    private static final String ANNOUNCE_PREFIX = "/announce";
-
-    public enum Event{
-        STARTED, STOPPED, COMPLETED, UNSPECIFIED;
-    }
-
-    private enum Field {
-        INFO_HASH, PEER_ID, PORT, UPLOADED, DOWNLOADED, LEFT, COMPACT, NO_PEER_ID,
-        EVENT, IP, NUMWANT, KEY, TRACKERID;
-    }
+public class HttpTrackerHelper {
 
     private static class HttpField{
         String fieldName;
         String fieldValue;
 
-        public HttpField(Field field, String fieldValue) {
+        public HttpField(Tracker.Field field, String fieldValue) {
             this.fieldName = field.name().toLowerCase();
             this.fieldValue = fieldValue;
         }
 
-        public HttpField(Field field, int fieldValue) {
+        public HttpField(Tracker.Field field, int fieldValue) {
             this.fieldName = field.name().toLowerCase();
             this.fieldValue = String.valueOf(fieldValue);
         }
 
-        public HttpField(Field field, Long fieldValue) {
+        public HttpField(Tracker.Field field, Long fieldValue) {
             this.fieldName = field.name().toLowerCase();
             this.fieldValue = String.valueOf(fieldValue);
         }
@@ -52,7 +42,7 @@ public class TrackerHelper {
         }
     }
 
-    public static String generateTrackerRequest(HashId torrentId, Event event, String trackerURL) throws MalformedURLException, UnsupportedEncodingException {
+    public static String generateTrackerRequest(HashId torrentId, Tracker.Event event, String trackerURL) throws MalformedURLException, UnsupportedEncodingException {
         List<HttpField> parameters = getRequestParameters(torrentId, event);
         return composeTrackerRequest(parameters, trackerURL);
     }
@@ -62,12 +52,6 @@ public class TrackerHelper {
     public static byte[] sendTrackerRequest(String requestURL) throws IOException {
         URL request = new URL(requestURL);
         InputStream in = new BufferedInputStream(request.openStream());
-
-        /*
-        HttpURLConnection conn = (HttpURLConnection) request.openConnection();
-        conn.setRequestMethod("GET");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-        */
         return getRequestReply(in);
     }
 
@@ -80,33 +64,31 @@ public class TrackerHelper {
         }
         in.close();
         out.close();
-        byte[] result = out.toByteArray();
-        return result;
+        return out.toByteArray();
     }
 
-    private static List<HttpField> getRequestParameters(HashId torrentId, Event event) throws UnsupportedEncodingException {
+    private static List<HttpField> getRequestParameters(HashId torrentId, Tracker.Event event) throws UnsupportedEncodingException {
         int port = Client.PORT;
         List<HttpField> parameters = new LinkedList<>();
-        parameters.add(new HttpField(Field.PORT, port));
+        parameters.add(new HttpField(Tracker.Field.PORT, port));
         parameters.addAll(getTorrentFileParameters(torrentId));
-        if(!event.equals(Event.UNSPECIFIED)){
-            parameters.add(new HttpField(Field.EVENT, event.name().toLowerCase()));
+        if(!event.equals(Tracker.Event.UNSPECIFIED)){
+            parameters.add(new HttpField(Tracker.Field.EVENT, event.name().toLowerCase()));
         }
         return parameters;
     }
 
-    //TODO escape the hash parameters
     private static List<HttpField> getTorrentFileParameters(HashId torrentId) throws UnsupportedEncodingException {
         TorrentFile torrentFile = TorrentManager.getInstance().retrieveTorrent(torrentId);
         List<HttpField> fileParameters = new LinkedList<>();
         String encodedTorrentHash = torrentFile.getTorrentId().asURLEncodedString();
         String encodedPeerHash = torrentFile.getPeerId().asURLEncodedString();
-        fileParameters.add(new HttpField(Field.INFO_HASH, encodedTorrentHash));
-        fileParameters.add(new HttpField(Field.PEER_ID, encodedPeerHash));
-        fileParameters.add(new HttpField(Field.UPLOADED, torrentFile.getUploaded()));
-        fileParameters.add(new HttpField(Field.DOWNLOADED, torrentFile.getDownloaded()));
-        fileParameters.add(new HttpField(Field.LEFT, torrentFile.getLeft()));
-        fileParameters.add(new HttpField(Field.NUMWANT, 50));
+        fileParameters.add(new HttpField(Tracker.Field.INFO_HASH, encodedTorrentHash));
+        fileParameters.add(new HttpField(Tracker.Field.PEER_ID, encodedPeerHash));
+        fileParameters.add(new HttpField(Tracker.Field.UPLOADED, torrentFile.getUploaded()));
+        fileParameters.add(new HttpField(Tracker.Field.DOWNLOADED, torrentFile.getDownloaded()));
+        fileParameters.add(new HttpField(Tracker.Field.LEFT, torrentFile.getLeft()));
+        fileParameters.add(new HttpField(Tracker.Field.NUMWANT, 50));
         return fileParameters;
     }
 
@@ -122,7 +104,4 @@ public class TrackerHelper {
         return request.toString();
     }
 
-    public static String byteToEscapedString(byte[] bytes){
-        return "";
-    }
 }

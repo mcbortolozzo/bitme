@@ -170,6 +170,27 @@ public abstract class TorrentFileInfo {
 
     public String getName() { return this.name; }
 
+    private List<String> filterTrackers(String proto){
+        List<String> trackers = new LinkedList<>();
+        if(this.announce.substring(0,proto.length()).equals(proto)){
+            trackers.add(this.announce);
+        }
+        for(List<String> tracker : this.l_announce){
+            if(tracker.get(0).substring(0,proto.length()).equals(proto)){
+                trackers.add(tracker.get(0));
+            }
+        }
+        return trackers;
+    }
+
+    public List<String> getHttpTrackers() {
+        return filterTrackers("http");
+    }
+
+    public List<String> getUdpTrackers() {
+        return filterTrackers("udp");
+    }
+
     public String getTrackerAnnounce() throws InvalidObjectException {
         if(this.announce.substring(0,4).equals("http")){
             return this.announce;
@@ -194,7 +215,6 @@ public abstract class TorrentFileInfo {
     public abstract TorrentBlock getFileBlock(int index, int begin, int length);
 
     public abstract Long getLength();
-
 
     public boolean isPieceValid(byte[] piece, int pieceIndex) throws NoSuchAlgorithmException {
         byte[] expected = this.hash_pieces.substring(pieceIndex * 20, pieceIndex * 20 + 20).getBytes(StandardCharsets.ISO_8859_1);

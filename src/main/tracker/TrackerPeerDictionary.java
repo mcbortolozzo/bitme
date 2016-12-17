@@ -1,6 +1,7 @@
 package main.tracker;
 
 import main.torrent.HashId;
+import main.tracker.TrackerPeerInfo;
 
 import java.util.ArrayList;
 import java.util.HashMap;

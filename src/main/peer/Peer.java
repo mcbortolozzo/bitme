@@ -9,6 +9,7 @@ import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
 import main.torrent.protocol.requests.HandshakeRequest;
+import main.tracker.TrackerPeerInfo;
 import main.util.Messages;
 
 import java.io.ByteArrayOutputStream;
@@ -24,6 +25,8 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import static main.tracker.TrackerPeerInfo.*;
 
 /**
  * Written by
@@ -368,9 +371,9 @@ public class Peer{
     }
 
     private class SpeedRateCalculations implements Runnable {
+
         private int lastUpload = 0;
         private int lastDownload = 0;
-
         @Override
         public void run() {
             int localDownloaded = getDownloaded();
@@ -381,6 +384,27 @@ public class Peer{
             uploadBytesLog.push(localUploaded - this.lastUpload);
             this.lastUpload = localUploaded;
         }
+
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if(obj instanceof Peer){
+            Peer other = (Peer) obj;
+            if(other.getOtherPeerId() != null && this.getOtherPeerId() != null){
+                return this.getOtherPeerId().equals(other.getOtherPeerId());
+            }else if(this.getPeerIp() != null && other.getPeerIp() != null){
+                return this.getPeerIp().equals(other.getPeerIp()) && this.getPeerPort() == other.getPeerPort();
+            }
+        }
+        return false;
+    }
+
+    public boolean isEquivalentPeer(TrackerPeerInfo.PeerTrackerData other){
+        if(this.getPeerIp() != null && other.peerIp != null && other.peerPort != null){
+            return this.getPeerIp().equals(other.peerIp) && other.peerPort.intValue() == this.getPeerPort();
+        }
+        return false;
     }
 
 }

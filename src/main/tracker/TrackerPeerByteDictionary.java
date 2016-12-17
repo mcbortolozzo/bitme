@@ -1,5 +1,8 @@
 package main.tracker;
 
+import main.tracker.TrackerPeerInfo;
+import main.util.Utils;
+
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -11,21 +14,29 @@ import java.util.ArrayList;
  * Hajar Aahdi
  * Thibault Tourailles
  */
-public class TrackerPeerByteDictionary extends TrackerPeerInfo{
+public class TrackerPeerByteDictionary extends TrackerPeerInfo {
 
     public TrackerPeerByteDictionary(String peersString){
-        this.peerList = new ArrayList<>();
         byte[] bytes = peersString.getBytes(StandardCharsets.ISO_8859_1);
         ByteBuffer buffer = ByteBuffer.allocate(bytes.length);
         buffer.put(bytes);
         buffer.flip();
-        while(buffer.hasRemaining()){
+        parsePeersFromBuffer(buffer);
+    }
+
+    public TrackerPeerByteDictionary(ByteBuffer replyBuffer) {
+        parsePeersFromBuffer(replyBuffer);
+    }
+
+    private void parsePeersFromBuffer(ByteBuffer buffer) {
+        this.peerList = new ArrayList<>();
+        while(buffer.hasRemaining() && buffer.remaining() >= 6){
             byte[] ip = new byte[4];
             byte[] port = new byte[2];
             buffer.get(ip);
             String ipString = getIp(ip);
             buffer.get(port);
-            int portInt = getPort(port);
+            int portInt = Utils.parse2ByteInt(port);
             this.peerList.add(new PeerTrackerData(ipString, (long) portInt));
         }
     }
@@ -41,9 +52,4 @@ public class TrackerPeerByteDictionary extends TrackerPeerInfo{
         return ipString;
     }
 
-    private int getPort(byte[] portBytes){
-        int portResult = ((portBytes[0] & 0xFF) << 8)
-                            | (portBytes[1] & 0xFF);
-        return portResult;
-    }
 }
