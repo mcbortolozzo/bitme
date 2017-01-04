@@ -20,10 +20,10 @@ import java.util.List;
 public class PeersTableModel extends AbstractTableModel {
 
     TorrentFile torrent;
-
+    //TODO add lock for peer list
     List<Peer> peers = new ArrayList<>();
 
-    private String[] title = {"IP", "Port", "Client", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up"};
+    private String[] title = {"IP", "Port", "Client", "Progression", "Reçu", "Vitesse DL", "Envoyé", "Vitesse Up"};
 
     public PeersTableModel(TorrentManager manager) {
         Timer timer = new Timer(1000, new ActionListener() {
@@ -64,12 +64,14 @@ public class PeersTableModel extends AbstractTableModel {
             case 2:
                 return p.getPeerClient() != null ? p.getPeerClient() : "-";
             case 3:
-                return Utils.prettySizePrint(p.getDownloaded());
+                return p.getOtherPeerProgress();
             case 4:
-                return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUDowloadLog()));
+                return Utils.prettySizePrint(p.getDownloaded());
             case 5:
-                return Utils.prettySizePrint(p.getUploaded());
+                return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUDowloadLog()));
             case 6:
+                return Utils.prettySizePrint(p.getUploaded());
+            case 7:
                 return Utils.prettySizePrint(Utils.getSpeedFromLog(p.getUploadLog()));
             default:
                 return null;

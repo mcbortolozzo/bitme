@@ -69,12 +69,24 @@ public class TorrentFile {
         this.pieceCount = this.fileInfo.getPieceCount();
         this.pieceSize = this.fileInfo.getPieceSize();
         this.selector = selector;
-        this.updateBitfield();
-        this.blockPieceManager = new BlockPieceManager(pieceCount, pieceSize, this.fileInfo.getLength(), bitfield, fileInfo);
-        this.pieceSelectionAlgorithm = new PieceSelectionAlgorithm(this.blockPieceManager, fileInfo, bitfield);
-        this.scheduledExecutor.scheduleAtFixedRate(this.chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
-        this.scheduledExecutor.scheduleAtFixedRate(this.pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
-        this.initTrackers();
+    }
+
+    public void init() throws IOException, NoSuchAlgorithmException {
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    updateBitfield();
+                    blockPieceManager = new BlockPieceManager(pieceCount, pieceSize, fileInfo.getLength(), bitfield, fileInfo);
+                    pieceSelectionAlgorithm = new PieceSelectionAlgorithm(blockPieceManager, fileInfo, bitfield);
+                    scheduledExecutor.scheduleAtFixedRate(chokingAlgorithm, 0, ChokingAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+                    scheduledExecutor.scheduleAtFixedRate(pieceSelectionAlgorithm, 0, PieceSelectionAlgorithm.RUN_PERIOD, TimeUnit.MILLISECONDS);
+                    initTrackers();
+                } catch (IOException | NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).start();
     }
 
     private void initTrackers() {
@@ -139,6 +151,10 @@ public class TorrentFile {
                 this.bitfield.setHavePiece(pieceIndex);
             }
             pieceIndex++;
+            float progress = 100*(float)pieceIndex/this.bitfield.getBitfieldLength();
+            if(pieceIndex % 50 == 0){
+                logger.log(Level.INFO, "Bitfield check progress: " + String.format("%.02f", progress) + "%");
+            }
         }
     }
 

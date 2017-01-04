@@ -175,9 +175,11 @@ public abstract class TorrentFileInfo {
         if(this.announce.substring(0,proto.length()).equals(proto)){
             trackers.add(this.announce);
         }
-        for(List<String> tracker : this.l_announce){
-            if(tracker.get(0).substring(0,proto.length()).equals(proto)){
-                trackers.add(tracker.get(0));
+        if(this.l_announce != null){
+            for(List<String> tracker : this.l_announce){
+                if(tracker.get(0).substring(0,proto.length()).equals(proto)){
+                    trackers.add(tracker.get(0));
+                }
             }
         }
         return trackers;

@@ -8,7 +8,6 @@ import main.torrent.file.TorrentBlock;
 import main.torrent.protocol.RequestTypes;
 import main.torrent.protocol.TorrentProtocolHelper;
 import main.torrent.protocol.TorrentRequest;
-import main.torrent.protocol.requests.HandshakeRequest;
 import main.tracker.TrackerPeerInfo;
 import main.util.Messages;
 
@@ -26,8 +25,6 @@ import java.util.concurrent.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static main.tracker.TrackerPeerInfo.*;
-
 /**
  * Written by
  * Ricardo Atanazio S Carvalho
@@ -38,6 +35,7 @@ import static main.tracker.TrackerPeerInfo.*;
 public class Peer{
 
     private static final Long MEASUREMENT_PERIOD = 1000l; // in milliseconds
+    private static final Long KEEP_ALIVE_PERIOD = 5l; // in seconds
 
     Logger logger = Logger.getLogger(Peer.class.getName());
 
@@ -51,6 +49,7 @@ public class Peer{
 
     private SpeedRateCalculations speedRateCalculations = new SpeedRateCalculations();
     ScheduledFuture rateCalculationFuture;
+    ScheduledFuture keepAliveFuture;
     private int uploaded = 0;
     private LinkedList<Integer> uploadBytesLog = new LinkedList<>();
     private int downloaded = 0;
@@ -92,8 +91,9 @@ public class Peer{
         this.sendHandshake(null);
     }
 
-    private void launchSpeedMeasurement() {
+    private void launchScheduledEvents() {
         rateCalculationFuture = this.torrentFile.getExecutor().scheduleAtFixedRate(speedRateCalculations, 0, MEASUREMENT_PERIOD, TimeUnit.MILLISECONDS);
+        keepAliveFuture = this.torrentFile.getExecutor().scheduleAtFixedRate(new KeepAliveMessage(), 0, KEEP_ALIVE_PERIOD, TimeUnit.SECONDS);
     }
 
     /**
@@ -186,7 +186,7 @@ public class Peer{
             this.torrentFile = torrentFile;
             this.torrentFile.addPeer(this);
             this.stateManager = new PeerProtocolStateManager(this.torrentFile.getBitfield(), this.bitfield);
-            this.launchSpeedMeasurement();
+            this.launchScheduledEvents();
         }
     }
 
@@ -316,7 +316,7 @@ public class Peer{
      * Closes this connection and updates the torrent file by removing the peer from it
      */
     public void shutdown() {
-        logger.log(Level.INFO, Messages.PEER_SHUTDOWN.getText() + " - other peer: " + this.getOtherPeerId());
+        logger.log(Level.INFO, Messages.PEER_SHUTDOWN.getText() + " - other peer: " + this.getOtherPeerId() + " - " + this.getPeerIp());
         if(rateCalculationFuture != null)
             rateCalculationFuture.cancel(true);
         if(this.peerConnection != null) {
@@ -368,6 +368,18 @@ public class Peer{
 
     public void cancelRequest(int pieceIndex, int begin) {
         this.peerConnection.cancelRequest(pieceIndex, begin);
+    }
+
+    public float getOtherPeerProgress() {
+        return 100*(float)this.getBitfield().getBitfield().cardinality()/this.torrentFile.getPieceCount();
+    }
+
+    private class KeepAliveMessage implements Runnable {
+        @Override
+        public void run() {
+            ByteBuffer message = TorrentProtocolHelper.createKeepAlive();
+            sendMessage(message);
+        }
     }
 
     private class SpeedRateCalculations implements Runnable {

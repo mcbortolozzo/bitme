@@ -50,6 +50,7 @@ public class TorrentManager {
         synchronized (this){
             torrentList.put(torrentFile.getTorrentId(), torrentFile);
         }
+        torrentFile.init();
         return torrentFile;
     }
 

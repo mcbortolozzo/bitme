@@ -208,6 +208,7 @@ public class MainWindow {
         peersPanel.add(peersScrollPane);
 
         peersTable = new JTable(new PeersTableModel(TorrentManager.getInstance()));
+        peersTable.getColumnModel().getColumn(3).setCellRenderer(new ProgressCellRenderer());
         peersScrollPane.setViewportView(peersTable);
 
         JPanel piecePanel = new JPanel();
